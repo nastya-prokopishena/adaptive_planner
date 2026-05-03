@@ -1,0 +1,11 @@
+flask
+flask-cors
+google-auth
+google-auth-oauthlib
+google-api-python-client
+requests-oauthlib
+oauthlib
+sqlalchemy
+psycopg2-binary
+redis
+bcrypt

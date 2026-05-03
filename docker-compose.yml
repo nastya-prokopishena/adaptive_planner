@@ -1,0 +1,32 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:15
+    container_name: planner_db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 1234
+      POSTGRES_DB: planner
+    ports:
+      - "5432:5432"
+
+  redis:
+    image: redis:7
+    container_name: planner_redis
+    ports:
+      - "6379:6379"
+
+  backend:
+    build: .
+    container_name: planner_backend
+    ports:
+      - "5000:5000"
+    depends_on:
+      - db
+      - redis
+    environment:
+      DATABASE_URL: postgresql://postgres:31220566@db:5432/planner
+      REDIS_HOST: redis
+      REDIS_PORT: 6379

@@ -1,0 +1,144 @@
+:root {
+  --bg-main: #ffffff;
+  --bg-card: #f6f6f6;
+  --text-main: #1f1f1f;
+  --border-color: #e5e5e5;
+  --event-bg: #e3e3e3;
+  --button-bg: #ffffff;
+}
+
+[data-theme="dark"] {
+  --bg-main: #111111;
+  --bg-card: #1c1c1c;
+  --text-main: #e5e5e5;
+  --border-color: #2a2a2a;
+  --event-bg: #2d2d2d;
+  --button-bg: #1f1f1f;
+}
+
+body {
+  margin: 0;
+  background: var(--bg-main);
+  color: var(--text-main);
+  font-family: Inter, system-ui, -apple-system, sans-serif;
+  transition: 0.3s ease;
+}
+
+.app-wrapper {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 30px;
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+}
+
+.left-controls,
+.right-controls {
+  display: flex;
+  gap: 10px;
+}
+
+button {
+  background: var(--button-bg);
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+  padding: 6px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+button:hover {
+  opacity: 0.7;
+}
+
+.calendar-container {
+  background: var(--bg-card);
+  padding: 20px;
+  border-radius: 16px;
+}
+
+.fc {
+  background: var(--bg-card);
+  position: relative;
+  z-index: 1;
+}
+
+.fc-theme-standard td,
+.fc-theme-standard th {
+  border: 1px solid var(--border-color);
+}
+
+.fc-event {
+  background: var(--event-bg) !important;
+  border: none !important;
+  border-radius: 8px !important;
+  padding: 2px 6px !important;
+}
+
+.fc-day-today {
+  background: rgba(59, 130, 246, 0.08) !important;
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(6px);
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  z-index: 9999;
+  pointer-events: all;
+}
+
+.modal {
+  background: var(--modal-bg);
+  padding: 28px;
+  border-radius: 14px;
+  width: 340px;
+
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+
+  box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+}
+
+.modal input {
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-main);
+  color: var(--text-main);
+}
+
+.auth-container {
+  max-width: 400px;
+  margin: 40px auto;
+  padding: 20px;
+  background: var(--bg-card);
+  border-radius: 12px;
+  text-align: center;
+}
+
+.auth-container input {
+  width: 100%;
+  padding: 8px;
+  margin: 8px 0;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-main);
+  color: var(--text-main);
+}
+
+.auth-container button {
+  margin-top: 10px;
+}
