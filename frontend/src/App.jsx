@@ -1,6 +1,5 @@
-// src/App.jsx
 import { useEffect, useRef, useState } from "react";
-import { BrowserRouter, Routes, Route, Link, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
 import axios from "axios";
 import "./index.css";
 
@@ -9,6 +8,10 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Profile from "./pages/Profile";
 import ProtectedRoute from "./components/ProtectedRoute";
+import WelcomePage from "./pages/WelcomePage";
+
+// 🔥 ОБОВʼЯЗКОВО
+axios.defaults.withCredentials = true;
 
 export default function App() {
   const [user, setUser] = useState(null);
@@ -56,24 +59,34 @@ export default function App() {
     document.documentElement.setAttribute("data-theme", theme);
   }, [theme]);
 
-  // ====== CHECK AUTH ======
+  // ====== AUTH CHECK (ВИПРАВЛЕНО) ======
   useEffect(() => {
     axios
-      .get("/api/user/me", { withCredentials: true })
-      .then((res) => setUser(res.data))
+      .get("/api/user/me")
+      .then((res) => {
+        if (res.data.authenticated) {
+          setUser(res.data);
+        } else {
+          setUser(null);
+        }
+      })
       .catch(() => setUser(null))
       .finally(() => setLoading(false));
   }, []);
 
-  // ====== LOAD EVENTS (only if user is logged in) ======
+  // ====== LOAD EVENTS ======
   const loadEvents = () => {
     if (!user) return;
+
     axios
-      .get("/api/events", { withCredentials: true })
+      .get("/api/events")
       .then((res) => {
         const formatted = res.data.map((event) => ({
-          id: event.id,
-          title: event.title,
+          id: String(event.id),
+          title:
+            typeof event.title === "string"
+              ? event.title
+              : JSON.stringify(event.title || "No title"),
           start: new Date(event.start),
           end: new Date(event.end),
         }));
@@ -109,8 +122,9 @@ export default function App() {
 
   const handleCreateEvent = async () => {
     if (!newEvent.title) return;
+
     try {
-      await axios.post("/api/events", newEvent, { withCredentials: true });
+      await axios.post("/api/events", newEvent);
       setModalOpen(false);
       loadEvents();
     } catch (error) {
@@ -121,29 +135,21 @@ export default function App() {
 
   // ====== DRAG & DROP ======
   const handleEventDrop = (info) => {
-    axios.put(
-      `/api/events/${info.event.id}`,
-      {
-        start: info.event.start.toISOString(),
-        end: info.event.end.toISOString(),
-      },
-      { withCredentials: true }
-    );
+    axios.put(`/api/events/${info.event.id}`, {
+      start: info.event.start.toISOString(),
+      end: info.event.end.toISOString(),
+    });
   };
 
   const handleEventResize = (info) => {
-    axios.put(
-      `/api/events/${info.event.id}`,
-      {
-        start: info.event.start.toISOString(),
-        end: info.event.end.toISOString(),
-      },
-      { withCredentials: true }
-    );
+    axios.put(`/api/events/${info.event.id}`, {
+      start: info.event.start.toISOString(),
+      end: info.event.end.toISOString(),
+    });
   };
 
   const logout = async () => {
-    await axios.post("/auth/logout", {}, { withCredentials: true });
+    await axios.post("/auth/logout");
     setUser(null);
     setEvents([]);
   };
@@ -153,6 +159,8 @@ export default function App() {
   return (
     <BrowserRouter>
       <div className="app-wrapper">
+
+        {/* 🔝 HEADER */}
         <div className="topbar">
           <div className="left-controls">
             {user && (
@@ -179,19 +187,21 @@ export default function App() {
                 </button>
               </>
             )}
+
             <button onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
               {theme === "dark" ? "☀ Light" : "🌙 Dark"}
             </button>
+
             <button onClick={() => setLang(lang === "en" ? "uk" : "en")}>
               {lang === "en" ? "🇺🇦" : "🇬🇧"}
             </button>
-            {user && (
+
+            {user ? (
               <>
                 <Link to="/profile">Profile</Link>
                 <button onClick={logout}>Logout</button>
               </>
-            )}
-            {!user && (
+            ) : (
               <>
                 <Link to="/login">Login</Link>
                 <Link to="/register">Register</Link>
@@ -200,27 +210,14 @@ export default function App() {
           </div>
         </div>
 
+        {/* 🔥 ROUTES */}
         <Routes>
-          <Route
-            path="/login"
-            element={<Login setUser={setUser} />}
-          />
-          <Route
-            path="/register"
-            element={<Register setUser={setUser} />}
-          />
-          <Route
-            path="/profile"
-            element={
-              <ProtectedRoute user={user}>
-                <Profile user={user} />
-              </ProtectedRoute>
-            }
-          />
+
+          {/* 👇 ГОЛОВНЕ: Welcome або Calendar */}
           <Route
             path="/"
             element={
-              <ProtectedRoute user={user}>
+              user ? (
                 <CalendarView
                   events={events}
                   lang={lang}
@@ -234,9 +231,26 @@ export default function App() {
                   handleCreateEvent={handleCreateEvent}
                   t={t}
                 />
+              ) : (
+                <WelcomePage />
+              )
+            }
+          />
+
+          {/* LOGIN / REGISTER */}
+          <Route path="/login" element={<Login setUser={setUser} />} />
+          <Route path="/register" element={<Register setUser={setUser} />} />
+
+          {/* PROFILE */}
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute user={user}>
+                <Profile user={user} />
               </ProtectedRoute>
             }
           />
+
         </Routes>
       </div>
     </BrowserRouter>
