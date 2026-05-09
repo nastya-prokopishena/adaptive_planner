@@ -46,11 +46,31 @@ function AppContent() {
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [isEditMode, setIsEditMode] = useState(false);
 
+  const [autoPlanOpen, setAutoPlanOpen] = useState(false);
+  const [autoPlanTask, setAutoPlanTask] = useState({
+    title: "",
+    duration_minutes: 60,
+    date_from: "",
+    date_to: "",
+    day_start: "08:00",
+    day_end: "22:00",
+    preferred_time: "10:00",
+    repeat_enabled: false,
+    times_per_week: 1,
+    allowed_days: [],
+  });
+
+  const [deleteManagerOpen, setDeleteManagerOpen] = useState(false);
+  const [deleteSearchQuery, setDeleteSearchQuery] = useState("");
+  const [deleteSearchResults, setDeleteSearchResults] = useState([]);
+  const [selectedDeleteIds, setSelectedDeleteIds] = useState([]);
+
   const [theme, setTheme] = useState("dark");
   const [lang, setLang] = useState("uk");
 
   const [toast, setToast] = useState(null);
   const [confirmDialog, setConfirmDialog] = useState(null);
+  const [recurringDeleteDialog, setRecurringDeleteDialog] = useState(null);
 
   const [newEvent, setNewEvent] = useState({
     title: "",
@@ -142,6 +162,46 @@ function AppContent() {
       times: "разів",
       done: "Готово",
 
+      autoPlanTitle: "Автоматичне планування",
+      autoPlanDescription:
+        "Система знайде вільний слот у календарі та створить подію без накладань.",
+      taskTitle: "Назва задачі",
+      durationMinutes: "Тривалість, хв",
+      dateFrom: "Початкова дата",
+      dateTo: "Кінцева дата",
+      dayStart: "Планувати з",
+      dayEnd: "Планувати до",
+      preferredTime: "Бажаний час",
+      autoPlanButton: "Запланувати автоматично",
+      autoPlanSuccess: "Подію автоматично заплановано",
+      autoPlanError: "Не вдалося автоматично запланувати подію",
+      noFreeSlot: "Вільний слот не знайдено",
+      repeatAutoPlan: "Повторювати задачу",
+      timesPerWeek: "Кількість разів на тиждень",
+      preferredDays: "Бажані дні",
+      plannedMany: "Події автоматично заплановано",
+
+      manageDeletion: "Керувати видаленням",
+      deleteManagerTitle: "Керування видаленням",
+      deleteManagerDescription:
+        "Знайди події за назвою, вибери конкретні варіанти або видали всі події з однаковою назвою.",
+      searchByEventName: "Пошук за назвою події",
+      searchPlaceholder: "Наприклад: Gym, навчання, робота",
+      searchEvents: "Знайти події",
+      selectedForDelete: "Вибрано для видалення",
+      deleteSelected: "Видалити вибрані",
+      deleteAllWithTitle: "Видалити всі з такою назвою",
+      noDeleteResults: "Подій за цим запитом не знайдено",
+      deleteOnlyThis: "Тільки цю подію",
+      deleteThisAndFuture: "Цю і всі наступні",
+      deleteWholeSeries: "Усю серію",
+      recurringDeleteTitle: "Що саме видалити?",
+      recurringDeleteDescription:
+        "Це повторювана подія. Можна видалити тільки цей екземпляр, усі наступні або всю серію.",
+      bulkDeleteSuccess: "Події видалено",
+      selectEventsFirst: "Спочатку вибери події для видалення",
+      enterSearchTitle: "Введи назву події для пошуку",
+
       enterTitle: "Введи назву події",
       invalidEnd: "Кінець події має бути пізніше за початок",
       createError: "Помилка при створенні події",
@@ -227,6 +287,46 @@ function AppContent() {
       times: "times",
       done: "Done",
 
+      autoPlanTitle: "Automatic planning",
+      autoPlanDescription:
+        "The system will find a free calendar slot and create an event without overlaps.",
+      taskTitle: "Task title",
+      durationMinutes: "Duration, min",
+      dateFrom: "Start date",
+      dateTo: "End date",
+      dayStart: "Plan from",
+      dayEnd: "Plan until",
+      preferredTime: "Preferred time",
+      autoPlanButton: "Plan automatically",
+      autoPlanSuccess: "Event was planned automatically",
+      autoPlanError: "Could not automatically plan the event",
+      noFreeSlot: "No free slot found",
+      repeatAutoPlan: "Repeat task",
+      timesPerWeek: "Times per week",
+      preferredDays: "Preferred days",
+      plannedMany: "Events were planned automatically",
+
+      manageDeletion: "Manage deletion",
+      deleteManagerTitle: "Deletion manager",
+      deleteManagerDescription:
+        "Search events by title, select exact items or delete all events with the same title.",
+      searchByEventName: "Search by event name",
+      searchPlaceholder: "For example: Gym, study, work",
+      searchEvents: "Search events",
+      selectedForDelete: "Selected for deletion",
+      deleteSelected: "Delete selected",
+      deleteAllWithTitle: "Delete all with this title",
+      noDeleteResults: "No events found for this query",
+      deleteOnlyThis: "Only this event",
+      deleteThisAndFuture: "This and future events",
+      deleteWholeSeries: "Whole series",
+      recurringDeleteTitle: "What do you want to delete?",
+      recurringDeleteDescription:
+        "This is a recurring event. You can delete only this occurrence, this and future events, or the whole series.",
+      bulkDeleteSuccess: "Events deleted",
+      selectEventsFirst: "Select events first",
+      enterSearchTitle: "Enter event title to search",
+
       enterTitle: "Enter event title",
       invalidEnd: "Event end must be later than start",
       createError: "Error while creating event",
@@ -249,6 +349,14 @@ function AppContent() {
 
   const normalizeTitleKey = (title) => {
     return (title || "").trim().toLowerCase();
+  };
+
+  const getSafeRecurrence = (recurrence) => {
+    return {
+      ...defaultRecurrence,
+      ...(recurrence || {}),
+      days: Array.isArray(recurrence?.days) ? recurrence.days : [],
+    };
   };
 
   const getEventColorByTitle = (title, colorsMap = eventTitleColors) => {
@@ -326,12 +434,18 @@ function AppContent() {
     return `${year}-${month}-${day}T${hours}:${minutes}:00`;
   };
 
-  const getSafeRecurrence = (recurrence) => {
-    return {
-      ...defaultRecurrence,
-      ...(recurrence || {}),
-      days: Array.isArray(recurrence?.days) ? recurrence.days : [],
-    };
+  const formatEventDate = (value) => {
+    if (!value) return "";
+
+    const date = new Date(value);
+
+    return new Intl.DateTimeFormat(lang === "uk" ? "uk-UA" : "en-US", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    }).format(date);
   };
 
   const normalizeEvent = (event, colorsMap = eventTitleColors) => {
@@ -410,6 +524,18 @@ function AppContent() {
     calendarRef.current?.getApi().today();
   };
 
+  const resetEventForm = () => {
+    setModalOpen(false);
+    setSelectedEvent(null);
+    setIsEditMode(false);
+    setNewEvent({
+      title: "",
+      start: "",
+      end: "",
+      recurrence: defaultRecurrence,
+    });
+  };
+
   const openCreateModal = () => {
     const now = new Date();
 
@@ -431,6 +557,43 @@ function AppContent() {
     });
 
     setModalOpen(true);
+  };
+
+  const openAutoPlanModal = () => {
+    const today = new Date();
+    const nextWeek = new Date();
+
+    nextWeek.setDate(today.getDate() + 7);
+
+    const formatOnlyDate = (date) => {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+
+      return `${year}-${month}-${day}`;
+    };
+
+    setAutoPlanTask({
+      title: "",
+      duration_minutes: 60,
+      date_from: formatOnlyDate(today),
+      date_to: formatOnlyDate(nextWeek),
+      day_start: "08:00",
+      day_end: "22:00",
+      preferred_time: "10:00",
+      repeat_enabled: false,
+      times_per_week: 1,
+      allowed_days: [],
+    });
+
+    setAutoPlanOpen(true);
+  };
+
+  const openDeleteManagerModal = () => {
+    setDeleteSearchQuery("");
+    setDeleteSearchResults([]);
+    setSelectedDeleteIds([]);
+    setDeleteManagerOpen(true);
   };
 
   const handleDateSelect = (info) => {
@@ -505,18 +668,6 @@ function AppContent() {
     return true;
   };
 
-  const resetEventForm = () => {
-    setModalOpen(false);
-    setSelectedEvent(null);
-    setIsEditMode(false);
-    setNewEvent({
-      title: "",
-      start: "",
-      end: "",
-      recurrence: defaultRecurrence,
-    });
-  };
-
   const handleCreateEvent = async () => {
     if (!validateEventForm()) return;
 
@@ -563,8 +714,43 @@ function AppContent() {
     }
   };
 
+  const deleteEventByScope = async (event, scope = "all") => {
+    const targetId = event.master_id || event.id;
+
+    await axios.delete(`/api/events/${targetId}`, {
+      data: {
+        scope,
+        occurrence_start: event.start,
+      },
+    });
+  };
+
+  const confirmRecurringDelete = async (scope) => {
+    if (!recurringDeleteDialog?.event) return;
+
+    try {
+      await deleteEventByScope(recurringDeleteDialog.event, scope);
+
+      setRecurringDeleteDialog(null);
+      resetEventForm();
+
+      showToast("success", t.successDelete);
+      loadEvents();
+    } catch (error) {
+      setRecurringDeleteDialog(null);
+      handleApiError(error, t.deleteError);
+    }
+  };
+
   const handleDeleteEvent = async () => {
     if (!selectedEvent) return;
+
+    if (selectedEvent.is_recurring) {
+      setRecurringDeleteDialog({
+        event: selectedEvent,
+      });
+      return;
+    }
 
     setConfirmDialog({
       title: t.confirmDeleteTitle,
@@ -572,10 +758,8 @@ function AppContent() {
       confirmText: t.confirmDeleteAction,
       cancelText: t.cancel,
       onConfirm: async () => {
-        const targetId = selectedEvent.master_id || selectedEvent.id;
-
         try {
-          await axios.delete(`/api/events/${targetId}`);
+          await deleteEventByScope(selectedEvent, "all");
 
           setConfirmDialog(null);
           resetEventForm();
@@ -630,6 +814,125 @@ function AppContent() {
       info.revert();
       handleApiError(error, t.updateError);
     }
+  };
+
+  const handleAutoPlan = async () => {
+    if (!autoPlanTask.title.trim()) {
+      showToast("error", t.enterTitle);
+      return;
+    }
+
+    try {
+      const response = await axios.post("/api/planner/auto-plan", autoPlanTask);
+
+      setAutoPlanOpen(false);
+
+      const plannedCount = response.data?.planned_count || 1;
+
+      if (plannedCount > 1) {
+        showToast("success", `${t.plannedMany}: ${plannedCount}`);
+      } else {
+        showToast("success", t.autoPlanSuccess);
+      }
+
+      loadEvents();
+    } catch (error) {
+      console.error(error);
+
+      if (error?.response?.status === 409) {
+        showToast("error", t.noFreeSlot);
+        return;
+      }
+
+      showToast("error", t.autoPlanError);
+    }
+  };
+
+  const searchEventsForDeletion = async () => {
+    if (!deleteSearchQuery.trim()) {
+      showToast("error", t.enterSearchTitle);
+      return;
+    }
+
+    try {
+      const response = await axios.get("/api/events/search", {
+        params: {
+          query: deleteSearchQuery.trim(),
+        },
+      });
+
+      const formattedEvents = Array.isArray(response.data)
+        ? response.data.map(normalizeEvent)
+        : [];
+
+      setDeleteSearchResults(formattedEvents);
+      setSelectedDeleteIds([]);
+    } catch (error) {
+      handleApiError(error, t.deleteError);
+    }
+  };
+
+  const toggleDeleteSelection = (eventId) => {
+    setSelectedDeleteIds((current) => {
+      if (current.includes(eventId)) {
+        return current.filter((id) => id !== eventId);
+      }
+
+      return [...current, eventId];
+    });
+  };
+
+  const handleBulkDeleteSelected = async () => {
+    if (selectedDeleteIds.length === 0) {
+      showToast("error", t.selectEventsFirst);
+      return;
+    }
+
+    try {
+      await axios.post("/api/events/bulk-delete", {
+        event_ids: selectedDeleteIds,
+      });
+
+      setSelectedDeleteIds([]);
+      await searchEventsForDeletion();
+
+      showToast("success", t.bulkDeleteSuccess);
+      loadEvents();
+    } catch (error) {
+      handleApiError(error, t.deleteError);
+    }
+  };
+
+  const handleDeleteAllByTitle = async () => {
+    if (!deleteSearchQuery.trim()) {
+      showToast("error", t.enterSearchTitle);
+      return;
+    }
+
+    setConfirmDialog({
+      title: t.confirmDeleteTitle,
+      message: `${t.deleteAllWithTitle}: "${deleteSearchQuery.trim()}"`,
+      confirmText: t.confirmDeleteAction,
+      cancelText: t.cancel,
+      onConfirm: async () => {
+        try {
+          await axios.post("/api/events/bulk-delete", {
+            delete_all_by_title: true,
+            title: deleteSearchQuery.trim(),
+          });
+
+          setConfirmDialog(null);
+          setDeleteSearchResults([]);
+          setSelectedDeleteIds([]);
+
+          showToast("success", t.bulkDeleteSuccess);
+          loadEvents();
+        } catch (error) {
+          setConfirmDialog(null);
+          handleApiError(error, t.deleteError);
+        }
+      },
+    });
   };
 
   const closeModal = () => {
@@ -717,6 +1020,8 @@ function AppContent() {
                 handleEventDrop={handleEventDrop}
                 handleEventResize={handleEventResize}
                 openCreateModal={openCreateModal}
+                openAutoPlanModal={openAutoPlanModal}
+                openDeleteManagerModal={openDeleteManagerModal}
                 goPrev={goPrev}
                 goNext={goNext}
                 goToday={goToday}
@@ -730,10 +1035,7 @@ function AppContent() {
           }
         />
 
-        <Route
-          path="/login"
-          element={<Login setUser={setUser} lang={lang} />}
-        />
+        <Route path="/login" element={<Login setUser={setUser} lang={lang} />} />
 
         <Route
           path="/register"
@@ -750,11 +1052,349 @@ function AppContent() {
         />
       </Routes>
 
+      {autoPlanOpen && (
+        <div className="modal-overlay">
+          <div className="modal modern-modal">
+            <div className="modal-header">
+              <div>
+                <p className="eyebrow">{t.autoPlanning}</p>
+                <h3>{t.autoPlanTitle}</h3>
+                <p className="modal-description">{t.autoPlanDescription}</p>
+              </div>
+
+              <button
+                type="button"
+                className="icon-button"
+                onClick={() => setAutoPlanOpen(false)}
+              >
+                ×
+              </button>
+            </div>
+
+            <label>
+              {t.taskTitle}
+              <input
+                type="text"
+                value={autoPlanTask.title}
+                onChange={(e) =>
+                  setAutoPlanTask({
+                    ...autoPlanTask,
+                    title: e.target.value,
+                  })
+                }
+              />
+            </label>
+
+            <label>
+              {t.durationMinutes}
+              <input
+                type="number"
+                min="15"
+                step="15"
+                value={autoPlanTask.duration_minutes}
+                onChange={(e) =>
+                  setAutoPlanTask({
+                    ...autoPlanTask,
+                    duration_minutes: Number(e.target.value),
+                  })
+                }
+              />
+            </label>
+
+            <div className="datetime-grid">
+              <label>
+                {t.dateFrom}
+                <input
+                  type="date"
+                  value={autoPlanTask.date_from}
+                  onChange={(e) =>
+                    setAutoPlanTask({
+                      ...autoPlanTask,
+                      date_from: e.target.value,
+                    })
+                  }
+                />
+              </label>
+
+              <label>
+                {t.dateTo}
+                <input
+                  type="date"
+                  value={autoPlanTask.date_to}
+                  onChange={(e) =>
+                    setAutoPlanTask({
+                      ...autoPlanTask,
+                      date_to: e.target.value,
+                    })
+                  }
+                />
+              </label>
+            </div>
+
+            <div className="datetime-grid">
+              <label>
+                {t.dayStart}
+                <input
+                  type="time"
+                  value={autoPlanTask.day_start}
+                  onChange={(e) =>
+                    setAutoPlanTask({
+                      ...autoPlanTask,
+                      day_start: e.target.value,
+                    })
+                  }
+                />
+              </label>
+
+              <label>
+                {t.dayEnd}
+                <input
+                  type="time"
+                  value={autoPlanTask.day_end}
+                  onChange={(e) =>
+                    setAutoPlanTask({
+                      ...autoPlanTask,
+                      day_end: e.target.value,
+                    })
+                  }
+                />
+              </label>
+            </div>
+
+            <label>
+              {t.preferredTime}
+              <input
+                type="time"
+                value={autoPlanTask.preferred_time}
+                onChange={(e) =>
+                  setAutoPlanTask({
+                    ...autoPlanTask,
+                    preferred_time: e.target.value,
+                  })
+                }
+              />
+            </label>
+
+            <div className="auto-repeat-block">
+              <label className="checkbox-row">
+                <input
+                  type="checkbox"
+                  checked={autoPlanTask.repeat_enabled}
+                  onChange={(e) =>
+                    setAutoPlanTask({
+                      ...autoPlanTask,
+                      repeat_enabled: e.target.checked,
+                    })
+                  }
+                />
+                {t.repeatAutoPlan}
+              </label>
+
+              {autoPlanTask.repeat_enabled && (
+                <>
+                  <label>
+                    {t.timesPerWeek}
+                    <input
+                      type="number"
+                      min="1"
+                      max="7"
+                      value={autoPlanTask.times_per_week}
+                      onChange={(e) =>
+                        setAutoPlanTask({
+                          ...autoPlanTask,
+                          times_per_week: Number(e.target.value),
+                        })
+                      }
+                    />
+                  </label>
+
+                  <div className="preferred-days-block">
+                    <p>{t.preferredDays}</p>
+
+                    <div className="repeat-days-row">
+                      {[
+                        { code: "MO", uk: "Пн", en: "Mo" },
+                        { code: "TU", uk: "Вт", en: "Tu" },
+                        { code: "WE", uk: "Ср", en: "We" },
+                        { code: "TH", uk: "Чт", en: "Th" },
+                        { code: "FR", uk: "Пт", en: "Fr" },
+                        { code: "SA", uk: "Сб", en: "Sa" },
+                        { code: "SU", uk: "Нд", en: "Su" },
+                      ].map((day) => {
+                        const active = autoPlanTask.allowed_days.includes(day.code);
+
+                        return (
+                          <button
+                            key={day.code}
+                            type="button"
+                            className={active ? "repeat-day active" : "repeat-day"}
+                            onClick={() => {
+                              const currentDays = autoPlanTask.allowed_days;
+
+                              const nextDays = active
+                                ? currentDays.filter((item) => item !== day.code)
+                                : [...currentDays, day.code];
+
+                              setAutoPlanTask({
+                                ...autoPlanTask,
+                                allowed_days: nextDays,
+                              });
+                            }}
+                          >
+                            {lang === "uk" ? day.uk : day.en}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+
+            <div className="modal-buttons">
+              <button type="button" onClick={() => setAutoPlanOpen(false)}>
+                {t.cancel}
+              </button>
+
+              <button
+                type="button"
+                className="primary-button"
+                onClick={handleAutoPlan}
+              >
+                ✨ {t.autoPlanButton}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {deleteManagerOpen && (
+        <div className="modal-overlay">
+          <div className="modal modern-modal delete-manager-modal">
+            <div className="modal-header">
+              <div>
+                <p className="eyebrow">{t.manageDeletion}</p>
+                <h3>{t.deleteManagerTitle}</h3>
+                <p className="modal-description">{t.deleteManagerDescription}</p>
+              </div>
+
+              <button
+                type="button"
+                className="icon-button"
+                onClick={() => setDeleteManagerOpen(false)}
+              >
+                ×
+              </button>
+            </div>
+
+            <label>
+              {t.searchByEventName}
+              <input
+                type="text"
+                placeholder={t.searchPlaceholder}
+                value={deleteSearchQuery}
+                onChange={(e) => setDeleteSearchQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    searchEventsForDeletion();
+                  }
+                }}
+              />
+            </label>
+
+            <div className="modal-buttons delete-search-actions">
+              <button type="button" onClick={searchEventsForDeletion}>
+                {t.searchEvents}
+              </button>
+
+              <button
+                type="button"
+                className="danger-button"
+                onClick={handleDeleteAllByTitle}
+              >
+                {t.deleteAllWithTitle}
+              </button>
+            </div>
+
+            <div className="delete-results">
+              {deleteSearchResults.length === 0 ? (
+                <p className="empty-delete-result">{t.noDeleteResults}</p>
+              ) : (
+                deleteSearchResults.map((event) => (
+                  <label key={event.id} className="delete-result-card">
+                    <input
+                      type="checkbox"
+                      checked={selectedDeleteIds.includes(event.id)}
+                      onChange={() => toggleDeleteSelection(event.id)}
+                    />
+
+                    <span>
+                      <strong>{event.title}</strong>
+                      <small>{formatEventDate(event.start)}</small>
+                      {event.is_recurring && <em>{t.repeat}</em>}
+                    </span>
+                  </label>
+                ))
+              )}
+            </div>
+
+            <div className="delete-manager-footer">
+              <p>
+                {t.selectedForDelete}: <strong>{selectedDeleteIds.length}</strong>
+              </p>
+
+              <button
+                type="button"
+                className="danger-button"
+                onClick={handleBulkDeleteSelected}
+              >
+                {t.deleteSelected}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {recurringDeleteDialog && (
+        <div className="confirm-overlay">
+          <div className="confirm-dialog recurring-delete-dialog">
+            <div className="confirm-icon">!</div>
+
+            <h3>{t.recurringDeleteTitle}</h3>
+            <p>{t.recurringDeleteDescription}</p>
+
+            <div className="recurring-delete-actions">
+              <button type="button" onClick={() => confirmRecurringDelete("this")}>
+                {t.deleteOnlyThis}
+              </button>
+
+              <button type="button" onClick={() => confirmRecurringDelete("future")}>
+                {t.deleteThisAndFuture}
+              </button>
+
+              <button
+                type="button"
+                className="danger-button"
+                onClick={() => confirmRecurringDelete("all")}
+              >
+                {t.deleteWholeSeries}
+              </button>
+            </div>
+
+            <button
+              type="button"
+              className="cancel-recurring-delete"
+              onClick={() => setRecurringDeleteDialog(null)}
+            >
+              {t.cancel}
+            </button>
+          </div>
+        </div>
+      )}
+
       {toast && (
         <div className={`toast toast-${toast.type}`}>
-          <div className="toast-icon">
-            {toast.type === "success" ? "✓" : "!"}
-          </div>
+          <div className="toast-icon">{toast.type === "success" ? "✓" : "!"}</div>
 
           <p>{toast.message}</p>
 

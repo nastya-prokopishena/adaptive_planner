@@ -22,6 +22,8 @@ export default function Dashboard({
   handleEventDrop,
   handleEventResize,
   openCreateModal,
+  openAutoPlanModal,
+  openDeleteManagerModal,
   goPrev,
   goNext,
   goToday,
@@ -108,8 +110,12 @@ export default function Dashboard({
               {t.uploadSchedule}
             </button>
 
-            <button type="button" disabled>
-              {t.autoPlanning}
+            <button type="button" onClick={openAutoPlanModal}>
+              ✨ {t.autoPlanning}
+            </button>
+
+            <button type="button" onClick={openDeleteManagerModal}>
+              🗑 {t.manageDeletion}
             </button>
 
             <p>{t.toolsDescription}</p>

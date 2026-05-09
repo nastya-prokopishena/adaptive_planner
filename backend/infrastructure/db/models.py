@@ -33,3 +33,4 @@ class Event(Base):
     recurrence_end_date = Column(DateTime, nullable=True)
     recurrence_count = Column(Integer, nullable=True)
     recurrence_rule = Column(String, nullable=True)
+    recurrence_excluded_dates = Column(Text, nullable=True)

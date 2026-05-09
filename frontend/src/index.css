@@ -1426,3 +1426,182 @@ button:disabled {
     grid-template-columns: 24px 1fr;
   }
 }
+
+.modal-description {
+  margin: 8px 0 0;
+  color: var(--muted);
+  line-height: 1.5;
+  max-width: 420px;
+}
+
+.planner-tools button:not(:disabled) {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.18), rgba(34, 211, 238, 0.12));
+  border-color: rgba(99, 102, 241, 0.38);
+}
+
+.auto-repeat-block {
+  margin: 8px 0 22px;
+  padding: 16px;
+  border-radius: 18px;
+  background: var(--surface-soft);
+  border: 1px solid var(--border);
+}
+
+.checkbox-row {
+  display: flex !important;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px !important;
+  color: var(--text-soft);
+  font-weight: 800;
+}
+
+.checkbox-row input {
+  width: 18px !important;
+  height: 18px;
+  margin: 0 !important;
+}
+
+.preferred-days-block {
+  margin-top: 14px;
+}
+
+.preferred-days-block p {
+  margin: 0 0 12px;
+  color: var(--text-soft);
+  font-weight: 800;
+}
+
+/* =========================
+   DELETE MANAGER
+========================= */
+
+.delete-manager-modal {
+  width: min(620px, 100%);
+}
+
+.delete-search-actions {
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+
+.delete-results {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 46vh;
+  overflow-y: auto;
+  padding-right: 4px;
+  margin: 16px 0 20px;
+}
+
+.empty-delete-result {
+  margin: 0;
+  padding: 18px;
+  border-radius: 16px;
+  color: var(--muted);
+  background: var(--surface-soft);
+  border: 1px solid var(--border);
+}
+
+.delete-result-card {
+  display: grid !important;
+  grid-template-columns: 22px 1fr;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px;
+  margin: 0 !important;
+  border-radius: 18px;
+  background: var(--surface-soft);
+  border: 1px solid var(--border);
+  cursor: pointer;
+}
+
+.delete-result-card:hover {
+  border-color: rgba(99, 102, 241, 0.42);
+}
+
+.delete-result-card input {
+  width: 18px !important;
+  height: 18px;
+  margin: 3px 0 0 !important;
+}
+
+.delete-result-card span {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.delete-result-card strong {
+  color: var(--text);
+  font-size: 15px;
+}
+
+.delete-result-card small {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.delete-result-card em {
+  width: fit-content;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: var(--primary-soft);
+  color: var(--primary);
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.delete-manager-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+.delete-manager-footer p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.recurring-delete-dialog {
+  text-align: left;
+}
+
+.recurring-delete-dialog h3,
+.recurring-delete-dialog p {
+  text-align: center;
+}
+
+.recurring-delete-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.recurring-delete-actions button {
+  width: 100%;
+}
+
+.cancel-recurring-delete {
+  width: 100%;
+  margin-top: 12px;
+}
+
+@media (max-width: 760px) {
+  .delete-search-actions,
+  .delete-manager-footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .delete-search-actions button,
+  .delete-manager-footer button {
+    width: 100%;
+  }
+}

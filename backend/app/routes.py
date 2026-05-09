@@ -4,6 +4,7 @@ from datetime import datetime, time
 import json
 import requests
 
+from backend.domain.services.auto_planner import plan_task_with_ortools
 from backend.domain.models.time_slot import TimeSlot
 from backend.infrastructure.db.database import SessionLocal
 from backend.infrastructure.db.models import User, Event
@@ -144,8 +145,29 @@ def serialize_event(event, occurrence_start=None, occurrence_end=None):
     }
 
 
+def get_excluded_dates(event):
+    if not event.recurrence_excluded_dates:
+        return []
+
+    return [
+        item.strip()
+        for item in event.recurrence_excluded_dates.split(",")
+        if item.strip()
+    ]
+
+
+def add_excluded_date(event, occurrence_start):
+    excluded_dates = get_excluded_dates(event)
+    occurrence_key = occurrence_start.isoformat()
+
+    if occurrence_key not in excluded_dates:
+        excluded_dates.append(occurrence_key)
+
+    event.recurrence_excluded_dates = ",".join(excluded_dates)
+
+
 def get_event_occurrences(event):
-    return generate_occurrences(
+    occurrences = generate_occurrences(
         start_time=event.start_time,
         end_time=event.end_time,
         recurrence_type=event.recurrence_type or "none",
@@ -157,6 +179,16 @@ def get_event_occurrences(event):
         recurrence_count=event.recurrence_count,
         horizon_days=365,
     )
+
+    excluded_dates = get_excluded_dates(event)
+
+    filtered_occurrences = []
+
+    for start, end in occurrences:
+        if start.isoformat() not in excluded_dates:
+            filtered_occurrences.append((start, end))
+
+    return filtered_occurrences
 
 
 def get_candidate_occurrences(start_time, end_time, recurrence_data):
@@ -682,6 +714,11 @@ def delete_event_api(event_id):
     if not user:
         return jsonify({"error": "Unauthorized"}), 401
 
+    data = request.json or {}
+
+    delete_scope = data.get("scope", "all")
+    occurrence_start_raw = data.get("occurrence_start")
+
     db = SessionLocal()
 
     try:
@@ -694,23 +731,317 @@ def delete_event_api(event_id):
         if not event:
             return jsonify({"error": "Event not found"}), 404
 
-        if user.google_credentials and event.google_event_id:
-            try:
-                schedule_service.delete_google_event(
-                    json.loads(user.google_credentials),
-                    event.google_event_id,
-                )
-            except Exception as error:
-                print("Google delete error:", error)
+        is_recurring = event.recurrence_type and event.recurrence_type != "none"
 
-        db.delete(event)
-        db.commit()
+        if not is_recurring:
+            if user.google_credentials and event.google_event_id:
+                try:
+                    schedule_service.delete_google_event(
+                        json.loads(user.google_credentials),
+                        event.google_event_id,
+                    )
+                except Exception as error:
+                    print("Google delete error:", error)
 
-        return jsonify({"message": "Event deleted"})
+            db.delete(event)
+            db.commit()
+
+            return jsonify({"message": "Event deleted"})
+
+        occurrence_start = parse_datetime(occurrence_start_raw)
+
+        if delete_scope == "this":
+            if not occurrence_start:
+                return jsonify({"error": "Occurrence start is required"}), 400
+
+            add_excluded_date(event, occurrence_start)
+
+            db.commit()
+
+            return jsonify({
+                "message": "Single occurrence deleted",
+                "scope": "this",
+            })
+
+        if delete_scope == "future":
+            if not occurrence_start:
+                return jsonify({"error": "Occurrence start is required"}), 400
+
+            event.recurrence_end_type = "on"
+            event.recurrence_end_date = occurrence_start
+
+            recurrence_data = {
+                "recurrence_type": event.recurrence_type,
+                "recurrence_interval": event.recurrence_interval,
+                "recurrence_unit": event.recurrence_unit,
+                "recurrence_days": event.recurrence_days,
+                "recurrence_end_type": event.recurrence_end_type,
+                "recurrence_end_date": event.recurrence_end_date,
+                "recurrence_count": event.recurrence_count,
+            }
+
+            event.recurrence_rule = build_google_rrule(
+                recurrence_type=event.recurrence_type,
+                recurrence_interval=event.recurrence_interval,
+                recurrence_unit=event.recurrence_unit,
+                recurrence_days=event.recurrence_days,
+                recurrence_end_type=event.recurrence_end_type,
+                recurrence_end_date=event.recurrence_end_date,
+                recurrence_count=event.recurrence_count,
+                start_time=event.start_time,
+            )
+
+            if user.google_credentials and event.google_event_id:
+                try:
+                    schedule_service.update_google_event(
+                        json.loads(user.google_credentials),
+                        event.google_event_id,
+                        event.title,
+                        event.start_time.isoformat(),
+                        event.end_time.isoformat(),
+                        recurrence_rule=event.recurrence_rule,
+                    )
+                except Exception as error:
+                    print("Google update recurrence error:", error)
+
+            db.commit()
+
+            return jsonify({
+                "message": "Future occurrences deleted",
+                "scope": "future",
+            })
+
+        if delete_scope == "all":
+            if user.google_credentials and event.google_event_id:
+                try:
+                    schedule_service.delete_google_event(
+                        json.loads(user.google_credentials),
+                        event.google_event_id,
+                    )
+                except Exception as error:
+                    print("Google delete error:", error)
+
+            db.delete(event)
+            db.commit()
+
+            return jsonify({
+                "message": "Recurring event series deleted",
+                "scope": "all",
+            })
+
+        return jsonify({"error": "Invalid delete scope"}), 400
 
     finally:
         db.close()
 
+@main.route("/api/events/search", methods=["GET"])
+def search_events_api():
+    user = current_user()
+
+    if not user:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    query = request.args.get("query", "").strip().lower()
+
+    db = SessionLocal()
+
+    try:
+        events = (
+            db.query(Event)
+            .filter(Event.user_id == user.id)
+            .order_by(Event.start_time.asc())
+            .all()
+        )
+
+        result = []
+
+        for event in events:
+            if query and query not in event.title.lower():
+                continue
+
+            if event.recurrence_type and event.recurrence_type != "none":
+                occurrences = get_event_occurrences(event)
+
+                for occurrence_start, occurrence_end in occurrences:
+                    result.append(
+                        serialize_event(
+                            event,
+                            occurrence_start=occurrence_start,
+                            occurrence_end=occurrence_end,
+                        )
+                    )
+            else:
+                result.append(serialize_event(event))
+
+        return jsonify(result)
+
+    finally:
+        db.close()
+
+@main.route("/api/events/bulk-delete", methods=["POST"])
+def bulk_delete_events_api():
+    user = current_user()
+
+    if not user:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    data = request.json or {}
+
+    event_ids = data.get("event_ids") or []
+    delete_all_by_title = data.get("delete_all_by_title", False)
+    title = data.get("title", "").strip().lower()
+
+    db = SessionLocal()
+
+    try:
+        deleted_count = 0
+
+        if delete_all_by_title and title:
+            events = (
+                db.query(Event)
+                .filter(Event.user_id == user.id)
+                .all()
+            )
+
+            events_to_delete = [
+                event for event in events
+                if event.title.lower() == title
+            ]
+
+        else:
+            clean_ids = []
+
+            for event_id in event_ids:
+                clean_id = str(event_id).split("__")[0]
+
+                if clean_id.isdigit():
+                    clean_ids.append(int(clean_id))
+
+            events_to_delete = (
+                db.query(Event)
+                .filter(Event.user_id == user.id)
+                .filter(Event.id.in_(clean_ids))
+                .all()
+            )
+
+        for event in events_to_delete:
+            if user.google_credentials and event.google_event_id:
+                try:
+                    schedule_service.delete_google_event(
+                        json.loads(user.google_credentials),
+                        event.google_event_id,
+                    )
+                except Exception as error:
+                    print("Google delete error:", error)
+
+            db.delete(event)
+            deleted_count += 1
+
+        db.commit()
+
+        return jsonify({
+            "message": "Events deleted",
+            "deleted_count": deleted_count,
+        })
+
+    finally:
+        db.close()
+
+@main.route("/api/planner/auto-plan", methods=["POST"])
+def auto_plan_event_api():
+    user = current_user()
+
+    if not user:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    data = request.json or {}
+
+    title = data.get("title")
+    duration_minutes = data.get("duration_minutes")
+    date_from = data.get("date_from")
+    date_to = data.get("date_to")
+
+    day_start = data.get("day_start", "08:00")
+    day_end = data.get("day_end", "22:00")
+    preferred_time = data.get("preferred_time", "10:00")
+
+    repeat_enabled = bool(data.get("repeat_enabled", False))
+    times_per_week = int(data.get("times_per_week") or 1)
+    allowed_days = data.get("allowed_days") or []
+
+    db = SessionLocal()
+
+    try:
+        existing_events = (
+            db.query(Event)
+            .filter_by(user_id=user.id)
+            .order_by(Event.start_time.asc())
+            .all()
+        )
+
+        planned = plan_task_with_ortools(
+            existing_events=existing_events,
+            title=title,
+            duration_minutes=duration_minutes,
+            date_from=date_from,
+            date_to=date_to,
+            day_start=day_start,
+            day_end=day_end,
+            preferred_time=preferred_time,
+            repeat_enabled=repeat_enabled,
+            times_per_week=times_per_week,
+            allowed_days=allowed_days,
+        )
+
+        if not planned:
+            return jsonify({
+                "error": "No free slot",
+                "message": "No available time slot was found for this task",
+            }), 409
+
+        created_events = []
+
+        for planned_item in planned["events"]:
+            event = Event(
+                user_id=user.id,
+                title=planned_item["title"],
+                start_time=planned_item["start"],
+                end_time=planned_item["end"],
+                source="local",
+                recurrence_type="none",
+            )
+
+            db.add(event)
+            db.commit()
+            db.refresh(event)
+
+            if user.google_credentials:
+                google_event = schedule_service.create_google_event(
+                    json.loads(user.google_credentials),
+                    event.title,
+                    event.start_time.isoformat(),
+                    event.end_time.isoformat(),
+                )
+
+                event.google_event_id = google_event.get("id")
+                event.source = "google"
+
+                db.commit()
+                db.refresh(event)
+
+            created_events.append(serialize_event(event))
+
+        return jsonify({
+            "events": created_events,
+            "planned_count": planned["planned_count"],
+            "candidates_count": planned["candidates_count"],
+        }), 201
+
+    except ValueError as error:
+        return jsonify({"error": str(error)}), 400
+
+    finally:
+        db.close()
 
 # ---------------------------
 # REACT
