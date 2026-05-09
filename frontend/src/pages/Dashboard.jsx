@@ -1,6 +1,7 @@
 import { useState } from "react";
 import CalendarView from "../components/CalendarView";
 import EventList from "../components/EventList";
+import TasksPanel from "../components/TasksPanel";
 
 export default function Dashboard({
   events,
@@ -179,6 +180,7 @@ export default function Dashboard({
           />
         </section>
       </section>
+      <TasksPanel events={events} lang={lang} />
     </main>
   );
 }

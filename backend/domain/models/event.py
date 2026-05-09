@@ -9,6 +9,8 @@ class Event:
         user_id=None,
         source="local",
         google_event_id=None,
+        event_type_id=None,
+        subject_id=None,
         recurrence_type="none",
         recurrence_interval=1,
         recurrence_unit=None,
@@ -28,6 +30,9 @@ class Event:
 
         self.source = source
         self.google_event_id = google_event_id
+
+        self.event_type_id = event_type_id
+        self.subject_id = subject_id
 
         self.recurrence_type = recurrence_type
         self.recurrence_interval = recurrence_interval
@@ -52,6 +57,8 @@ class Event:
             "description": self.description,
             "source": self.source,
             "google_event_id": self.google_event_id,
+            "event_type_id": self.event_type_id,
+            "subject_id": self.subject_id,
             "is_recurring": self.is_recurring,
             "recurrence": {
                 "type": self.recurrence_type,

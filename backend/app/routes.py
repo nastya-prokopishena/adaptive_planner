@@ -7,7 +7,7 @@ import requests
 from backend.domain.services.auto_planner import plan_task_with_ortools
 from backend.domain.models.time_slot import TimeSlot
 from backend.infrastructure.db.database import SessionLocal
-from backend.infrastructure.db.models import User, Event
+from backend.infrastructure.db.models import User, Event, EventType, Subject, Task, TaskActivityLog
 from backend.infrastructure.google_calendar_adapter import GoogleCalendarAdapter
 from backend.application.schedule_service import ScheduleService
 from backend.domain.recurrence import (
@@ -15,6 +15,7 @@ from backend.domain.recurrence import (
     generate_occurrences,
     time_ranges_overlap,
 )
+
 
 
 main = Blueprint("main", __name__)
@@ -143,6 +144,93 @@ def serialize_event(event, occurrence_start=None, occurrence_end=None):
             "count": event.recurrence_count or "",
         },
     }
+
+def parse_optional_datetime(value):
+    if not value:
+        return None
+
+    value = value.replace("Z", "+00:00")
+
+    try:
+        return datetime.fromisoformat(value)
+    except ValueError:
+        return None
+
+
+def serialize_event_type(event_type):
+    return {
+        "id": event_type.id,
+        "user_id": event_type.user_id,
+        "name": event_type.name,
+        "color": event_type.color,
+        "is_default": event_type.is_default,
+        "created_at": event_type.created_at.isoformat() if event_type.created_at else None,
+    }
+
+
+def serialize_subject(subject):
+    return {
+        "id": subject.id,
+        "user_id": subject.user_id,
+        "name": subject.name,
+        "teacher": subject.teacher,
+        "description": subject.description,
+        "color": subject.color,
+        "created_at": subject.created_at.isoformat() if subject.created_at else None,
+    }
+
+
+def serialize_task(task):
+    return {
+        "id": task.id,
+        "user_id": task.user_id,
+        "event_id": task.event_id,
+        "subject_id": task.subject_id,
+        "title": task.title,
+        "description": task.description,
+        "status": task.status,
+        "priority": task.priority,
+        "due_date": task.due_date.isoformat() if task.due_date else None,
+        "completed_at": task.completed_at.isoformat() if task.completed_at else None,
+        "missed_at": task.missed_at.isoformat() if task.missed_at else None,
+        "created_at": task.created_at.isoformat() if task.created_at else None,
+        "updated_at": task.updated_at.isoformat() if task.updated_at else None,
+    }
+
+
+def serialize_activity_log(log):
+    return {
+        "id": log.id,
+        "user_id": log.user_id,
+        "task_id": log.task_id,
+        "action": log.action,
+        "old_status": log.old_status,
+        "new_status": log.new_status,
+        "details": log.details,
+        "created_at": log.created_at.isoformat() if log.created_at else None,
+    }
+
+
+def create_task_log(
+    db,
+    user_id,
+    task_id,
+    action,
+    old_status=None,
+    new_status=None,
+    details=None,
+):
+    log = TaskActivityLog(
+        user_id=user_id,
+        task_id=task_id,
+        action=action,
+        old_status=old_status,
+        new_status=new_status,
+        details=details,
+    )
+
+    db.add(log)
+
 
 
 def get_excluded_dates(event):
@@ -296,6 +384,396 @@ def sync_google_events_to_db(user, db):
             db.add(new_event)
 
     db.commit()
+
+@main.route("/api/event-types", methods=["GET"])
+def get_event_types():
+    user = current_user()
+
+    if not user:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    db = SessionLocal()
+
+    try:
+        event_types = (
+            db.query(EventType)
+            .filter_by(user_id=user.id)
+            .order_by(EventType.name.asc())
+            .all()
+        )
+
+        return jsonify([serialize_event_type(item) for item in event_types])
+
+    finally:
+        db.close()
+
+
+@main.route("/api/event-types", methods=["POST"])
+def create_event_type():
+    user = current_user()
+
+    if not user:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    data = request.json or {}
+
+    name = data.get("name")
+    color = data.get("color")
+
+    if not name:
+        return jsonify({"error": "Name is required"}), 400
+
+    db = SessionLocal()
+
+    try:
+        event_type = EventType(
+            user_id=user.id,
+            name=name,
+            color=color,
+            is_default=False,
+        )
+
+        db.add(event_type)
+        db.commit()
+        db.refresh(event_type)
+
+        return jsonify(serialize_event_type(event_type)), 201
+
+    finally:
+        db.close()
+
+@main.route("/api/subjects", methods=["GET"])
+def get_subjects():
+    user = current_user()
+
+    if not user:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    db = SessionLocal()
+
+    try:
+        subjects = (
+            db.query(Subject)
+            .filter_by(user_id=user.id)
+            .order_by(Subject.name.asc())
+            .all()
+        )
+
+        return jsonify([serialize_subject(subject) for subject in subjects])
+
+    finally:
+        db.close()
+
+
+@main.route("/api/subjects", methods=["POST"])
+def create_subject():
+    user = current_user()
+
+    if not user:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    data = request.json or {}
+
+    name = data.get("name")
+    teacher = data.get("teacher")
+    description = data.get("description")
+    color = data.get("color")
+
+    if not name:
+        return jsonify({"error": "Name is required"}), 400
+
+    db = SessionLocal()
+
+    try:
+        subject = Subject(
+            user_id=user.id,
+            name=name,
+            teacher=teacher,
+            description=description,
+            color=color,
+        )
+
+        db.add(subject)
+        db.commit()
+        db.refresh(subject)
+
+        return jsonify(serialize_subject(subject)), 201
+
+    finally:
+        db.close()
+
+@main.route("/api/tasks", methods=["GET"])
+def get_tasks():
+    user = current_user()
+
+    if not user:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    event_id = request.args.get("event_id")
+    subject_id = request.args.get("subject_id")
+    status = request.args.get("status")
+
+    db = SessionLocal()
+
+    try:
+        query = db.query(Task).filter(Task.user_id == user.id)
+
+        if event_id:
+            query = query.filter(Task.event_id == int(event_id))
+
+        if subject_id:
+            query = query.filter(Task.subject_id == int(subject_id))
+
+        if status:
+            query = query.filter(Task.status == status)
+
+        tasks = query.order_by(Task.created_at.desc()).all()
+
+        return jsonify([serialize_task(task) for task in tasks])
+
+    finally:
+        db.close()
+
+
+@main.route("/api/tasks", methods=["POST"])
+def create_task():
+    user = current_user()
+
+    if not user:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    data = request.json or {}
+
+    title = data.get("title")
+    description = data.get("description")
+    event_id = data.get("event_id")
+    subject_id = data.get("subject_id")
+    priority = data.get("priority", "medium")
+    due_date = parse_optional_datetime(data.get("due_date"))
+
+    if not title:
+        return jsonify({"error": "Title is required"}), 400
+
+    db = SessionLocal()
+
+    try:
+        task = Task(
+            user_id=user.id,
+            event_id=event_id,
+            subject_id=subject_id,
+            title=title,
+            description=description,
+            status="planned",
+            priority=priority,
+            due_date=due_date,
+        )
+
+        db.add(task)
+        db.commit()
+        db.refresh(task)
+
+        create_task_log(
+            db=db,
+            user_id=user.id,
+            task_id=task.id,
+            action="task_created",
+            new_status=task.status,
+            details=f"Task created: {task.title}",
+        )
+
+        db.commit()
+
+        return jsonify(serialize_task(task)), 201
+
+    finally:
+        db.close()
+
+
+@main.route("/api/tasks/<int:task_id>", methods=["PUT"])
+def update_task(task_id):
+    user = current_user()
+
+    if not user:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    data = request.json or {}
+
+    db = SessionLocal()
+
+    try:
+        task = (
+            db.query(Task)
+            .filter_by(id=task_id, user_id=user.id)
+            .first()
+        )
+
+        if not task:
+            return jsonify({"error": "Task not found"}), 404
+
+        old_status = task.status
+
+        if "title" in data:
+            task.title = data.get("title")
+
+        if "description" in data:
+            task.description = data.get("description")
+
+        if "event_id" in data:
+            task.event_id = data.get("event_id")
+
+        if "subject_id" in data:
+            task.subject_id = data.get("subject_id")
+
+        if "priority" in data:
+            task.priority = data.get("priority")
+
+        if "due_date" in data:
+            task.due_date = parse_optional_datetime(data.get("due_date"))
+
+        task.updated_at = datetime.utcnow()
+
+        create_task_log(
+            db=db,
+            user_id=user.id,
+            task_id=task.id,
+            action="task_updated",
+            old_status=old_status,
+            new_status=task.status,
+            details=f"Task updated: {task.title}",
+        )
+
+        db.commit()
+        db.refresh(task)
+
+        return jsonify(serialize_task(task))
+
+    finally:
+        db.close()
+
+
+@main.route("/api/tasks/<int:task_id>", methods=["DELETE"])
+def delete_task(task_id):
+    user = current_user()
+
+    if not user:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    db = SessionLocal()
+
+    try:
+        task = (
+            db.query(Task)
+            .filter_by(id=task_id, user_id=user.id)
+            .first()
+        )
+
+        if not task:
+            return jsonify({"error": "Task not found"}), 404
+
+        create_task_log(
+            db=db,
+            user_id=user.id,
+            task_id=task.id,
+            action="task_deleted",
+            old_status=task.status,
+            details=f"Task deleted: {task.title}",
+        )
+
+        db.delete(task)
+        db.commit()
+
+        return jsonify({"message": "Task deleted"})
+
+    finally:
+        db.close()
+
+
+@main.route("/api/tasks/<int:task_id>/status", methods=["PUT"])
+def update_task_status(task_id):
+    user = current_user()
+
+    if not user:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    data = request.json or {}
+
+    new_status = data.get("status")
+
+    allowed_statuses = ["planned", "done", "missed"]
+
+    if new_status not in allowed_statuses:
+        return jsonify({"error": "Invalid task status"}), 400
+
+    db = SessionLocal()
+
+    try:
+        task = (
+            db.query(Task)
+            .filter_by(id=task_id, user_id=user.id)
+            .first()
+        )
+
+        if not task:
+            return jsonify({"error": "Task not found"}), 404
+
+        old_status = task.status
+
+        task.status = new_status
+        task.updated_at = datetime.utcnow()
+
+        if new_status == "done":
+            task.completed_at = datetime.utcnow()
+            task.missed_at = None
+
+        elif new_status == "missed":
+            task.missed_at = datetime.utcnow()
+            task.completed_at = None
+
+        else:
+            task.completed_at = None
+            task.missed_at = None
+
+        create_task_log(
+            db=db,
+            user_id=user.id,
+            task_id=task.id,
+            action="status_changed",
+            old_status=old_status,
+            new_status=new_status,
+            details=f"Task status changed from {old_status} to {new_status}",
+        )
+
+        db.commit()
+        db.refresh(task)
+
+        return jsonify(serialize_task(task))
+
+    finally:
+        db.close()
+
+@main.route("/api/activity-logs", methods=["GET"])
+def get_activity_logs():
+    user = current_user()
+
+    if not user:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    task_id = request.args.get("task_id")
+
+    db = SessionLocal()
+
+    try:
+        query = db.query(TaskActivityLog).filter(TaskActivityLog.user_id == user.id)
+
+        if task_id:
+            query = query.filter(TaskActivityLog.task_id == int(task_id))
+
+        logs = query.order_by(TaskActivityLog.created_at.desc()).limit(100).all()
+
+        return jsonify([serialize_activity_log(log) for log in logs])
+
+    finally:
+        db.close()
 
 
 # ---------------------------
@@ -579,6 +1057,8 @@ def create_event_api():
             start_time=start_time,
             end_time=end_time,
             source="local",
+            event_type_id=data.get("event_type_id"),
+            subject_id=data.get("subject_id"),
             recurrence_type=recurrence_data["recurrence_type"],
             recurrence_interval=recurrence_data["recurrence_interval"],
             recurrence_unit=recurrence_data["recurrence_unit"],
@@ -697,6 +1177,12 @@ def update_event_api(event_id):
             )
 
             event.source = "google"
+
+        if "event_type_id" in data:
+            event.event_type_id = data.get("event_type_id")
+
+        if "subject_id" in data:
+            event.subject_id = data.get("subject_id")
 
         db.commit()
         db.refresh(event)
