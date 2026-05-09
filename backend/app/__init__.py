@@ -12,11 +12,14 @@ def create_app():
         static_url_path="/"
     )
 
-    app.secret_key = "super-secret"
+    app.secret_key = "super_secret_key_123"
 
-    app.config["SESSION_COOKIE_SAMESITE"] = "None"
+    app.config["SESSION_COOKIE_NAME"] = "session"
+    app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
     app.config["SESSION_COOKIE_SECURE"] = False
     app.config["SESSION_COOKIE_HTTPONLY"] = True
+    app.config["SESSION_PERMANENT"] = True
+    app.config["SESSION_COOKIE_DOMAIN"] = None
 
     CORS(app, supports_credentials=True)
 

@@ -17,56 +17,22 @@ calendar_adapter = GoogleCalendarAdapter()
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 credentials_path = os.path.join(BASE_DIR, "..", "infrastructure", "credentials.json")
 
+REDIRECT_URI = "http://localhost:5000/callback"
 
-# =========================
-# EMAIL AUTH
-# =========================
-@main.route("/auth/register", methods=["POST"])
-def register():
-    data = request.json
-    email = data.get("email")
-    password = data.get("password")
-
-    if not email or not password:
-        return jsonify({"error": "Email and password required"}), 400
-
-    user, error = AuthService.register(email, password)
-    if error:
-        return jsonify({"error": error}), 400
-
-    session["user_id"] = user.id
-    return jsonify({"id": user.id, "email": user.email})
-
-
-@main.route("/auth/login", methods=["POST"])
-def login_email():
-    data = request.json
-    email = data.get("email")
-    password = data.get("password")
-
-    user, error = AuthService.login(email, password)
-    if error:
-        return jsonify({"error": error}), 401
-
-    session["user_id"] = user.id
-    return jsonify({"id": user.id, "email": user.email})
-
-
-@main.route("/auth/logout", methods=["POST"])
-def logout():
-    session.clear()
-    return jsonify({"message": "Logged out"})
+# 🔥 ГЛОБАЛЬНЕ СХОВИЩЕ (замість session)
+OAUTH_STORE = {}
 
 
 # =========================
-# GOOGLE AUTH (FIXED)
+# GOOGLE AUTH (STABLE)
 # =========================
 @main.route("/auth/google")
 def login_google():
+
     flow = Flow.from_client_secrets_file(
         credentials_path,
         scopes=["https://www.googleapis.com/auth/calendar"],
-        redirect_uri="http://localhost:5000/callback"  # 🔥 FIX
+        redirect_uri=REDIRECT_URI
     )
 
     auth_url, state = flow.authorization_url(
@@ -75,40 +41,40 @@ def login_google():
         prompt="consent"
     )
 
-    # 🔥 ЗБЕРІГАЄМО В SESSION
-    session["state"] = state
-    session["code_verifier"] = flow.code_verifier
+    # 🔥 ЗБЕРІГАЄМО НЕ В SESSION
+    OAUTH_STORE[state] = {
+        "code_verifier": flow.code_verifier
+    }
 
-    print("LOGIN → CODE VERIFIER:", flow.code_verifier)
+    print("NEW STATE:", state)
+    print("STORE:", OAUTH_STORE)
 
     return redirect(auth_url)
 
 
 @main.route("/callback")
 def callback():
-    print("SESSION BEFORE CALLBACK:", dict(session))
+
+    request_state = request.args.get("state")
+    print("REQUEST STATE:", request_state)
+
+    data = OAUTH_STORE.get(request_state)
+
+    if not data:
+        return "State mismatch or expired", 400
 
     flow = Flow.from_client_secrets_file(
         credentials_path,
         scopes=["https://www.googleapis.com/auth/calendar"],
-        state=session.get("state"),
-        redirect_uri="http://localhost:5000/callback"  # 🔥 FIX
+        redirect_uri=REDIRECT_URI
     )
 
-    code_verifier = session.get("code_verifier")
-
-    print("CODE VERIFIER FROM SESSION:", code_verifier)
-
-    # 🔥 якщо нема verifier → очищаємо і починаємо заново
-    if not code_verifier:
-        session.clear()
-        return redirect("/")
-
-    flow.code_verifier = code_verifier
+    flow.state = request_state
+    flow.code_verifier = data["code_verifier"]
 
     flow.fetch_token(
         authorization_response=request.url,
-        code_verifier=code_verifier
+        code_verifier=data["code_verifier"]
     )
 
     credentials = flow.credentials
@@ -122,17 +88,18 @@ def callback():
         "scopes": credentials.scopes
     }
 
-    user_id = session.get("user_id")
+    # 🔥 створення користувача
+    temp_email = f"google_{uuid.uuid4().hex}@temp.com"
+    user = user_repo.create(temp_email)
+    user_repo.update_google_credentials(user.id, creds_dict)
 
-    if user_id:
-        user_repo.update_google_credentials(user_id, creds_dict)
-    else:
-        temp_email = f"google_{uuid.uuid4().hex}@temp.com"
-        user = user_repo.create(temp_email)
-        user_repo.update_google_credentials(user.id, creds_dict)
-        session["user_id"] = user.id
+    # 🔥 МОЖЕШ ЗАЛИШИТИ session тільки для user_id
+    session["user_id"] = user.id
 
-    print("LOGIN SUCCESS, USER ID:", session["user_id"])
+    print("LOGIN SUCCESS:", user.id)
+
+    # 🔥 очищаємо state після використання
+    OAUTH_STORE.pop(request_state, None)
 
     return redirect("/")
 
@@ -185,61 +152,13 @@ def get_events():
             continue
 
         formatted.append({
-            "id": e.get("id"),
-            "title": e.get("summary", "No title"),
+            "id": str(e.get("id")),
+            "title": str(e.get("summary", "No title")),
             "start": start,
             "end": end
         })
 
     return jsonify(formatted)
-
-
-@main.route("/api/events", methods=["POST"])
-def create_event():
-    user_id = session.get("user_id")
-
-    if not user_id:
-        return jsonify({"error": "Unauthorized"}), 401
-
-    user = user_repo.get_by_id(user_id)
-    if not user or not user.google_credentials:
-        return jsonify({"error": "Google not connected"}), 400
-
-    data = request.json
-
-    event = schedule_service.create_google_event(
-        user.google_credentials,
-        data["title"],
-        data["start"],
-        data["end"]
-    )
-
-    return jsonify(event)
-
-
-@main.route("/api/events/<event_id>", methods=["PUT"])
-def update_event(event_id):
-    user_id = session.get("user_id")
-
-    if not user_id:
-        return jsonify({"error": "Unauthorized"}), 401
-
-    user = user_repo.get_by_id(user_id)
-    if not user or not user.google_credentials:
-        return jsonify({"error": "Google not connected"}), 400
-
-    data = request.json
-
-    adapter = GoogleCalendarAdapter()
-
-    updated = adapter.update_event(
-        user.google_credentials,
-        event_id,
-        data["start"],
-        data["end"]
-    )
-
-    return jsonify(updated)
 
 
 # =========================
