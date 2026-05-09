@@ -1,8 +1,9 @@
 from flask import Blueprint, redirect, request, session, jsonify, current_app
 from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import datetime
+from datetime import datetime, time
 import json
 import requests
+from backend.domain.models.time_slot import TimeSlot
 
 from backend.infrastructure.db.database import SessionLocal
 from backend.infrastructure.db.models import User, Event
@@ -17,18 +18,224 @@ schedule_service = ScheduleService()
 
 def current_user():
     user_id = session.get("user_id")
+
     if not user_id:
         return None
 
     db = SessionLocal()
     user = db.query(User).filter_by(id=user_id).first()
     db.close()
+
     return user
 
+def parse_datetime(value):
+    if not value:
+        return None
+
+    value = value.replace("Z", "+00:00")
+
+    try:
+        return datetime.fromisoformat(value)
+    except ValueError:
+        return None
+
+
+def parse_google_event_time(event_time):
+    if not event_time:
+        return None
+
+    if event_time.get("dateTime"):
+        return parse_datetime(event_time["dateTime"])
+
+    if event_time.get("date"):
+        return datetime.combine(
+            datetime.fromisoformat(event_time["date"]).date(),
+            time.min
+        )
+
+    return None
+
+
+def serialize_event(event):
+    return {
+        "id": event.id,
+        "title": event.title,
+        "start": event.start_time.isoformat() if event.start_time else None,
+        "end": event.end_time.isoformat() if event.end_time else None,
+        "source": event.source,
+        "google_event_id": event.google_event_id,
+    }
+
+
+def has_time_conflict(db, user_id, start_time, end_time, exclude_event_id=None):
+    new_slot = TimeSlot(start_time, end_time)
+
+    query = db.query(Event).filter(Event.user_id == user_id)
+
+    if exclude_event_id:
+        query = query.filter(Event.id != exclude_event_id)
+
+    existing_events = query.all()
+
+    for event in existing_events:
+        if not event.start_time or not event.end_time:
+            continue
+
+        existing_slot = TimeSlot(event.start_time, event.end_time)
+
+        if new_slot.overlaps(existing_slot):
+            return event
+
+    return None
+
+
+def sync_google_events_to_db(user, db):
+    if not user.google_credentials:
+        return
+
+    google_events = schedule_service.get_google_events(
+        json.loads(user.google_credentials)
+    )
+
+    for google_event in google_events:
+        google_event_id = google_event.get("id")
+
+        if not google_event_id:
+            continue
+
+        title = google_event.get("summary") or "Без назви"
+        start_time = parse_google_event_time(google_event.get("start"))
+        end_time = parse_google_event_time(google_event.get("end"))
+
+        if not start_time or not end_time:
+            continue
+
+        existing_event = (
+            db.query(Event)
+            .filter_by(
+                user_id=user.id,
+                google_event_id=google_event_id
+            )
+            .first()
+        )
+
+        if existing_event:
+            existing_event.title = title
+            existing_event.start_time = start_time
+            existing_event.end_time = end_time
+            existing_event.source = "google"
+        else:
+            new_event = Event(
+                user_id=user.id,
+                title=title,
+                start_time=start_time,
+                end_time=end_time,
+                source="google",
+                google_event_id=google_event_id
+            )
+
+            db.add(new_event)
+
+    db.commit()
+
+def parse_google_datetime(value):
+    if not value:
+        return None
+
+    value = value.replace("Z", "+00:00")
+
+    try:
+        return datetime.fromisoformat(value)
+    except ValueError:
+        return None
+
+
+def parse_google_event_time(event_time):
+    if not event_time:
+        return None
+
+    if event_time.get("dateTime"):
+        return parse_google_datetime(event_time["dateTime"])
+
+    if event_time.get("date"):
+        return datetime.combine(
+            datetime.fromisoformat(event_time["date"]).date(),
+            time.min
+        )
+
+    return None
+
+
+def serialize_event(event):
+    return {
+        "id": event.id,
+        "title": event.title,
+        "start": event.start_time.isoformat() if event.start_time else None,
+        "end": event.end_time.isoformat() if event.end_time else None,
+        "source": event.source,
+        "google_event_id": event.google_event_id,
+    }
+
+
+def sync_google_events_to_db(user, db):
+    if not user.google_credentials:
+        return
+
+    google_events = schedule_service.get_google_events(
+        json.loads(user.google_credentials)
+    )
+
+    for google_event in google_events:
+        google_event_id = google_event.get("id")
+
+        if not google_event_id:
+            continue
+
+        title = google_event.get("summary") or "Без назви"
+
+        start_time = parse_google_event_time(google_event.get("start"))
+        end_time = parse_google_event_time(google_event.get("end"))
+
+        if not start_time or not end_time:
+            continue
+
+        existing_event = (
+            db.query(Event)
+            .filter_by(
+                user_id=user.id,
+                google_event_id=google_event_id
+            )
+            .first()
+        )
+
+        if existing_event:
+            existing_event.title = title
+            existing_event.start_time = start_time
+            existing_event.end_time = end_time
+            existing_event.source = "google"
+        else:
+            new_event = Event(
+                user_id=user.id,
+                title=title,
+                start_time=start_time,
+                end_time=end_time,
+                source="google",
+                google_event_id=google_event_id
+            )
+
+            db.add(new_event)
+
+    db.commit()
+
+
+# ---------------------------
+# AUTH
+# ---------------------------
 
 @main.route("/auth/register", methods=["POST"])
 def register():
     data = request.json
+
     email = data.get("email")
     password = data.get("password")
 
@@ -38,6 +245,7 @@ def register():
     db = SessionLocal()
 
     existing_user = db.query(User).filter_by(email=email).first()
+
     if existing_user:
         db.close()
         return jsonify({"error": "User already exists"}), 409
@@ -57,23 +265,30 @@ def register():
     result = {
         "id": user.id,
         "email": user.email,
-        "authenticated": True
+        "authenticated": True,
+        "auth_provider": user.auth_provider
     }
 
     db.close()
+
     return jsonify(result)
 
 
 @main.route("/auth/login", methods=["POST"])
 def login_local():
     data = request.json
+
     email = data.get("email")
     password = data.get("password")
 
     db = SessionLocal()
     user = db.query(User).filter_by(email=email).first()
 
-    if not user or not user.password_hash or not check_password_hash(user.password_hash, password):
+    if not user or not user.password_hash:
+        db.close()
+        return jsonify({"error": "Invalid credentials"}), 401
+
+    if not check_password_hash(user.password_hash, password):
         db.close()
         return jsonify({"error": "Invalid credentials"}), 401
 
@@ -82,10 +297,12 @@ def login_local():
     result = {
         "id": user.id,
         "email": user.email,
-        "authenticated": True
+        "authenticated": True,
+        "auth_provider": user.auth_provider
     }
 
     db.close()
+
     return jsonify(result)
 
 
@@ -96,7 +313,7 @@ def google_login():
     authorization_url, state = flow.authorization_url(
         access_type="offline",
         include_granted_scopes="true",
-        prompt="consent"
+        prompt="select_account"
     )
 
     session["state"] = state
@@ -115,6 +332,7 @@ def google_callback():
     flow.state = state
 
     flow.fetch_token(authorization_response=request.url)
+
     credentials = flow.credentials
 
     creds_dict = {
@@ -128,7 +346,9 @@ def google_callback():
 
     userinfo_response = requests.get(
         "https://www.googleapis.com/oauth2/v2/userinfo",
-        headers={"Authorization": f"Bearer {credentials.token}"}
+        headers={
+            "Authorization": f"Bearer {credentials.token}"
+        }
     )
 
     google_user = userinfo_response.json()
@@ -161,9 +381,17 @@ def google_callback():
 
     session["user_id"] = user.id
 
+    sync_google_events_to_db(user, db)
+
     db.close()
 
     return redirect("/")
+
+
+@main.route("/auth/logout", methods=["POST"])
+def logout():
+    session.clear()
+    return jsonify({"message": "Logged out"})
 
 
 @main.route("/api/user/me", methods=["GET"])
@@ -181,11 +409,9 @@ def me():
     })
 
 
-@main.route("/auth/logout", methods=["POST"])
-def logout():
-    session.clear()
-    return jsonify({"message": "Logged out"})
-
+# ---------------------------
+# EVENTS
+# ---------------------------
 
 @main.route("/api/events", methods=["GET"])
 def get_events():
@@ -196,34 +422,19 @@ def get_events():
 
     db = SessionLocal()
 
-    local_events = db.query(Event).filter_by(user_id=user.id).all()
+    sync_google_events_to_db(user, db)
 
-    result = [
-        {
-            "id": event.id,
-            "title": event.title,
-            "start": event.start_time.isoformat(),
-            "end": event.end_time.isoformat(),
-            "source": event.source
-        }
-        for event in local_events
-    ]
+    events = (
+        db.query(Event)
+        .filter_by(user_id=user.id)
+        .order_by(Event.start_time.asc())
+        .all()
+    )
 
-    if user.google_credentials:
-        google_events = schedule_service.get_google_events(
-            json.loads(user.google_credentials)
-        )
-
-        for event in google_events:
-            result.append({
-                "id": event.get("id"),
-                "title": event.get("summary", "No title"),
-                "start": event.get("start", {}).get("dateTime"),
-                "end": event.get("end", {}).get("dateTime"),
-                "source": "google"
-            })
+    result = [serialize_event(event) for event in events]
 
     db.close()
+
     return jsonify(result)
 
 
@@ -236,14 +447,45 @@ def create_event_api():
 
     data = request.json
 
-    start_time = datetime.fromisoformat(data["start"].replace("Z", "+00:00"))
-    end_time = datetime.fromisoformat(data["end"].replace("Z", "+00:00"))
+    title = data.get("title")
+    start = data.get("start")
+    end = data.get("end")
+
+    if not title or not start or not end:
+        return jsonify({"error": "Title, start and end are required"}), 400
+
+    start_time = parse_datetime(start)
+    end_time = parse_datetime(end)
+
+    if not start_time or not end_time:
+        return jsonify({"error": "Invalid datetime format"}), 400
+
+    try:
+        TimeSlot(start_time, end_time)
+    except ValueError as error:
+        return jsonify({"error": str(error)}), 400
 
     db = SessionLocal()
 
+    conflict_event = has_time_conflict(
+        db=db,
+        user_id=user.id,
+        start_time=start_time,
+        end_time=end_time
+    )
+
+    if conflict_event:
+        db.close()
+
+        return jsonify({
+            "error": "Time conflict",
+            "message": "This event overlaps with another event",
+            "conflict_event": serialize_event(conflict_event)
+        }), 409
+
     event = Event(
         user_id=user.id,
-        title=data["title"],
+        title=title,
         start_time=start_time,
         end_time=end_time,
         source="local"
@@ -256,28 +498,25 @@ def create_event_api():
     if user.google_credentials:
         google_event = schedule_service.create_google_event(
             json.loads(user.google_credentials),
-            data["title"],
-            data["start"],
-            data["end"]
+            title,
+            start,
+            end
         )
 
         event.google_event_id = google_event.get("id")
         event.source = "google"
-        db.commit()
 
-    result = {
-        "id": event.id,
-        "title": event.title,
-        "start": event.start_time.isoformat(),
-        "end": event.end_time.isoformat(),
-        "source": event.source
-    }
+        db.commit()
+        db.refresh(event)
+
+    result = serialize_event(event)
 
     db.close()
-    return jsonify(result)
+
+    return jsonify(result), 201
 
 
-@main.route("/api/events/<event_id>", methods=["PUT"])
+@main.route("/api/events/<int:event_id>", methods=["PUT"])
 def update_event_api(event_id):
     user = current_user()
 
@@ -287,35 +526,115 @@ def update_event_api(event_id):
     data = request.json
 
     db = SessionLocal()
-    event = db.query(Event).filter_by(id=event_id, user_id=user.id).first()
+
+    event = (
+        db.query(Event)
+        .filter_by(id=event_id, user_id=user.id)
+        .first()
+    )
 
     if not event:
         db.close()
         return jsonify({"error": "Event not found"}), 404
 
-    event.start_time = datetime.fromisoformat(data["start"].replace("Z", "+00:00"))
-    event.end_time = datetime.fromisoformat(data["end"].replace("Z", "+00:00"))
+    title = data.get("title", event.title)
+
+    start = data.get("start")
+    end = data.get("end")
+
+    start_time = parse_datetime(start) if start else event.start_time
+    end_time = parse_datetime(end) if end else event.end_time
+
+    if not start_time or not end_time:
+        db.close()
+        return jsonify({"error": "Invalid datetime format"}), 400
+
+    try:
+        TimeSlot(start_time, end_time)
+    except ValueError as error:
+        db.close()
+        return jsonify({"error": str(error)}), 400
+
+    conflict_event = has_time_conflict(
+        db=db,
+        user_id=user.id,
+        start_time=start_time,
+        end_time=end_time,
+        exclude_event_id=event.id
+    )
+
+    if conflict_event:
+        db.close()
+
+        return jsonify({
+            "error": "Time conflict",
+            "message": "This event overlaps with another event",
+            "conflict_event": serialize_event(conflict_event)
+        }), 409
+
+    event.title = title
+    event.start_time = start_time
+    event.end_time = end_time
 
     if user.google_credentials and event.google_event_id:
         schedule_service.update_google_event(
             json.loads(user.google_credentials),
             event.google_event_id,
-            data["start"],
-            data["end"]
+            event.title,
+            event.start_time.isoformat(),
+            event.end_time.isoformat()
         )
 
-    db.commit()
+        event.source = "google"
 
-    result = {
-        "id": event.id,
-        "title": event.title,
-        "start": event.start_time.isoformat(),
-        "end": event.end_time.isoformat()
-    }
+    db.commit()
+    db.refresh(event)
+
+    result = serialize_event(event)
 
     db.close()
+
     return jsonify(result)
 
+
+@main.route("/api/events/<int:event_id>", methods=["DELETE"])
+def delete_event_api(event_id):
+    user = current_user()
+
+    if not user:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    db = SessionLocal()
+
+    event = (
+        db.query(Event)
+        .filter_by(id=event_id, user_id=user.id)
+        .first()
+    )
+
+    if not event:
+        db.close()
+        return jsonify({"error": "Event not found"}), 404
+
+    if user.google_credentials and event.google_event_id:
+        try:
+            schedule_service.delete_google_event(
+                json.loads(user.google_credentials),
+                event.google_event_id
+            )
+        except Exception as error:
+            print("Google delete error:", error)
+
+    db.delete(event)
+    db.commit()
+    db.close()
+
+    return jsonify({"message": "Event deleted"})
+
+
+# ---------------------------
+# REACT
+# ---------------------------
 
 @main.route("/", defaults={"path": ""})
 @main.route("/<path:path>")
