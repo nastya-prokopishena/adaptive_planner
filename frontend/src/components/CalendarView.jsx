@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
@@ -30,6 +30,97 @@ export default function CalendarView({
   onCalendarTitleChange,
 }) {
   const wheelLockRef = useRef(false);
+  const [customRepeatOpen, setCustomRepeatOpen] = useState(false);
+
+  const weekDays = [
+    { code: "MO", uk: "Пн", en: "Mo" },
+    { code: "TU", uk: "Вт", en: "Tu" },
+    { code: "WE", uk: "Ср", en: "We" },
+    { code: "TH", uk: "Чт", en: "Th" },
+    { code: "FR", uk: "Пт", en: "Fr" },
+    { code: "SA", uk: "Сб", en: "Sa" },
+    { code: "SU", uk: "Нд", en: "Su" },
+  ];
+
+  const defaultRecurrence = {
+    type: "none",
+    interval: 1,
+    unit: "week",
+    days: [],
+    endType: "never",
+    endDate: "",
+    count: 4,
+  };
+
+  const recurrence = newEvent.recurrence || defaultRecurrence;
+
+  const updateRecurrence = (updates) => {
+    setNewEvent({
+      ...newEvent,
+      recurrence: {
+        ...recurrence,
+        ...updates,
+      },
+    });
+  };
+
+  const getRepeatLabel = () => {
+    switch (recurrence.type) {
+      case "daily":
+        return t.repeatDaily;
+      case "weekdays":
+        return t.repeatWeekdays;
+      case "weekly":
+        return t.repeatWeekly;
+      case "biweekly":
+        return t.repeatBiweekly;
+      case "monthly":
+        return t.repeatMonthly;
+      case "yearly":
+        return t.repeatYearly;
+      case "custom":
+        return t.repeatCustom;
+      default:
+        return t.repeatNone;
+    }
+  };
+
+  const handleRepeatChange = (value) => {
+    if (value === "custom") {
+      updateRecurrence({
+        type: "custom",
+        interval: recurrence.interval || 1,
+        unit: recurrence.unit || "week",
+        days: recurrence.days?.length ? recurrence.days : [],
+        endType: recurrence.endType || "never",
+        endDate: recurrence.endDate || "",
+        count: recurrence.count || 4,
+      });
+
+      setCustomRepeatOpen(true);
+      return;
+    }
+
+    updateRecurrence({
+      type: value,
+      interval: value === "biweekly" ? 2 : 1,
+      unit: "week",
+      days: [],
+      endType: "never",
+      endDate: "",
+      count: 4,
+    });
+  };
+
+  const toggleRepeatDay = (dayCode) => {
+    const currentDays = recurrence.days || [];
+
+    const nextDays = currentDays.includes(dayCode)
+      ? currentDays.filter((day) => day !== dayCode)
+      : [...currentDays, dayCode];
+
+    updateRecurrence({ days: nextDays });
+  };
 
   const toDatetimeLocal = (value) => {
     if (!value) return "";
@@ -153,6 +244,9 @@ export default function CalendarView({
             borderColor: color.bg,
             textColor: "#ffffff",
             extendedProps: {
+              master_id: event.master_id,
+              is_recurring: event.is_recurring,
+              recurrence: event.recurrence,
               source: event.source,
               google_event_id: event.google_event_id,
               bg: color.bg,
@@ -254,6 +348,10 @@ export default function CalendarView({
                 {selectedEvent.google_event_id && (
                   <span className="event-sync-label">Google Calendar sync</span>
                 )}
+
+                {selectedEvent.is_recurring && (
+                  <span className="event-sync-label">{t.repeat}</span>
+                )}
               </div>
             )}
 
@@ -290,6 +388,29 @@ export default function CalendarView({
                   onChange={(e) => handleEndChange(e.target.value)}
                 />
               </label>
+            </div>
+
+            <div className="repeat-block">
+              <label>
+                {t.repeat}
+                <select
+                  value={recurrence.type}
+                  onChange={(e) => handleRepeatChange(e.target.value)}
+                >
+                  <option value="none">{t.repeatNone}</option>
+                  <option value="daily">{t.repeatDaily}</option>
+                  <option value="weekdays">{t.repeatWeekdays}</option>
+                  <option value="weekly">{t.repeatWeekly}</option>
+                  <option value="biweekly">{t.repeatBiweekly}</option>
+                  <option value="monthly">{t.repeatMonthly}</option>
+                  <option value="yearly">{t.repeatYearly}</option>
+                  <option value="custom">{t.repeatCustom}</option>
+                </select>
+              </label>
+
+              {recurrence.type !== "none" && (
+                <p className="repeat-summary">{getRepeatLabel()}</p>
+              )}
             </div>
 
             <div className="color-picker-block">
@@ -353,6 +474,133 @@ export default function CalendarView({
                 onClick={isEditMode ? handleUpdateEvent : handleCreateEvent}
               >
                 {isEditMode ? t.save : t.create}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {customRepeatOpen && (
+        <div className="confirm-overlay">
+          <div className="custom-repeat-dialog">
+            <h3>{t.customRepeat}</h3>
+
+            <div className="custom-repeat-row">
+              <span>{t.every}</span>
+
+              <input
+                type="number"
+                min="1"
+                value={recurrence.interval}
+                onChange={(e) =>
+                  updateRecurrence({
+                    interval: Number(e.target.value),
+                  })
+                }
+              />
+
+              <select
+                value={recurrence.unit}
+                onChange={(e) =>
+                  updateRecurrence({
+                    unit: e.target.value,
+                  })
+                }
+              >
+                <option value="day">{t.day}</option>
+                <option value="week">{t.week}</option>
+                <option value="month">{t.monthUnit}</option>
+                <option value="year">{t.year}</option>
+              </select>
+            </div>
+
+            {recurrence.unit === "week" && (
+              <div className="repeat-weekdays">
+                <p>{t.on}</p>
+
+                <div className="repeat-days-row">
+                  {weekDays.map((day) => (
+                    <button
+                      key={day.code}
+                      type="button"
+                      className={
+                        recurrence.days?.includes(day.code)
+                          ? "repeat-day active"
+                          : "repeat-day"
+                      }
+                      onClick={() => toggleRepeatDay(day.code)}
+                    >
+                      {lang === "uk" ? day.uk : day.en}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="repeat-end-block">
+              <p>{t.ends}</p>
+
+              <label className="radio-row">
+                <input
+                  type="radio"
+                  checked={recurrence.endType === "never"}
+                  onChange={() => updateRecurrence({ endType: "never" })}
+                />
+                {t.never}
+              </label>
+
+              <label className="radio-row">
+                <input
+                  type="radio"
+                  checked={recurrence.endType === "on"}
+                  onChange={() => updateRecurrence({ endType: "on" })}
+                />
+                {t.onDate}
+                <input
+                  type="date"
+                  value={recurrence.endDate ? recurrence.endDate.slice(0, 10) : ""}
+                  disabled={recurrence.endType !== "on"}
+                  onChange={(e) =>
+                    updateRecurrence({
+                      endDate: `${e.target.value}T23:59:59`,
+                    })
+                  }
+                />
+              </label>
+
+              <label className="radio-row">
+                <input
+                  type="radio"
+                  checked={recurrence.endType === "after"}
+                  onChange={() => updateRecurrence({ endType: "after" })}
+                />
+                {t.after}
+                <input
+                  type="number"
+                  min="1"
+                  value={recurrence.count}
+                  disabled={recurrence.endType !== "after"}
+                  onChange={(e) =>
+                    updateRecurrence({
+                      count: Number(e.target.value),
+                    })
+                  }
+                />
+                {t.times}
+              </label>
+            </div>
+
+            <div className="confirm-actions">
+              <button type="button" onClick={() => setCustomRepeatOpen(false)}>
+                {t.cancel}
+              </button>
+
+              <button
+                type="button"
+                className="primary-button"
+                onClick={() => setCustomRepeatOpen(false)}
+              >
+                {t.done}
               </button>
             </div>
           </div>

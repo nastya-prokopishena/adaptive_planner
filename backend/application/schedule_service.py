@@ -15,55 +15,79 @@ class ScheduleService:
 
         return build("calendar", "v3", credentials=creds)
 
-    def get_google_events(self, creds_dict):
+    def get_google_events(self, creds_dict, single_events=False):
         service = self.build_service(creds_dict)
 
-        result = service.events().list(
-            calendarId="primary",
-            singleEvents=True,
-            orderBy="startTime"
-        ).execute()
+        request_params = {
+            "calendarId": "primary",
+            "singleEvents": single_events,
+        }
+
+        if single_events:
+            request_params["orderBy"] = "startTime"
+
+        result = service.events().list(**request_params).execute()
 
         return result.get("items", [])
 
-    def create_google_event(self, creds_dict, title, start, end):
+    def create_google_event(self, creds_dict, title, start, end, recurrence_rule=None):
         service = self.build_service(creds_dict)
 
         event_body = {
             "summary": title,
             "start": {
                 "dateTime": start,
-                "timeZone": "Europe/Kyiv"
+                "timeZone": "Europe/Kyiv",
             },
             "end": {
                 "dateTime": end,
-                "timeZone": "Europe/Kyiv"
-            }
+                "timeZone": "Europe/Kyiv",
+            },
         }
+
+        if recurrence_rule:
+            event_body["recurrence"] = [recurrence_rule]
 
         return service.events().insert(
             calendarId="primary",
-            body=event_body
+            body=event_body,
         ).execute()
 
-    def update_google_event(self, creds_dict, event_id, title, start, end):
+    def update_google_event(
+        self,
+        creds_dict,
+        event_id,
+        title,
+        start,
+        end,
+        recurrence_rule=None,
+    ):
         service = self.build_service(creds_dict)
 
         event = service.events().get(
             calendarId="primary",
-            eventId=event_id
+            eventId=event_id,
         ).execute()
 
         event["summary"] = title
-        event["start"]["dateTime"] = start
-        event["start"]["timeZone"] = "Europe/Kyiv"
-        event["end"]["dateTime"] = end
-        event["end"]["timeZone"] = "Europe/Kyiv"
+        event["start"] = {
+            "dateTime": start,
+            "timeZone": "Europe/Kyiv",
+        }
+        event["end"] = {
+            "dateTime": end,
+            "timeZone": "Europe/Kyiv",
+        }
+
+        if recurrence_rule:
+            event["recurrence"] = [recurrence_rule]
+        else:
+            event.pop("recurrence", None)
 
         return service.events().update(
             calendarId="primary",
             eventId=event_id,
-            body=event
+            body=event,
         ).execute()
 
     def delete_google_event(self, creds_dict, event_id):
@@ -71,5 +95,5 @@ class ScheduleService:
 
         return service.events().delete(
             calendarId="primary",
-            eventId=event_id
+            eventId=event_id,
         ).execute()

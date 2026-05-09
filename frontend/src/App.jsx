@@ -13,6 +13,31 @@ import WelcomePage from "./pages/WelcomePage";
 axios.defaults.withCredentials = true;
 
 function AppContent() {
+  const defaultRecurrence = {
+    type: "none",
+    interval: 1,
+    unit: "week",
+    days: [],
+    endType: "never",
+    endDate: "",
+    count: 4,
+  };
+
+  const eventPalette = [
+    { id: "blue", name: "Blue", bg: "#2563eb", bg2: "#38bdf8" },
+    { id: "green", name: "Green", bg: "#16a34a", bg2: "#4ade80" },
+    { id: "red", name: "Red", bg: "#dc2626", bg2: "#f87171" },
+    { id: "purple", name: "Purple", bg: "#7c3aed", bg2: "#a78bfa" },
+    { id: "orange", name: "Orange", bg: "#ea580c", bg2: "#fb923c" },
+    { id: "teal", name: "Teal", bg: "#0f766e", bg2: "#2dd4bf" },
+    { id: "pink", name: "Pink", bg: "#db2777", bg2: "#f472b6" },
+    { id: "indigo", name: "Indigo", bg: "#4338ca", bg2: "#818cf8" },
+    { id: "lime", name: "Lime", bg: "#65a30d", bg2: "#a3e635" },
+    { id: "amber", name: "Amber", bg: "#d97706", bg2: "#fbbf24" },
+    { id: "cyan", name: "Cyan", bg: "#0891b2", bg2: "#22d3ee" },
+    { id: "rose", name: "Rose", bg: "#e11d48", bg2: "#fb7185" },
+  ];
+
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [events, setEvents] = useState([]);
@@ -31,22 +56,8 @@ function AppContent() {
     title: "",
     start: "",
     end: "",
+    recurrence: defaultRecurrence,
   });
-
-  const eventPalette = [
-      { id: "blue", name: "Blue", bg: "#2563eb", bg2: "#38bdf8" },
-      { id: "green", name: "Green", bg: "#16a34a", bg2: "#4ade80" },
-      { id: "red", name: "Red", bg: "#dc2626", bg2: "#f87171" },
-      { id: "purple", name: "Purple", bg: "#7c3aed", bg2: "#a78bfa" },
-      { id: "orange", name: "Orange", bg: "#ea580c", bg2: "#fb923c" },
-      { id: "teal", name: "Teal", bg: "#0f766e", bg2: "#2dd4bf" },
-      { id: "pink", name: "Pink", bg: "#db2777", bg2: "#f472b6" },
-      { id: "indigo", name: "Indigo", bg: "#4338ca", bg2: "#818cf8" },
-      { id: "lime", name: "Lime", bg: "#65a30d", bg2: "#a3e635" },
-      { id: "amber", name: "Amber", bg: "#d97706", bg2: "#fbbf24" },
-      { id: "cyan", name: "Cyan", bg: "#0891b2", bg2: "#22d3ee" },
-      { id: "rose", name: "Rose", bg: "#e11d48", bg2: "#fb7185" },
-  ];
 
   const [eventTitleColors, setEventTitleColors] = useState(() => {
     try {
@@ -109,6 +120,28 @@ function AppContent() {
       event: "Подія",
       color: "Колір події",
 
+      repeat: "Повторення",
+      repeatNone: "Не повторювати",
+      repeatDaily: "Щодня",
+      repeatWeekdays: "Кожен будній день",
+      repeatWeekly: "Щотижня",
+      repeatBiweekly: "Кожні 2 тижні",
+      repeatMonthly: "Щомісяця",
+      repeatYearly: "Щороку",
+      repeatCustom: "Custom...",
+      customRepeat: "Custom repeat",
+      every: "Кожні",
+      day: "день",
+      monthUnit: "місяць",
+      year: "рік",
+      on: "У дні",
+      ends: "Завершення",
+      never: "Ніколи",
+      onDate: "У дату",
+      after: "Після",
+      times: "разів",
+      done: "Готово",
+
       enterTitle: "Введи назву події",
       invalidEnd: "Кінець події має бути пізніше за початок",
       createError: "Помилка при створенні події",
@@ -122,7 +155,6 @@ function AppContent() {
       successCreate: "Подію створено",
       successUpdate: "Подію оновлено",
       successDelete: "Подію видалено",
-      colorUpdated: "Колір для подій з такою назвою оновлено",
       local: "Локальна",
       untitled: "Без назви",
     },
@@ -173,6 +205,28 @@ function AppContent() {
       event: "Event",
       color: "Event color",
 
+      repeat: "Repeat",
+      repeatNone: "Does not repeat",
+      repeatDaily: "Every day",
+      repeatWeekdays: "Every weekday",
+      repeatWeekly: "Every week",
+      repeatBiweekly: "Every 2 weeks",
+      repeatMonthly: "Every month",
+      repeatYearly: "Every year",
+      repeatCustom: "Custom...",
+      customRepeat: "Custom repeat",
+      every: "Every",
+      day: "day",
+      monthUnit: "month",
+      year: "year",
+      on: "On",
+      ends: "Ends",
+      never: "Never",
+      onDate: "On",
+      after: "After",
+      times: "times",
+      done: "Done",
+
       enterTitle: "Enter event title",
       invalidEnd: "Event end must be later than start",
       createError: "Error while creating event",
@@ -186,7 +240,6 @@ function AppContent() {
       successCreate: "Event created",
       successUpdate: "Event updated",
       successDelete: "Event deleted",
-      colorUpdated: "Color for events with this title was updated",
       local: "Local",
       untitled: "Untitled",
     },
@@ -273,6 +326,14 @@ function AppContent() {
     return `${year}-${month}-${day}T${hours}:${minutes}:00`;
   };
 
+  const getSafeRecurrence = (recurrence) => {
+    return {
+      ...defaultRecurrence,
+      ...(recurrence || {}),
+      days: Array.isArray(recurrence?.days) ? recurrence.days : [],
+    };
+  };
+
   const normalizeEvent = (event, colorsMap = eventTitleColors) => {
     const start =
       typeof event.start === "object"
@@ -288,18 +349,21 @@ function AppContent() {
       typeof event.title === "string"
         ? event.title
         : typeof event.summary === "string"
-        ? event.summary
-        : t.untitled;
+          ? event.summary
+          : t.untitled;
 
     const color = getEventColorByTitle(title, colorsMap);
 
     return {
       id: String(event.id),
+      master_id: event.master_id || event.id,
       title,
       start,
       end,
       source: event.source || "local",
       google_event_id: event.google_event_id || null,
+      is_recurring: event.is_recurring || false,
+      recurrence: getSafeRecurrence(event.recurrence),
       color,
     };
   };
@@ -363,6 +427,7 @@ function AppContent() {
       title: "",
       start: formatDateForApi(start),
       end: formatDateForApi(end),
+      recurrence: defaultRecurrence,
     });
 
     setModalOpen(true);
@@ -377,6 +442,7 @@ function AppContent() {
       title: "",
       start: formatDateForApi(info.start),
       end: formatDateForApi(info.end),
+      recurrence: defaultRecurrence,
     });
 
     setModalOpen(true);
@@ -397,6 +463,7 @@ function AppContent() {
       title: clickedEvent.title || "",
       start: formatDateForApi(clickedEvent.start),
       end: formatDateForApi(clickedEvent.end),
+      recurrence: getSafeRecurrence(clickedEvent.recurrence),
     });
 
     setModalOpen(true);
@@ -438,6 +505,18 @@ function AppContent() {
     return true;
   };
 
+  const resetEventForm = () => {
+    setModalOpen(false);
+    setSelectedEvent(null);
+    setIsEditMode(false);
+    setNewEvent({
+      title: "",
+      start: "",
+      end: "",
+      recurrence: defaultRecurrence,
+    });
+  };
+
   const handleCreateEvent = async () => {
     if (!validateEventForm()) return;
 
@@ -448,12 +527,10 @@ function AppContent() {
         title: newEvent.title,
         start: newEvent.start,
         end: newEvent.end,
+        recurrence: getSafeRecurrence(newEvent.recurrence),
       });
 
-      setModalOpen(false);
-      setSelectedEvent(null);
-      setIsEditMode(false);
-      setNewEvent({ title: "", start: "", end: "" });
+      resetEventForm();
 
       showToast("success", t.successCreate);
       loadEvents(updatedColors);
@@ -466,19 +543,18 @@ function AppContent() {
     if (!selectedEvent) return;
     if (!validateEventForm()) return;
 
+    const targetId = selectedEvent.master_id || selectedEvent.id;
     const updatedColors = saveColorForTitle(newEvent.title, selectedColor);
 
     try {
-      await axios.put(`/api/events/${selectedEvent.id}`, {
+      await axios.put(`/api/events/${targetId}`, {
         title: newEvent.title,
         start: newEvent.start,
         end: newEvent.end,
+        recurrence: getSafeRecurrence(newEvent.recurrence),
       });
 
-      setModalOpen(false);
-      setSelectedEvent(null);
-      setIsEditMode(false);
-      setNewEvent({ title: "", start: "", end: "" });
+      resetEventForm();
 
       showToast("success", t.successUpdate);
       loadEvents(updatedColors);
@@ -496,14 +572,13 @@ function AppContent() {
       confirmText: t.confirmDeleteAction,
       cancelText: t.cancel,
       onConfirm: async () => {
+        const targetId = selectedEvent.master_id || selectedEvent.id;
+
         try {
-          await axios.delete(`/api/events/${selectedEvent.id}`);
+          await axios.delete(`/api/events/${targetId}`);
 
           setConfirmDialog(null);
-          setModalOpen(false);
-          setSelectedEvent(null);
-          setIsEditMode(false);
-          setNewEvent({ title: "", start: "", end: "" });
+          resetEventForm();
 
           showToast("success", t.successDelete);
           loadEvents();
@@ -516,11 +591,16 @@ function AppContent() {
   };
 
   const handleEventDrop = async (info) => {
+    const targetId =
+      info.event.extendedProps?.master_id ||
+      String(info.event.id).split("__")[0];
+
     try {
-      await axios.put(`/api/events/${info.event.id}`, {
+      await axios.put(`/api/events/${targetId}`, {
         title: info.event.title,
         start: formatDateForApi(info.event.start),
         end: formatDateForApi(info.event.end),
+        recurrence: getSafeRecurrence(info.event.extendedProps?.recurrence),
       });
 
       showToast("success", t.successUpdate);
@@ -532,11 +612,16 @@ function AppContent() {
   };
 
   const handleEventResize = async (info) => {
+    const targetId =
+      info.event.extendedProps?.master_id ||
+      String(info.event.id).split("__")[0];
+
     try {
-      await axios.put(`/api/events/${info.event.id}`, {
+      await axios.put(`/api/events/${targetId}`, {
         title: info.event.title,
         start: formatDateForApi(info.event.start),
         end: formatDateForApi(info.event.end),
+        recurrence: getSafeRecurrence(info.event.extendedProps?.recurrence),
       });
 
       showToast("success", t.successUpdate);
@@ -548,10 +633,7 @@ function AppContent() {
   };
 
   const closeModal = () => {
-    setModalOpen(false);
-    setSelectedEvent(null);
-    setIsEditMode(false);
-    setNewEvent({ title: "", start: "", end: "" });
+    resetEventForm();
   };
 
   const logout = async () => {
@@ -648,7 +730,10 @@ function AppContent() {
           }
         />
 
-        <Route path="/login" element={<Login setUser={setUser} lang={lang} />} />
+        <Route
+          path="/login"
+          element={<Login setUser={setUser} lang={lang} />}
+        />
 
         <Route
           path="/register"
