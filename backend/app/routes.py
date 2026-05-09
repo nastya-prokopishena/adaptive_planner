@@ -1,82 +1,120 @@
-import os
-import uuid
 from flask import Blueprint, redirect, request, session, jsonify, current_app
-from google_auth_oauthlib.flow import Flow
+from werkzeug.security import generate_password_hash, check_password_hash
+from datetime import datetime
+import json
+import requests
 
-from backend.application.schedule_service import ScheduleService
-from backend.application.auth_service import AuthService
-from backend.infrastructure.db.repositories.user_repo import UserRepository
+from backend.infrastructure.db.database import SessionLocal
+from backend.infrastructure.db.models import User, Event
 from backend.infrastructure.google_calendar_adapter import GoogleCalendarAdapter
+from backend.application.schedule_service import ScheduleService
 
 main = Blueprint("main", __name__)
 
-schedule_service = ScheduleService()
-user_repo = UserRepository()
 calendar_adapter = GoogleCalendarAdapter()
-
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-credentials_path = os.path.join(BASE_DIR, "..", "infrastructure", "credentials.json")
-
-REDIRECT_URI = "http://localhost:5000/callback"
-
-# 🔥 ГЛОБАЛЬНЕ СХОВИЩЕ (замість session)
-OAUTH_STORE = {}
+schedule_service = ScheduleService()
 
 
-# =========================
-# GOOGLE AUTH (STABLE)
-# =========================
-@main.route("/auth/google")
-def login_google():
+def current_user():
+    user_id = session.get("user_id")
+    if not user_id:
+        return None
 
-    flow = Flow.from_client_secrets_file(
-        credentials_path,
-        scopes=["https://www.googleapis.com/auth/calendar"],
-        redirect_uri=REDIRECT_URI
+    db = SessionLocal()
+    user = db.query(User).filter_by(id=user_id).first()
+    db.close()
+    return user
+
+
+@main.route("/auth/register", methods=["POST"])
+def register():
+    data = request.json
+    email = data.get("email")
+    password = data.get("password")
+
+    if not email or not password:
+        return jsonify({"error": "Email and password are required"}), 400
+
+    db = SessionLocal()
+
+    existing_user = db.query(User).filter_by(email=email).first()
+    if existing_user:
+        db.close()
+        return jsonify({"error": "User already exists"}), 409
+
+    user = User(
+        email=email,
+        password_hash=generate_password_hash(password),
+        auth_provider="local"
     )
 
-    auth_url, state = flow.authorization_url(
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+
+    session["user_id"] = user.id
+
+    result = {
+        "id": user.id,
+        "email": user.email,
+        "authenticated": True
+    }
+
+    db.close()
+    return jsonify(result)
+
+
+@main.route("/auth/login", methods=["POST"])
+def login_local():
+    data = request.json
+    email = data.get("email")
+    password = data.get("password")
+
+    db = SessionLocal()
+    user = db.query(User).filter_by(email=email).first()
+
+    if not user or not user.password_hash or not check_password_hash(user.password_hash, password):
+        db.close()
+        return jsonify({"error": "Invalid credentials"}), 401
+
+    session["user_id"] = user.id
+
+    result = {
+        "id": user.id,
+        "email": user.email,
+        "authenticated": True
+    }
+
+    db.close()
+    return jsonify(result)
+
+
+@main.route("/auth/google")
+def google_login():
+    flow = calendar_adapter.create_flow()
+
+    authorization_url, state = flow.authorization_url(
         access_type="offline",
         include_granted_scopes="true",
         prompt="consent"
     )
 
-    # 🔥 ЗБЕРІГАЄМО НЕ В SESSION
-    OAUTH_STORE[state] = {
-        "code_verifier": flow.code_verifier
-    }
+    session["state"] = state
+    session["code_verifier"] = flow.code_verifier
 
-    print("NEW STATE:", state)
-    print("STORE:", OAUTH_STORE)
-
-    return redirect(auth_url)
+    return redirect(authorization_url)
 
 
 @main.route("/callback")
-def callback():
+def google_callback():
+    state = session.get("state")
+    code_verifier = session.get("code_verifier")
 
-    request_state = request.args.get("state")
-    print("REQUEST STATE:", request_state)
+    flow = calendar_adapter.create_flow()
+    flow.code_verifier = code_verifier
+    flow.state = state
 
-    data = OAUTH_STORE.get(request_state)
-
-    if not data:
-        return "State mismatch or expired", 400
-
-    flow = Flow.from_client_secrets_file(
-        credentials_path,
-        scopes=["https://www.googleapis.com/auth/calendar"],
-        redirect_uri=REDIRECT_URI
-    )
-
-    flow.state = request_state
-    flow.code_verifier = data["code_verifier"]
-
-    flow.fetch_token(
-        authorization_response=request.url,
-        code_verifier=data["code_verifier"]
-    )
-
+    flow.fetch_token(authorization_response=request.url)
     credentials = flow.credentials
 
     creds_dict = {
@@ -88,87 +126,201 @@ def callback():
         "scopes": credentials.scopes
     }
 
-    # 🔥 створення користувача
-    temp_email = f"google_{uuid.uuid4().hex}@temp.com"
-    user = user_repo.create(temp_email)
-    user_repo.update_google_credentials(user.id, creds_dict)
+    userinfo_response = requests.get(
+        "https://www.googleapis.com/oauth2/v2/userinfo",
+        headers={"Authorization": f"Bearer {credentials.token}"}
+    )
 
-    # 🔥 МОЖЕШ ЗАЛИШИТИ session тільки для user_id
+    google_user = userinfo_response.json()
+
+    email = google_user.get("email")
+    google_id = google_user.get("id")
+
+    if not email:
+        return jsonify({"error": "Google email not found"}), 400
+
+    db = SessionLocal()
+
+    user = db.query(User).filter_by(email=email).first()
+
+    if not user:
+        user = User(
+            email=email,
+            auth_provider="google",
+            google_id=google_id,
+            google_credentials=json.dumps(creds_dict)
+        )
+        db.add(user)
+    else:
+        user.auth_provider = "google"
+        user.google_id = google_id
+        user.google_credentials = json.dumps(creds_dict)
+
+    db.commit()
+    db.refresh(user)
+
     session["user_id"] = user.id
 
-    print("LOGIN SUCCESS:", user.id)
-
-    # 🔥 очищаємо state після використання
-    OAUTH_STORE.pop(request_state, None)
+    db.close()
 
     return redirect("/")
 
 
-# =========================
-# USER INFO
-# =========================
-@main.route("/api/user/me")
+@main.route("/api/user/me", methods=["GET"])
 def me():
-    user_id = session.get("user_id")
-
-    if not user_id:
-        return jsonify({"authenticated": False})
-
-    user = user_repo.get_by_id(user_id)
+    user = current_user()
 
     if not user:
-        session.clear()
         return jsonify({"authenticated": False})
 
     return jsonify({
-        "authenticated": True,
         "id": user.id,
-        "email": user.email
+        "email": user.email,
+        "authenticated": True,
+        "auth_provider": user.auth_provider
     })
 
 
-# =========================
-# EVENTS
-# =========================
+@main.route("/auth/logout", methods=["POST"])
+def logout():
+    session.clear()
+    return jsonify({"message": "Logged out"})
+
+
 @main.route("/api/events", methods=["GET"])
 def get_events():
-    user_id = session.get("user_id")
+    user = current_user()
 
-    if not user_id:
-        return jsonify([])
+    if not user:
+        return jsonify({"error": "Unauthorized"}), 401
 
-    user = user_repo.get_by_id(user_id)
-    if not user or not user.google_credentials:
-        return jsonify([])
+    db = SessionLocal()
 
-    events = schedule_service.get_google_events(user.google_credentials)
+    local_events = db.query(Event).filter_by(user_id=user.id).all()
 
-    formatted = []
-    for e in events:
-        start = e.get("start", {}).get("dateTime") or e.get("start", {}).get("date")
-        end = e.get("end", {}).get("dateTime") or e.get("end", {}).get("date")
+    result = [
+        {
+            "id": event.id,
+            "title": event.title,
+            "start": event.start_time.isoformat(),
+            "end": event.end_time.isoformat(),
+            "source": event.source
+        }
+        for event in local_events
+    ]
 
-        if not start or not end:
-            continue
+    if user.google_credentials:
+        google_events = schedule_service.get_google_events(
+            json.loads(user.google_credentials)
+        )
 
-        formatted.append({
-            "id": str(e.get("id")),
-            "title": str(e.get("summary", "No title")),
-            "start": start,
-            "end": end
-        })
+        for event in google_events:
+            result.append({
+                "id": event.get("id"),
+                "title": event.get("summary", "No title"),
+                "start": event.get("start", {}).get("dateTime"),
+                "end": event.get("end", {}).get("dateTime"),
+                "source": "google"
+            })
 
-    return jsonify(formatted)
+    db.close()
+    return jsonify(result)
 
 
-# =========================
-# SERVE REACT
-# =========================
+@main.route("/api/events", methods=["POST"])
+def create_event_api():
+    user = current_user()
+
+    if not user:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    data = request.json
+
+    start_time = datetime.fromisoformat(data["start"].replace("Z", "+00:00"))
+    end_time = datetime.fromisoformat(data["end"].replace("Z", "+00:00"))
+
+    db = SessionLocal()
+
+    event = Event(
+        user_id=user.id,
+        title=data["title"],
+        start_time=start_time,
+        end_time=end_time,
+        source="local"
+    )
+
+    db.add(event)
+    db.commit()
+    db.refresh(event)
+
+    if user.google_credentials:
+        google_event = schedule_service.create_google_event(
+            json.loads(user.google_credentials),
+            data["title"],
+            data["start"],
+            data["end"]
+        )
+
+        event.google_event_id = google_event.get("id")
+        event.source = "google"
+        db.commit()
+
+    result = {
+        "id": event.id,
+        "title": event.title,
+        "start": event.start_time.isoformat(),
+        "end": event.end_time.isoformat(),
+        "source": event.source
+    }
+
+    db.close()
+    return jsonify(result)
+
+
+@main.route("/api/events/<event_id>", methods=["PUT"])
+def update_event_api(event_id):
+    user = current_user()
+
+    if not user:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    data = request.json
+
+    db = SessionLocal()
+    event = db.query(Event).filter_by(id=event_id, user_id=user.id).first()
+
+    if not event:
+        db.close()
+        return jsonify({"error": "Event not found"}), 404
+
+    event.start_time = datetime.fromisoformat(data["start"].replace("Z", "+00:00"))
+    event.end_time = datetime.fromisoformat(data["end"].replace("Z", "+00:00"))
+
+    if user.google_credentials and event.google_event_id:
+        schedule_service.update_google_event(
+            json.loads(user.google_credentials),
+            event.google_event_id,
+            data["start"],
+            data["end"]
+        )
+
+    db.commit()
+
+    result = {
+        "id": event.id,
+        "title": event.title,
+        "start": event.start_time.isoformat(),
+        "end": event.end_time.isoformat()
+    }
+
+    db.close()
+    return jsonify(result)
+
+
 @main.route("/", defaults={"path": ""})
 @main.route("/<path:path>")
 def serve_react(path):
-
-    if path.startswith("api") or path.startswith("auth"):
+    if path.startswith("api/") or path.startswith("auth/"):
         return jsonify({"error": "Not found"}), 404
 
     return current_app.send_static_file("index.html")

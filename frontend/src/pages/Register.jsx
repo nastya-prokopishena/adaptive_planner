@@ -1,26 +1,44 @@
-import { useState } from 'react';
-import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
+import { useState } from "react";
+import axios from "axios";
+import { Link, useNavigate } from "react-router-dom";
 
 export default function Register({ setUser }) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     try {
-      const res = await axios.post('/auth/register', { email, password }, { withCredentials: true });
+      const res = await axios.post(
+        "/auth/register",
+        {
+          email,
+          password,
+        },
+        {
+          withCredentials: true,
+        }
+      );
+
       setUser(res.data);
-      navigate('/');
+      navigate("/");
     } catch (err) {
-      alert('Registration failed (email may already exist)');
+      console.error(err);
+      alert("Не вдалося зареєструватися. Можливо, такий email вже існує.");
     }
+  };
+
+  const handleGoogleLogin = () => {
+    window.location.href = "/auth/google";
   };
 
   return (
     <div className="auth-container">
-      <h2>Register</h2>
+      <h2>Реєстрація</h2>
+
       <form onSubmit={handleSubmit}>
         <input
           type="email"
@@ -29,17 +47,24 @@ export default function Register({ setUser }) {
           onChange={(e) => setEmail(e.target.value)}
           required
         />
+
         <input
           type="password"
-          placeholder="Password"
+          placeholder="Пароль"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
         />
-        <button type="submit">Register</button>
+
+        <button type="submit">Зареєструватися</button>
       </form>
+
+      <button type="button" onClick={handleGoogleLogin}>
+        Зареєструватися через Google
+      </button>
+
       <p>
-        Already have an account? <a href="/login">Login</a>
+        Вже маєш акаунт? <Link to="/login">Увійти</Link>
       </p>
     </div>
   );

@@ -1,46 +1,56 @@
-import { useState } from "react"
+import { useState } from "react";
 
 export default function EventModal({ event, onClose, onSave }) {
-  const [title, setTitle] = useState(event?.title || "")
-  const [start, setStart] = useState(event?.start || "")
-  const [end, setEnd] = useState(event?.end || "")
+  const [title, setTitle] = useState(event?.title || "");
+  const [start, setStart] = useState(event?.start || "");
+  const [end, setEnd] = useState(event?.end || "");
 
   const handleSubmit = () => {
-    onSave({ title, start, end })
-  }
+    if (!title.trim()) {
+      alert("Введи назву події");
+      return;
+    }
+
+    onSave({
+      title,
+      start,
+      end,
+    });
+  };
 
   return (
     <div className="modal-overlay">
-
       <div className="modal">
-
-        <h3>Create / Edit Event</h3>
+        <h3>Створити / редагувати подію</h3>
 
         <input
-          placeholder="Title"
+          placeholder="Назва"
           value={title}
-          onChange={e => setTitle(e.target.value)}
+          onChange={(e) => setTitle(e.target.value)}
         />
 
         <input
           type="datetime-local"
           value={start}
-          onChange={e => setStart(e.target.value)}
+          onChange={(e) => setStart(e.target.value)}
         />
 
         <input
           type="datetime-local"
           value={end}
-          onChange={e => setEnd(e.target.value)}
+          onChange={(e) => setEnd(e.target.value)}
         />
 
         <div className="modal-buttons">
-          <button onClick={onClose}>Cancel</button>
-          <button onClick={handleSubmit}>Save</button>
+          <button type="button" onClick={onClose}>
+            Скасувати
+          </button>
+
+          <button type="button" onClick={handleSubmit}>
+            Зберегти
+          </button>
         </div>
-
       </div>
-
     </div>
-  )
+  );
 }

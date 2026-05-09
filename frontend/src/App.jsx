@@ -10,7 +10,6 @@ import Profile from "./pages/Profile";
 import ProtectedRoute from "./components/ProtectedRoute";
 import WelcomePage from "./pages/WelcomePage";
 
-// 🔥 ОБОВʼЯЗКОВО
 axios.defaults.withCredentials = true;
 
 export default function App() {
@@ -19,7 +18,7 @@ export default function App() {
   const [events, setEvents] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [theme, setTheme] = useState("dark");
-  const [lang, setLang] = useState("en");
+  const [lang, setLang] = useState("uk");
 
   const [newEvent, setNewEvent] = useState({
     title: "",
@@ -31,6 +30,7 @@ export default function App() {
 
   const translations = {
     en: {
+      appName: "Adaptive Planner",
       today: "Today",
       week: "Week",
       month: "Month",
@@ -39,8 +39,14 @@ export default function App() {
       title: "Title",
       create: "Create",
       cancel: "Cancel",
+      profile: "Profile",
+      logout: "Logout",
+      login: "Login",
+      register: "Register",
+      loading: "Loading...",
     },
     uk: {
+      appName: "Adaptive Planner",
       today: "Сьогодні",
       week: "Тиждень",
       month: "Місяць",
@@ -49,17 +55,20 @@ export default function App() {
       title: "Назва",
       create: "Створити",
       cancel: "Скасувати",
+      profile: "Профіль",
+      logout: "Вийти",
+      login: "Увійти",
+      register: "Реєстрація",
+      loading: "Завантаження...",
     },
   };
 
   const t = translations[lang];
 
-  // ====== THEME ======
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
   }, [theme]);
 
-  // ====== AUTH CHECK (ВИПРАВЛЕНО) ======
   useEffect(() => {
     axios
       .get("/api/user/me")
@@ -74,26 +83,72 @@ export default function App() {
       .finally(() => setLoading(false));
   }, []);
 
-  // ====== LOAD EVENTS ======
-  const loadEvents = () => {
-    if (!user) return;
+  const normalizeEvent = (event) => {
+    const start =
+      typeof event.start === "object"
+        ? event.start?.dateTime || event.start?.date
+        : event.start;
 
-    axios
-      .get("/api/events")
-      .then((res) => {
-        const formatted = res.data.map((event) => ({
-          id: String(event.id),
-          title:
-            typeof event.title === "string"
-              ? event.title
-              : JSON.stringify(event.title || "No title"),
-          start: new Date(event.start),
-          end: new Date(event.end),
-        }));
-        setEvents(formatted);
-      })
-      .catch((err) => console.error("Error loading events:", err));
+    const end =
+      typeof event.end === "object"
+        ? event.end?.dateTime || event.end?.date
+        : event.end;
+
+    return {
+      id: String(event.id),
+      title:
+        typeof event.title === "string"
+          ? event.title
+          : typeof event.summary === "string"
+          ? event.summary
+          : "Без назви",
+      start,
+      end,
+      source: event.source || "local",
+    };
   };
+
+    const loadEvents = () => {
+      if (!user) return;
+
+      axios
+        .get("/api/events")
+        .then((res) => {
+          const formatted = Array.isArray(res.data)
+            ? res.data
+                .map((event) => {
+                  const start =
+                    typeof event.start === "object"
+                      ? event.start?.dateTime || event.start?.date
+                      : event.start;
+
+                  const end =
+                    typeof event.end === "object"
+                      ? event.end?.dateTime || event.end?.date
+                      : event.end;
+
+                  return {
+                    id: String(event.id),
+                    title:
+                      typeof event.title === "string"
+                        ? event.title
+                        : typeof event.summary === "string"
+                        ? event.summary
+                        : "Без назви",
+                    start,
+                    end,
+                  };
+                })
+                .filter((event) => event.start && event.end)
+            : [];
+
+          setEvents(formatted);
+        })
+        .catch((err) => {
+          console.error("Error loading events:", err);
+          setEvents([]);
+        });
+    };
 
   useEffect(() => {
     if (user) {
@@ -101,131 +156,182 @@ export default function App() {
     }
   }, [user]);
 
-  // ====== NAVIGATION ======
   const changeView = (view) => {
     calendarRef.current?.getApi().changeView(view);
   };
 
-  const goPrev = () => calendarRef.current?.getApi().prev();
-  const goNext = () => calendarRef.current?.getApi().next();
-  const goToday = () => calendarRef.current?.getApi().today();
+  const goPrev = () => {
+    calendarRef.current?.getApi().prev();
+  };
 
-  // ====== CREATE EVENT ======
+  const goNext = () => {
+    calendarRef.current?.getApi().next();
+  };
+
+  const goToday = () => {
+    calendarRef.current?.getApi().today();
+  };
+
   const handleDateSelect = (info) => {
     setNewEvent({
       title: "",
       start: info.startStr,
       end: info.endStr,
     });
+
     setModalOpen(true);
   };
 
   const handleCreateEvent = async () => {
-    if (!newEvent.title) return;
+    if (!newEvent.title.trim()) {
+      alert("Введи назву події");
+      return;
+    }
 
     try {
       await axios.post("/api/events", newEvent);
       setModalOpen(false);
+      setNewEvent({
+        title: "",
+        start: "",
+        end: "",
+      });
       loadEvents();
     } catch (error) {
       console.error(error);
-      alert("Error creating event");
+      alert("Помилка при створенні події");
     }
   };
 
-  // ====== DRAG & DROP ======
-  const handleEventDrop = (info) => {
-    axios.put(`/api/events/${info.event.id}`, {
-      start: info.event.start.toISOString(),
-      end: info.event.end.toISOString(),
-    });
+  const handleEventDrop = async (info) => {
+    try {
+      await axios.put(`/api/events/${info.event.id}`, {
+        start: info.event.start?.toISOString(),
+        end: info.event.end?.toISOString(),
+      });
+
+      loadEvents();
+    } catch (error) {
+      console.error(error);
+      info.revert();
+      alert("Помилка при оновленні події");
+    }
   };
 
-  const handleEventResize = (info) => {
-    axios.put(`/api/events/${info.event.id}`, {
-      start: info.event.start.toISOString(),
-      end: info.event.end.toISOString(),
-    });
+  const handleEventResize = async (info) => {
+    try {
+      await axios.put(`/api/events/${info.event.id}`, {
+        start: info.event.start?.toISOString(),
+        end: info.event.end?.toISOString(),
+      });
+
+      loadEvents();
+    } catch (error) {
+      console.error(error);
+      info.revert();
+      alert("Помилка при оновленні події");
+    }
   };
 
   const logout = async () => {
-    await axios.post("/auth/logout");
-    setUser(null);
-    setEvents([]);
+    try {
+      await axios.post("/auth/logout");
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setUser(null);
+      setEvents([]);
+    }
   };
 
-  if (loading) return <div>Loading...</div>;
+  if (loading) {
+    return <div className="loading">{t.loading}</div>;
+  }
 
   return (
     <BrowserRouter>
       <div className="app-wrapper">
-
-        {/* 🔝 HEADER */}
         <div className="topbar">
           <div className="left-controls">
             {user && (
               <>
-                <button onClick={goPrev}>‹</button>
-                <button onClick={goToday}>{t.today}</button>
-                <button onClick={goNext}>›</button>
+                <button type="button" onClick={goPrev}>
+                  ‹
+                </button>
+
+                <button type="button" onClick={goToday}>
+                  {t.today}
+                </button>
+
+                <button type="button" onClick={goNext}>
+                  ›
+                </button>
               </>
             )}
           </div>
 
           <div className="center-title">
-            <h2>{t.calendar}</h2>
+            <Link to="/" className="logo-link">
+              <h2>{t.appName}</h2>
+            </Link>
           </div>
 
           <div className="right-controls">
             {user && (
               <>
-                <button onClick={() => changeView("timeGridWeek")}>
+                <button type="button" onClick={() => changeView("timeGridWeek")}>
                   {t.week}
                 </button>
-                <button onClick={() => changeView("dayGridMonth")}>
+
+                <button type="button" onClick={() => changeView("dayGridMonth")}>
                   {t.month}
                 </button>
               </>
             )}
 
-            <button onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
+            <button
+              type="button"
+              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            >
               {theme === "dark" ? "☀ Light" : "🌙 Dark"}
             </button>
 
-            <button onClick={() => setLang(lang === "en" ? "uk" : "en")}>
+            <button
+              type="button"
+              onClick={() => setLang(lang === "en" ? "uk" : "en")}
+            >
               {lang === "en" ? "🇺🇦" : "🇬🇧"}
             </button>
 
             {user ? (
               <>
-                <Link to="/profile">Profile</Link>
-                <button onClick={logout}>Logout</button>
+                <Link to="/profile">{t.profile}</Link>
+                <button type="button" onClick={logout}>
+                  {t.logout}
+                </button>
               </>
             ) : (
               <>
-                <Link to="/login">Login</Link>
-                <Link to="/register">Register</Link>
+                <Link to="/login">{t.login}</Link>
+                <Link to="/register">{t.register}</Link>
               </>
             )}
           </div>
         </div>
 
-        {/* 🔥 ROUTES */}
         <Routes>
-
-          {/* 👇 ГОЛОВНЕ: Welcome або Calendar */}
           <Route
             path="/"
             element={
               user ? (
                 <CalendarView
                   events={events}
-                  lang={lang}
                   handleDateSelect={handleDateSelect}
                   handleEventDrop={handleEventDrop}
                   handleEventResize={handleEventResize}
                   calendarRef={calendarRef}
                   modalOpen={modalOpen}
+                  setModalOpen={setModalOpen}
                   newEvent={newEvent}
                   setNewEvent={setNewEvent}
                   handleCreateEvent={handleCreateEvent}
@@ -237,11 +343,9 @@ export default function App() {
             }
           />
 
-          {/* LOGIN / REGISTER */}
           <Route path="/login" element={<Login setUser={setUser} />} />
           <Route path="/register" element={<Register setUser={setUser} />} />
 
-          {/* PROFILE */}
           <Route
             path="/profile"
             element={
@@ -250,7 +354,6 @@ export default function App() {
               </ProtectedRoute>
             }
           />
-
         </Routes>
       </div>
     </BrowserRouter>

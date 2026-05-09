@@ -1,11 +1,10 @@
 export default function LoginButton() {
-
   const handleLogin = () => {
-    window.location.href = "http://localhost:5000/login";
+    window.location.href = "/auth/google";
   };
 
   return (
-    <button onClick={handleLogin}>
+    <button type="button" onClick={handleLogin}>
       Увійти через Google
     </button>
   );
