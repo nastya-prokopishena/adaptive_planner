@@ -36,6 +36,9 @@ services:
       REDIS_PORT: 6379
       OAUTHLIB_INSECURE_TRANSPORT: "1"
       FLASK_ENV: development
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      OPENAI_SCHEDULE_MODEL: ${OPENAI_SCHEDULE_MODEL}
+
     volumes:
       - ./backend/infrastructure/credentials.json:/app/backend/infrastructure/credentials.json:ro
 

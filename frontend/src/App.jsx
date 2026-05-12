@@ -1,5 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import { BrowserRouter, Routes, Route, Link, useNavigate } from "react-router-dom";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Link,
+  useNavigate,
+} from "react-router-dom";
 import axios from "axios";
 import "./index.css";
 
@@ -7,6 +13,7 @@ import Dashboard from "./pages/Dashboard";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Profile from "./pages/Profile";
+import ScheduleImportPage from "./pages/ScheduleImportPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import WelcomePage from "./pages/WelcomePage";
 
@@ -620,7 +627,9 @@ function AppContent() {
 
     setSelectedEvent(clickedEvent);
     setIsEditMode(true);
-    setSelectedColor(clickedEvent.color || getEventColorByTitle(clickedEvent.title));
+    setSelectedColor(
+      clickedEvent.color || getEventColorByTitle(clickedEvent.title)
+    );
 
     setNewEvent({
       title: clickedEvent.title || "",
@@ -981,6 +990,7 @@ function AppContent() {
 
           {user ? (
             <>
+              <Link to="/schedule-import">{t.uploadSchedule}</Link>
               <Link to="/profile">{t.profile}</Link>
               <button type="button" onClick={logout}>
                 {t.logout}
@@ -1047,6 +1057,15 @@ function AppContent() {
           element={
             <ProtectedRoute user={user}>
               <Profile user={user} lang={lang} />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/schedule-import"
+          element={
+            <ProtectedRoute user={user}>
+              <ScheduleImportPage loadEvents={loadEvents} />
             </ProtectedRoute>
           }
         />
@@ -1221,7 +1240,9 @@ function AppContent() {
                         { code: "SA", uk: "Сб", en: "Sa" },
                         { code: "SU", uk: "Нд", en: "Su" },
                       ].map((day) => {
-                        const active = autoPlanTask.allowed_days.includes(day.code);
+                        const active = autoPlanTask.allowed_days.includes(
+                          day.code
+                        );
 
                         return (
                           <button
@@ -1340,7 +1361,8 @@ function AppContent() {
 
             <div className="delete-manager-footer">
               <p>
-                {t.selectedForDelete}: <strong>{selectedDeleteIds.length}</strong>
+                {t.selectedForDelete}:{" "}
+                <strong>{selectedDeleteIds.length}</strong>
               </p>
 
               <button
@@ -1368,7 +1390,10 @@ function AppContent() {
                 {t.deleteOnlyThis}
               </button>
 
-              <button type="button" onClick={() => confirmRecurringDelete("future")}>
+              <button
+                type="button"
+                onClick={() => confirmRecurringDelete("future")}
+              >
                 {t.deleteThisAndFuture}
               </button>
 
@@ -1394,7 +1419,9 @@ function AppContent() {
 
       {toast && (
         <div className={`toast toast-${toast.type}`}>
-          <div className="toast-icon">{toast.type === "success" ? "✓" : "!"}</div>
+          <div className="toast-icon">
+            {toast.type === "success" ? "✓" : "!"}
+          </div>
 
           <p>{toast.message}</p>
 

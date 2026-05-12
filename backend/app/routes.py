@@ -10,6 +10,7 @@ from backend.infrastructure.db.database import SessionLocal
 from backend.infrastructure.db.models import User, Event, EventType, Subject, Task, TaskActivityLog
 from backend.infrastructure.google_calendar_adapter import GoogleCalendarAdapter
 from backend.application.schedule_service import ScheduleService
+from backend.application.schedule_import_service import ScheduleImportService
 from backend.domain.recurrence import (
     build_google_rrule,
     generate_occurrences,
@@ -22,6 +23,7 @@ main = Blueprint("main", __name__)
 
 calendar_adapter = GoogleCalendarAdapter()
 schedule_service = ScheduleService()
+schedule_import_service = ScheduleImportService()
 
 
 def current_user():
@@ -1528,6 +1530,94 @@ def auto_plan_event_api():
 
     finally:
         db.close()
+
+# ---------------------------
+# SCHEDULE IMPORT
+# ---------------------------
+
+@main.route("/api/schedule-import/upload", methods=["POST"])
+def upload_schedule_api():
+    if "file" not in request.files:
+        return jsonify({"error": "Файл розкладу не передано"}), 400
+
+    file = request.files["file"]
+
+    if not file or not file.filename:
+        return jsonify({"error": "Некоректний файл"}), 400
+
+    group_name = request.form.get("group_name", "")
+    subgroup = request.form.get("subgroup", "")
+
+    try:
+        result = schedule_import_service.build_preview_from_file(
+            filename=file.filename,
+            file_bytes=file.read(),
+            group_name=group_name,
+            subgroup=subgroup,
+        )
+
+        return jsonify(result)
+
+    except Exception as error:
+        return jsonify({
+            "error": "Не вдалося обробити файл розкладу через AI",
+            "details": str(error),
+        }), 500
+
+
+@main.route("/api/schedule-import/preview", methods=["POST"])
+def preview_schedule_import():
+    try:
+        content_type = request.content_type or ""
+
+        if content_type.startswith("multipart/form-data"):
+            uploaded_file = request.files.get("file")
+
+            if not uploaded_file:
+                return jsonify({"error": "Файл не передано."}), 400
+
+            group_name = request.form.get("group_name", "").strip()
+            subgroup = request.form.get("subgroup", "").strip()
+
+            if not group_name:
+                return jsonify({"error": "Вкажи групу, для якої потрібно знайти розклад."}), 400
+
+            result = schedule_import_service.build_preview_from_file(
+                filename=uploaded_file.filename,
+                file_bytes=uploaded_file.read(),
+                group_name=group_name,
+                subgroup=subgroup,
+            )
+
+            return jsonify(result)
+
+        data = request.get_json(silent=True) or {}
+
+        raw_text = str(data.get("raw_text") or "")
+        group_name = str(data.get("group_name") or "").strip()
+        subgroup = str(data.get("subgroup") or "").strip()
+
+        if not group_name:
+            return jsonify({"error": "Вкажи групу, для якої потрібно знайти розклад."}), 400
+
+        if not raw_text.strip():
+            return jsonify({"error": "Текст розкладу не передано."}), 400
+
+        result = schedule_import_service.build_preview_from_text(
+            text=raw_text,
+            group_name=group_name,
+            subgroup=subgroup,
+        )
+
+        return jsonify(result)
+
+    except Exception as exc:
+        return jsonify(
+            {
+                "error": "Не вдалося розпізнати розклад.",
+                "details": str(exc),
+            }
+        ), 500
 
 # ---------------------------
 # REACT

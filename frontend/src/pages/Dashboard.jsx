@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import CalendarView from "../components/CalendarView";
 import EventList from "../components/EventList";
 import TasksPanel from "../components/TasksPanel";
@@ -107,9 +108,9 @@ export default function Dashboard({
               + {t.addEvent}
             </button>
 
-            <button type="button" disabled>
+            <Link to="/schedule-import" className="planner-tool-link">
               {t.uploadSchedule}
-            </button>
+            </Link>
 
             <button type="button" onClick={openAutoPlanModal}>
               ✨ {t.autoPlanning}
@@ -180,6 +181,7 @@ export default function Dashboard({
           />
         </section>
       </section>
+
       <TasksPanel events={events} lang={lang} />
     </main>
   );
