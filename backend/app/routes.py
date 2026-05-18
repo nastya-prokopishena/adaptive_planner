@@ -860,8 +860,8 @@ def google_login():
 
     authorization_url, state = flow.authorization_url(
         access_type="offline",
-        include_granted_scopes="true",
-        prompt="select_account",
+        include_granted_scopes="false",
+        prompt="consent select_account",
     )
 
     session["state"] = state
@@ -1566,56 +1566,78 @@ def upload_schedule_api():
 
 
 @main.route("/api/schedule-import/preview", methods=["POST"])
-def preview_schedule_import():
-    try:
-        content_type = request.content_type or ""
+def schedule_import_preview():
+    service = ScheduleImportService()
 
-        if content_type.startswith("multipart/form-data"):
+    try:
+        if request.content_type and request.content_type.startswith("multipart/form-data"):
             uploaded_file = request.files.get("file")
 
             if not uploaded_file:
-                return jsonify({"error": "Файл не передано."}), 400
+                return jsonify(
+                    {
+                        "error": "Файл не передано.",
+                        "details": "Файл не передано.",
+                        "events": [],
+                        "total_found": 0,
+                    }
+                ), 400
 
-            group_name = request.form.get("group_name", "").strip()
-            subgroup = request.form.get("subgroup", "").strip()
+            group_name = (
+                request.form.get("group_name")
+                or request.form.get("group")
+                or ""
+            ).strip()
 
-            if not group_name:
-                return jsonify({"error": "Вкажи групу, для якої потрібно знайти розклад."}), 400
+            subgroup = (
+                request.form.get("subgroup")
+                or ""
+            ).strip()
 
-            result = schedule_import_service.build_preview_from_file(
+            result = service.build_preview_from_file(
                 filename=uploaded_file.filename,
                 file_bytes=uploaded_file.read(),
                 group_name=group_name,
                 subgroup=subgroup,
             )
 
-            return jsonify(result)
+        else:
+            payload = request.get_json(silent=True) or {}
 
-        data = request.get_json(silent=True) or {}
+            raw_text = (
+                payload.get("raw_text")
+                or payload.get("text")
+                or ""
+            )
 
-        raw_text = str(data.get("raw_text") or "")
-        group_name = str(data.get("group_name") or "").strip()
-        subgroup = str(data.get("subgroup") or "").strip()
+            group_name = (
+                payload.get("group_name")
+                or payload.get("group")
+                or ""
+            ).strip()
 
-        if not group_name:
-            return jsonify({"error": "Вкажи групу, для якої потрібно знайти розклад."}), 400
+            subgroup = (
+                payload.get("subgroup")
+                or ""
+            ).strip()
 
-        if not raw_text.strip():
-            return jsonify({"error": "Текст розкладу не передано."}), 400
+            result = service.build_preview_from_text(
+                raw_text=raw_text,
+                group_name=group_name,
+                subgroup=subgroup,
+            )
 
-        result = schedule_import_service.build_preview_from_text(
-            text=raw_text,
-            group_name=group_name,
-            subgroup=subgroup,
-        )
+        status_code = 400 if result.get("error") else 200
 
-        return jsonify(result)
+        return jsonify(result), status_code
 
     except Exception as exc:
         return jsonify(
             {
-                "error": "Не вдалося розпізнати розклад.",
+                "error": "Не вдалося сформувати preview розкладу.",
                 "details": str(exc),
+                "events": [],
+                "total_found": 0,
             }
         ), 500
 

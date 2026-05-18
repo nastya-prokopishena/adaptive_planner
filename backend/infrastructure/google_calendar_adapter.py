@@ -29,7 +29,7 @@ class GoogleCalendarAdapter:
         return Flow.from_client_secrets_file(
             self.client_secrets_file,
             scopes=SCOPES,
-            redirect_uri=self.redirect_uri
+            redirect_uri=self.redirect_uri,
         )
 
     def build_service(self, credentials_dict):

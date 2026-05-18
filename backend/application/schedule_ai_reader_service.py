@@ -1,3 +1,4 @@
+import json
 import os
 from typing import Any
 
@@ -5,424 +6,466 @@ from openai import OpenAI
 
 
 class ScheduleAIReaderService:
-    MAX_TEXT_CONTEXT_CHARS = 60000
-    MAX_IMAGES_PER_REQUEST = 6
+    TEXT_CHUNK_LIMIT = 55_000
 
     def __init__(self):
-        self.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-        self.model = os.getenv("OPENAI_SCHEDULE_MODEL", "gpt-4o")
+        api_key = os.getenv("OPENAI_API_KEY")
+
+        if not api_key:
+            raise RuntimeError("OPENAI_API_KEY не знайдено. Додай ключ у .env.")
+
+        self.client = OpenAI(api_key=api_key)
+        self.model = os.getenv("OPENAI_SCHEDULE_MODEL", "gpt-4.1")
 
     def read_schedule(
         self,
         extraction: dict[str, Any],
         group_name: str,
         subgroup: str = "",
-    ) -> str:
-        target_context = extraction.get("target_context") or ""
-        text_context = extraction.get("text_context") or ""
-        images = extraction.get("images") or []
-        extension = extraction.get("extension") or ""
+    ) -> dict[str, Any]:
+        group_name = (group_name or "").strip()
+        subgroup = (subgroup or "").strip()
 
-        if extension in {"pdf", "jpg", "jpeg", "png", "webp"} and images:
-            visual_result = self._read_from_images_with_optional_context(
-                images=images,
-                target_context=target_context,
-                text_context=text_context,
-                group_name=group_name,
-                subgroup=subgroup,
-                source_hint=extraction.get("filename", ""),
-            )
-
-            if visual_result and "ПОДІЙ НЕ ЗНАЙДЕНО" not in visual_result:
-                return visual_result
-
-        if target_context.strip():
-            result = self._read_from_text_context(
-                text_context=target_context,
-                group_name=group_name,
-                subgroup=subgroup,
-                source_hint="TARGET GROUP CONTEXT",
-                strict_target_context=True,
-            )
-
-            if result and "ПОДІЙ НЕ ЗНАЙДЕНО" not in result:
-                return result
-
-        if text_context.strip():
-            result = self._read_from_text_context(
-                text_context=text_context,
-                group_name=group_name,
-                subgroup=subgroup,
-                source_hint="FULL TEXT/TABLE CONTEXT",
-                strict_target_context=False,
-            )
-
-            if result and "ПОДІЙ НЕ ЗНАЙДЕНО" not in result:
-                return result
-
-        if images:
-            return self._read_from_images(
-                images=images,
-                group_name=group_name,
-                subgroup=subgroup,
-                source_hint=extraction.get("filename", ""),
-            )
-
-        return "ПОДІЙ НЕ ЗНАЙДЕНО"
-
-    def _read_from_images_with_optional_context(
-        self,
-        images: list[dict[str, Any]],
-        target_context: str,
-        text_context: str,
-        group_name: str,
-        subgroup: str,
-        source_hint: str,
-    ) -> str:
-        batches = [
-            images[index:index + self.MAX_IMAGES_PER_REQUEST]
-            for index in range(0, len(images), self.MAX_IMAGES_PER_REQUEST)
-        ]
-
-        results = []
-
-        for batch_index, batch in enumerate(batches, start=1):
-            prompt = self._build_prompt(
-                group_name=group_name,
-                subgroup=subgroup,
-                source_hint=f"{source_hint}; VISUAL FIRST batch {batch_index}/{len(batches)}",
-                strict_target_context=False,
-                visual_mode=True,
-            )
-
-            helper_context = ""
-
-            if target_context.strip():
-                helper_context += (
-                    "\n\nДОДАТКОВА ПІДКАЗКА З ТАБЛИЧНОГО ПАРСЕРА:\n"
-                    "Цей текст може бути неповним або мати неправильний день, тому НЕ довіряй йому для дня тижня.\n"
-                    "Використовуй його тільки як підказку для можливих предметів потрібної групи.\n"
-                    f"{target_context[:12000]}"
-                )
-
-            if text_context.strip():
-                helper_context += (
-                    "\n\nДОДАТКОВИЙ ТЕКСТ PDF/OCR:\n"
-                    "Цей текст може мати поламаний порядок колонок, тому НЕ використовуй його замість візуальної таблиці.\n"
-                    f"{text_context[:12000]}"
-                )
-
-            content = [
-                {
-                    "type": "input_text",
-                    "text": (
-                        f"{prompt}\n\n"
-                        "ГОЛОВНЕ ДЖЕРЕЛО — зображення сторінок нижче.\n"
-                        f"Потрібно ВІЗУАЛЬНО знайти колонку або блок групи {group_name}.\n"
-                        f"Випиши ВСІ пари цієї групи з усіх сторінок.\n"
-                        "День тижня визначай тільки за візуальним розміщенням у таблиці, а не з target_context.\n"
-                        "Не бери предмети з сусідніх груп.\n"
-                        f"{helper_context}"
-                    ),
-                }
-            ]
-
-            for image in batch:
-                mime_type = image.get("mime_type") or "image/png"
-                image_base64 = image.get("base64") or ""
-                page_number = image.get("page_number", "")
-
-                content.append(
-                    {
-                        "type": "input_text",
-                        "text": f"Сторінка / фото №{page_number}:",
-                    }
-                )
-
-                content.append(
-                    {
-                        "type": "input_image",
-                        "image_url": f"data:{mime_type};base64,{image_base64}",
-                    }
-                )
-
-            results.append(self._request(content))
-
-        return "\n\n".join(item for item in results if item.strip()).strip() or "ПОДІЙ НЕ ЗНАЙДЕНО"
-
-    def _read_from_text_context(
-        self,
-        text_context: str,
-        group_name: str,
-        subgroup: str,
-        source_hint: str,
-        strict_target_context: bool,
-    ) -> str:
-        chunks = self._split_text(text_context, self.MAX_TEXT_CONTEXT_CHARS)
-        results = []
-
-        for index, chunk in enumerate(chunks, start=1):
-            prompt = self._build_prompt(
-                group_name=group_name,
-                subgroup=subgroup,
-                source_hint=f"{source_hint}; chunk {index}/{len(chunks)}",
-                strict_target_context=strict_target_context,
-                visual_mode=False,
-            )
-
-            content = [
-                {
-                    "type": "input_text",
-                    "text": f"{prompt}\n\nДАНІ ДЛЯ АНАЛІЗУ:\n{chunk}",
-                }
-            ]
-
-            results.append(self._request(content))
-
-        return "\n\n".join(item for item in results if item.strip()).strip() or "ПОДІЙ НЕ ЗНАЙДЕНО"
-
-    def _read_from_images(
-        self,
-        images: list[dict[str, Any]],
-        group_name: str,
-        subgroup: str,
-        source_hint: str,
-    ) -> str:
-        batches = [
-            images[index:index + self.MAX_IMAGES_PER_REQUEST]
-            for index in range(0, len(images), self.MAX_IMAGES_PER_REQUEST)
-        ]
-
-        results = []
-
-        for batch_index, batch in enumerate(batches, start=1):
-            prompt = self._build_prompt(
-                group_name=group_name,
-                subgroup=subgroup,
-                source_hint=f"{source_hint}; image batch {batch_index}/{len(batches)}",
-                strict_target_context=False,
-                visual_mode=True,
-            )
-
-            content = [
-                {
-                    "type": "input_text",
-                    "text": (
-                        f"{prompt}\n\n"
-                        "Перед тобою сторінки або фото розкладу як зображення. "
-                        "Працюй саме з візуальною структурою: заголовки груп, дні, пари, час, клітинки."
-                    ),
-                }
-            ]
-
-            for image in batch:
-                mime_type = image.get("mime_type") or "image/png"
-                image_base64 = image.get("base64") or ""
-                page_number = image.get("page_number", "")
-
-                content.append(
-                    {
-                        "type": "input_text",
-                        "text": f"Зображення / сторінка №{page_number}:",
-                    }
-                )
-
-                content.append(
-                    {
-                        "type": "input_image",
-                        "image_url": f"data:{mime_type};base64,{image_base64}",
-                    }
-                )
-
-            results.append(self._request(content))
-
-        return "\n\n".join(item for item in results if item.strip()).strip() or "ПОДІЙ НЕ ЗНАЙДЕНО"
-
-    def _request(self, content: list[dict[str, Any]]) -> str:
-        response = self.client.responses.create(
-            model=self.model,
-            input=[
-                {
-                    "role": "user",
-                    "content": content,
-                }
-            ],
-        )
-
-        output = (response.output_text or "").strip()
-
-        if self._valid_output(output):
-            return output
-
-        retry_content = [
-            {
-                "type": "input_text",
-                "text": (
-                    "Попередня відповідь була неправильною. "
-                    "Поверни тільки структурований розклад у дозволеному форматі. "
-                    "Не використовуй JSON. Не пиши пояснень. "
-                    "Якщо подій немає, поверни рівно: ПОДІЙ НЕ ЗНАЙДЕНО."
-                ),
+        if not group_name:
+            return {
+                "table_pages": [],
+                "warnings": ["Не вказано групу."],
+                "document_analysis": {},
             }
-        ] + content
 
-        retry_response = self.client.responses.create(
-            model=self.model,
-            input=[
-                {
-                    "role": "user",
-                    "content": retry_content,
-                }
-            ],
-        )
+        if extraction.get("pages"):
+            return self._read_visual_pages(extraction, group_name, subgroup)
 
-        retry_output = (retry_response.output_text or "").strip()
+        return self._read_text_tables(extraction, group_name, subgroup)
 
-        if self._valid_output(retry_output):
-            return retry_output
-
-        return "ПОДІЙ НЕ ЗНАЙДЕНО"
-
-    def _valid_output(self, text: str) -> bool:
-        if not text:
-            return False
-
-        lowered = text.lower()
-
-        if "i'm sorry" in lowered:
-            return False
-
-        if "can't assist" in lowered:
-            return False
-
-        if "cannot assist" in lowered:
-            return False
-
-        if "подій не знайдено" in lowered:
-            return True
-
-        if "подія:" in lowered:
-            return True
-
-        if "|" in text and ("предмет" in lowered or "день" in lowered or "пара" in lowered):
-            return True
-
-        return False
-
-    def _build_prompt(
+    def _read_visual_pages(
         self,
+        extraction: dict[str, Any],
         group_name: str,
-        subgroup: str = "",
-        source_hint: str = "",
-        strict_target_context: bool = False,
-        visual_mode: bool = False,
-    ) -> str:
-        strict_text = (
-            """
+        subgroup: str,
+    ) -> dict[str, Any]:
+        table_pages = []
+        warnings = []
+
+        for page in extraction.get("pages") or []:
+            page_number = int(page.get("page") or 0)
+            page_text = page.get("page_text") or ""
+            image = page.get("full_image")
+
+            if not image:
+                continue
+
+            result = self._analyze_visual_page(
+                image=image,
+                page_text=page_text,
+                page_number=page_number,
+                group_name=group_name,
+                subgroup=subgroup,
+            )
+
+            table_pages.append(result)
+            warnings.extend(result.get("warnings", []))
+
+        return {
+            "table_pages": table_pages,
+            "warnings": list(dict.fromkeys(warnings)),
+            "document_analysis": {
+                "schedule_kind": "ai_coordinate_table",
+                "best_strategy": "ai_table_geometry_then_backend_group_intersection",
+                "target_group": group_name,
+                "target_subgroup": subgroup,
+            },
+        }
+
+    def _analyze_visual_page(
+        self,
+        image: dict[str, Any],
+        page_text: str,
+        page_number: int,
+        group_name: str,
+        subgroup: str,
+    ) -> dict[str, Any]:
+        prompt = f"""
+Ти не просто читаєш розклад. Ти маєш побудувати структуру таблиці, як coordinate parser.
+
+Потрібна група користувача: "{group_name}"
+Потрібна підгрупа: "{subgroup or 'не вказана'}"
+Сторінка: {page_number}
+
+ГОЛОВНЕ:
+Не вибирай події для групи самостійно.
+Твоє завдання — повернути геометрію таблиці:
+1. групи в шапці з координатами x1-x2;
+2. рядки з днем, номером пари, часом і координатами y1-y2;
+3. усі навчальні клітинки з координатами x1-x2-y1-y2;
+4. parsed_events всередині кожної клітинки.
+
+Backend сам перевірить:
+cell.x1 < target_group.x2 AND cell.x2 > target_group.x1
+
+Тому НЕ треба фільтрувати клітинки за групою. Поверни всі клітинки таблиці, але з правильними координатами.
+
+КООРДИНАТИ:
+- усі координати мають бути нормалізовані від 0 до 1;
+- x1=0 лівий край сторінки, x2=1 правий край;
+- y1=0 верх сторінки, y2=1 низ сторінки;
+- для merged/потокових клітинок x1-x2 мають охоплювати всю ширину клітинки;
+- якщо лекція розтягнута через кілька груп, її x1-x2 має перетинати всі ці групи;
+- якщо клітинка тільки в одній групі, її x1-x2 має бути в межах цієї групи.
+
+ГРУПИ:
+- знайди всі групи в шапці: наприклад ФЕЛ-41с, ФЕМ-41с, ФЕМ-42с, ФЕП-41с, ФЕП-42с, ФЕП-43с;
+- не плутай академічну групу з "підгр. 1";
+- group.name має бути рівно текстом групи з таблиці.
+
+РЯДКИ:
+- rows мають відповідати парам;
+- якщо видно день — day_of_week: MO/TU/WE/TH/FR/SA/SU;
+- якщо день не написаний на продовженні сторінки, визнач за логікою таблиці;
+- pair_number — номер пари;
+- start_time/end_time — якщо видно час;
+- якщо час не видно, але видно пару, залиш start_time/end_time порожніми.
+
+КЛІТИНКИ:
+- поверни тільки навчальні клітинки, не службові заголовки;
+- не додавай декан, затверджую, міністерство, розклад, семестр;
+- cell.text — повний текст клітинки;
+- cell.source_cell_type:
+  exact — звичайна клітинка однієї групи;
+  merged — клітинка розтягнута на кілька груп;
+  shared_lecture — потік/спільна лекція;
+  full_document — якщо весь документ для однієї групи.
+
+PARSED_EVENTS:
+У кожній клітинці може бути кілька занять.
+Розбий їх на parsed_events.
+
+subject:
+- тільки назва предмета;
+- без викладача, аудиторії, типу, групи, підгрупи, часу.
+
+event_type:
+lecture, laboratory, practice, seminar, consultation, exam, credit, class
+
+subgroup:
+- "1", "2", "3" тільки якщо явно написано підгр. 1 / підгрупа 1;
+- "1 півпара" НЕ є підгрупою;
+- півпару залиш у source_text.
+
+week_pattern:
+- чисельник / чис. / н/пар / непарні => odd
+- знаменник / знам. / парні => even
+- 1-15 без парності або без позначки => weekly
+- якщо неясно => unknown
+
+scope:
+- subgroup, якщо подія для конкретної підгрупи;
+- group, якщо для всієї групи;
+- stream, якщо потік/merged лекція;
+- faculty, якщо загальнофакультетська;
+- elective, якщо вибіркова.
+
 ВАЖЛИВО:
-Тобі вже передано TARGET CONTEXT, де є технічно витягнуті клітинки потрібної групи.
-Це основне джерело для предметів.
-"""
-            if strict_target_context
-            else ""
-        )
+Навіть якщо користувач просить "{group_name}", не відкидай інші клітинки. Backend сам відфільтрує їх по координатах.
+Твоя відповідальність — правильні координати груп, рядків і клітинок.
 
-        mode_text = (
-            "Потрібно аналізувати візуальну структуру файлу."
-            if visual_mode
-            else "Потрібно аналізувати текст/таблиці, витягнуті з файлу."
-        )
-
-        return f"""
-Ти модуль розпізнавання університетського розкладу.
-
-{mode_text}
-
-Користувач:
-Група: {group_name}
-Підгрупа: {subgroup}
-
-Завдання:
-Випиши всі пари саме для групи "{group_name}".
-
-Якщо підгрупа "{subgroup}" вказана:
-- включай пари всієї групи без підгрупи;
-- включай пари саме підгрупи "{subgroup}";
-- не включай пари інших підгруп.
-
-{strict_text}
-
-Правила:
-- Не плутай схожі групи.
-- Не бери пари сусідніх груп.
-- День визначай за візуальним положенням рядка у таблиці.
-- Випиши всі пари групи з усіх сторінок.
-- Якщо заняття без підгрупи, воно для всієї групи.
-- Якщо вказана підгрупа 1, не включай підгрупу 2 або 3.
-- Не вигадуй предмети, викладачів, аудиторії, дні або час.
-
-Час:
-1 пара = 08:30-09:50
-2 пара = 10:10-11:30
-3 пара = 11:50-13:10
-4 пара = 13:30-14:50
-5 пара = 15:05-16:25
-6 пара = 16:40-18:00
-7 пара = 18:10-19:30
-8 пара = 19:40-21:00
-
-Тижні:
-- непарні / н/пар / чис. / чисельник = непарні.
-- парні / пар. / знам. / знаменник = парні.
-- якщо не вказано = щотижня.
-
-Формат 1:
-
-ПОДІЯ:
-День: Понеділок
-Пара: 1
-Час: 08:30-09:50
-Предмет: Назва предмета
-Тип: Лекція
-Викладач: викладач
-Аудиторія: аудиторія
-Група: {group_name}
-Підгрупа: 1
-Тижні: щотижня
-Джерело: короткий фрагмент з файлу
-
-Формат 2:
-
-День | Пара | Час | Предмет | Тип | Викладач | Аудиторія | Група | Підгрупа | Тижні | Джерело
-
-Не використовуй JSON.
-Не додавай пояснення.
-Якщо не знайдено жодної пари, поверни рівно:
-ПОДІЙ НЕ ЗНАЙДЕНО
-
-Контекст джерела: {source_hint}
+OCR-текст сторінки для допомоги:
+{page_text[:18000]}
 """.strip()
 
-    def _split_text(self, text: str, max_chars: int) -> list[str]:
-        if len(text) <= max_chars:
+        content = [
+            {"type": "input_text", "text": prompt},
+            {
+                "type": "input_image",
+                "image_url": f"data:{image['mime_type']};base64,{image['base64']}",
+            },
+        ]
+
+        return self._call_json_schema(
+            content=content,
+            schema_name="ai_coordinate_table_page",
+            schema=self._table_page_schema(),
+        )
+
+    def _read_text_tables(
+        self,
+        extraction: dict[str, Any],
+        group_name: str,
+        subgroup: str,
+    ) -> dict[str, Any]:
+        text_context = extraction.get("text_context") or ""
+        chunks = self._split_text(text_context)
+
+        table_pages = []
+        warnings = []
+
+        if not chunks:
+            return {
+                "table_pages": [],
+                "warnings": ["У файлі не знайдено тексту для аналізу."],
+                "document_analysis": {
+                    "schedule_kind": "text",
+                    "best_strategy": "ai_text_table_geometry",
+                    "target_group": group_name,
+                    "target_subgroup": subgroup,
+                },
+            }
+
+        for index, chunk in enumerate(chunks, start=1):
+            prompt = f"""
+Ти аналізуєш текстову/Excel/DOCX таблицю розкладу.
+
+Потрібна група користувача: "{group_name}"
+Потрібна підгрупа: "{subgroup or 'не вказана'}"
+
+Твоє завдання — побудувати логічну геометрію таблиці:
+- groups з x1-x2;
+- rows з y1-y2, днем, парою, часом;
+- cells з x1-x2-y1-y2 і parsed_events.
+
+Якщо це текстова таблиця з колонками через "|", задай умовні координати:
+- службові колонки день/пара/час можуть бути x=0.00-0.20;
+- групи розподіли рівномірно зліва направо;
+- клітинка конкретної групи має перетинати тільки її колонку;
+- merged/потік має перетинати всі групи, для яких він спільний.
+
+Не фільтруй події за групою. Backend сам відфільтрує по координатах.
+
+Текст:
+{chunk}
+""".strip()
+
+            result = self._call_json_schema(
+                content=[{"type": "input_text", "text": prompt}],
+                schema_name=f"ai_text_coordinate_table_{index}",
+                schema=self._table_page_schema(),
+            )
+
+            result["page_number"] = index
+            table_pages.append(result)
+            warnings.extend(result.get("warnings", []))
+
+        return {
+            "table_pages": table_pages,
+            "warnings": list(dict.fromkeys(warnings)),
+            "document_analysis": {
+                "schedule_kind": "text_coordinate_table",
+                "best_strategy": "ai_text_table_geometry_then_backend_group_intersection",
+                "target_group": group_name,
+                "target_subgroup": subgroup,
+            },
+        }
+
+    def _call_json_schema(
+        self,
+        content: list[dict[str, Any]],
+        schema_name: str,
+        schema: dict[str, Any],
+    ) -> dict[str, Any]:
+        response = self.client.responses.create(
+            model=self.model,
+            input=[{"role": "user", "content": content}],
+            text={
+                "format": {
+                    "type": "json_schema",
+                    "name": schema_name,
+                    "strict": True,
+                    "schema": schema,
+                }
+            },
+            temperature=0,
+        )
+
+        return json.loads(response.output_text)
+
+    def _table_page_schema(self) -> dict[str, Any]:
+        return {
+            "type": "object",
+            "additionalProperties": False,
+            "properties": {
+                "page_number": {"type": "integer"},
+                "page_analysis": {
+                    "type": "object",
+                    "additionalProperties": False,
+                    "properties": {
+                        "has_table": {"type": "boolean"},
+                        "target_group_found": {"type": "boolean"},
+                        "detected_group_headers": {
+                            "type": "array",
+                            "items": {"type": "string"},
+                        },
+                        "layout_description": {"type": "string"},
+                    },
+                    "required": [
+                        "has_table",
+                        "target_group_found",
+                        "detected_group_headers",
+                        "layout_description",
+                    ],
+                },
+                "groups": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "additionalProperties": False,
+                        "properties": {
+                            "name": {"type": "string"},
+                            "x1": {"type": "number"},
+                            "x2": {"type": "number"},
+                        },
+                        "required": ["name", "x1", "x2"],
+                    },
+                },
+                "rows": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "additionalProperties": False,
+                        "properties": {
+                            "row_id": {"type": "string"},
+                            "day_of_week": {
+                                "type": "string",
+                                "enum": ["MO", "TU", "WE", "TH", "FR", "SA", "SU", ""],
+                            },
+                            "pair_number": {"type": "integer"},
+                            "start_time": {"type": "string"},
+                            "end_time": {"type": "string"},
+                            "y1": {"type": "number"},
+                            "y2": {"type": "number"},
+                        },
+                        "required": [
+                            "row_id",
+                            "day_of_week",
+                            "pair_number",
+                            "start_time",
+                            "end_time",
+                            "y1",
+                            "y2",
+                        ],
+                    },
+                },
+                "cells": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "additionalProperties": False,
+                        "properties": {
+                            "cell_id": {"type": "string"},
+                            "row_id": {"type": "string"},
+                            "text": {"type": "string"},
+                            "x1": {"type": "number"},
+                            "x2": {"type": "number"},
+                            "y1": {"type": "number"},
+                            "y2": {"type": "number"},
+                            "source_cell_type": {
+                                "type": "string",
+                                "enum": ["exact", "merged", "shared_lecture", "full_document"],
+                            },
+                            "parsed_events": {
+                                "type": "array",
+                                "items": self._parsed_event_schema(),
+                            },
+                        },
+                        "required": [
+                            "cell_id",
+                            "row_id",
+                            "text",
+                            "x1",
+                            "x2",
+                            "y1",
+                            "y2",
+                            "source_cell_type",
+                            "parsed_events",
+                        ],
+                    },
+                },
+                "warnings": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                },
+            },
+            "required": [
+                "page_number",
+                "page_analysis",
+                "groups",
+                "rows",
+                "cells",
+                "warnings",
+            ],
+        }
+
+    def _parsed_event_schema(self) -> dict[str, Any]:
+        return {
+            "type": "object",
+            "additionalProperties": False,
+            "properties": {
+                "subject": {"type": "string"},
+                "event_type": {
+                    "type": "string",
+                    "enum": [
+                        "lecture",
+                        "laboratory",
+                        "practice",
+                        "seminar",
+                        "consultation",
+                        "exam",
+                        "credit",
+                        "class",
+                    ],
+                },
+                "teacher": {"type": "string"},
+                "room": {"type": "string"},
+                "online_url": {"type": "string"},
+                "subgroup": {"type": "string"},
+                "subgroup_evidence": {
+                    "type": "string",
+                    "enum": ["explicit", "none", "uncertain"],
+                },
+                "week_pattern": {
+                    "type": "string",
+                    "enum": ["weekly", "odd", "even", "custom", "unknown"],
+                },
+                "week_range": {"type": "string"},
+                "scope": {
+                    "type": "string",
+                    "enum": ["subgroup", "group", "stream", "faculty", "elective", "unknown"],
+                },
+                "source_text": {"type": "string"},
+                "confidence": {"type": "number"},
+                "needs_review": {"type": "boolean"},
+            },
+            "required": [
+                "subject",
+                "event_type",
+                "teacher",
+                "room",
+                "online_url",
+                "subgroup",
+                "subgroup_evidence",
+                "week_pattern",
+                "week_range",
+                "scope",
+                "source_text",
+                "confidence",
+                "needs_review",
+            ],
+        }
+
+    def _split_text(self, text: str) -> list[str]:
+        text = str(text or "").strip()
+
+        if not text:
+            return []
+
+        if len(text) <= self.TEXT_CHUNK_LIMIT:
             return [text]
 
         chunks = []
-        current = []
-        current_size = 0
+        start = 0
 
-        for line in text.splitlines():
-            line_size = len(line) + 1
-
-            if current and current_size + line_size > max_chars:
-                chunks.append("\n".join(current))
-                current = []
-                current_size = 0
-
-            current.append(line)
-            current_size += line_size
-
-        if current:
-            chunks.append("\n".join(current))
+        while start < len(text):
+            end = start + self.TEXT_CHUNK_LIMIT
+            chunks.append(text[start:end])
+            start = end
 
         return chunks

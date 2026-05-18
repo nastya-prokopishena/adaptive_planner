@@ -1,614 +1,302 @@
 import base64
+import csv
 import io
-import mimetypes
+import os
 import re
 from typing import Any
 
+import fitz
 import pandas as pd
+from docx import Document
+from openpyxl import load_workbook
+from PIL import Image
 
 
 class ScheduleFileExtractorService:
-    IMAGE_EXTENSIONS = {"jpg", "jpeg", "png", "webp"}
     PDF_EXTENSIONS = {"pdf"}
-    EXCEL_EXTENSIONS = {"xlsx", "xls"}
+    IMAGE_EXTENSIONS = {"png", "jpg", "jpeg", "webp"}
     DOCX_EXTENSIONS = {"docx"}
+    EXCEL_EXTENSIONS = {"xlsx", "xls"}
     TEXT_EXTENSIONS = {"txt", "csv"}
 
-    def extract(
-        self,
-        filename: str,
-        file_bytes: bytes,
-        group_name: str = "",
-    ) -> dict[str, Any]:
+    MAX_TEXT_CHARS = 160_000
+    MAX_PDF_PAGES = 20
+    PDF_ZOOM = 3
+    MAX_IMAGE_SIDE = 2800
+
+    def extract(self, filename: str, file_bytes: bytes, group_name: str = "") -> dict[str, Any]:
         extension = self._get_extension(filename)
 
-        result = {
-            "filename": filename,
-            "extension": extension,
-            "text_context": "",
-            "target_context": "",
-            "images": [],
-            "debug": {
-                "detected_groups": [],
-                "target_group_found_in_tables": False,
-                "used_extractors": [],
-                "is_complex_pdf": False,
-            },
-        }
+        if extension in self.PDF_EXTENSIONS:
+            return self._extract_pdf(filename, file_bytes)
 
         if extension in self.IMAGE_EXTENSIONS:
-            result["images"] = [
-                self._image_to_payload(filename, file_bytes, page_number=1)
-            ]
-            result["debug"]["used_extractors"].append("image")
-            return result
-
-        if extension in self.PDF_EXTENSIONS:
-            return self._extract_pdf(filename, file_bytes, group_name)
-
-        if extension in self.EXCEL_EXTENSIONS:
-            return self._extract_excel(filename, file_bytes, group_name, extension)
+            return self._extract_image(filename, file_bytes, extension)
 
         if extension in self.DOCX_EXTENSIONS:
-            return self._extract_docx(filename, file_bytes, group_name)
+            return self._extract_docx(filename, file_bytes)
+
+        if extension in self.EXCEL_EXTENSIONS:
+            return self._extract_excel(filename, file_bytes, extension)
 
         if extension in self.TEXT_EXTENSIONS:
-            text = file_bytes.decode("utf-8", errors="ignore")
-            result["text_context"] = text
-            result["debug"]["used_extractors"].append("plain_text")
-            return result
+            return self._extract_text_or_csv(filename, file_bytes, extension)
 
         raise ValueError(
-            "Непідтримуваний формат файлу. "
-            "Підтримуються PDF, Excel, DOCX, TXT, CSV, JPG, PNG, WEBP."
+            f"Формат .{extension} не підтримується. "
+            "Підтримуються PDF, фото, Excel, DOCX, TXT, CSV."
         )
 
-    # --------------------------------------------------
-    # PDF
-    # --------------------------------------------------
+    def extract_text_input(self, raw_text: str) -> dict[str, Any]:
+        text = self._truncate_text(raw_text or "")
 
-    def _extract_pdf(
-        self,
-        filename: str,
-        file_bytes: bytes,
-        group_name: str,
-    ) -> dict[str, Any]:
-        result = {
-            "filename": filename,
-            "extension": "pdf",
-            "text_context": "",
-            "target_context": "",
-            "images": [],
+        return {
+            "filename": "manual_text",
+            "extension": "txt",
+            "text_context": text,
+            "pages": [],
+            "tables": [],
             "debug": {
-                "detected_groups": [],
-                "target_group_found_in_tables": False,
-                "used_extractors": ["pdf_images", "pdf_text", "pdf_tables", "pdf_words"],
-                "is_complex_pdf": False,
+                "extractor": "manual_text",
+                "text_chars": len(text),
             },
         }
 
-        result["images"] = self._render_pdf_pages_to_images(file_bytes)
+    def _extract_pdf(self, filename: str, file_bytes: bytes) -> dict[str, Any]:
+        document = fitz.open(stream=file_bytes, filetype="pdf")
 
-        detected_groups = set()
-        detected_groups.update(self._detect_groups_from_pdf_words(file_bytes))
+        pages = []
+        text_parts = []
 
         try:
-            import pdfplumber
-        except ImportError:
-            result["text_context"] = (
-                "pdfplumber не встановлено. "
-                "Для PDF буде використано AI або координатний parser."
-            )
-            result["debug"]["detected_groups"] = sorted(detected_groups)
-            result["debug"]["is_complex_pdf"] = len(detected_groups) >= 4
-            return result
+            page_count = min(len(document), self.MAX_PDF_PAGES)
 
-        text_parts = []
-        target_parts = []
+            for page_index in range(page_count):
+                page = document[page_index]
+                page_number = page_index + 1
 
-        with pdfplumber.open(io.BytesIO(file_bytes)) as pdf:
-            for page_index, page in enumerate(pdf.pages, start=1):
-                page_text = page.extract_text() or ""
+                page_text = self._clean_text(page.get_text("text") or "")
+                text_parts.append(f"\n\n--- PDF PAGE {page_number} TEXT ---\n{page_text}")
 
-                if page_text.strip():
-                    text_parts.append(f"\n=== PDF PAGE {page_index} TEXT ===\n{page_text}")
+                pixmap = page.get_pixmap(
+                    matrix=fitz.Matrix(self.PDF_ZOOM, self.PDF_ZOOM),
+                    alpha=False,
+                )
 
-                tables = page.extract_tables(
-                    table_settings={
-                        "vertical_strategy": "lines",
-                        "horizontal_strategy": "lines",
-                        "intersection_tolerance": 10,
-                        "snap_tolerance": 6,
-                        "join_tolerance": 6,
-                        "edge_min_length": 15,
-                        "min_words_vertical": 1,
-                        "min_words_horizontal": 1,
+                image = Image.open(io.BytesIO(pixmap.tobytes("png"))).convert("RGB")
+                image.thumbnail((self.MAX_IMAGE_SIDE, self.MAX_IMAGE_SIDE))
+
+                output = io.BytesIO()
+                image.save(output, format="PNG")
+
+                pages.append(
+                    {
+                        "page": page_number,
+                        "page_text": page_text,
+                        "full_image": {
+                            "filename": f"{filename}_page_{page_number}.png",
+                            "mime_type": "image/png",
+                            "base64": base64.b64encode(output.getvalue()).decode("utf-8"),
+                        },
                     }
                 )
 
-                for table_index, table in enumerate(tables, start=1):
-                    if not table:
-                        continue
+        finally:
+            document.close()
 
-                    table_text = self._table_to_text(
-                        table=table,
-                        title=f"PDF PAGE {page_index} TABLE {table_index}",
-                    )
+        text_context = self._truncate_text("\n".join(text_parts))
 
-                    if table_text:
-                        text_parts.append(table_text)
+        return {
+            "filename": filename,
+            "extension": "pdf",
+            "text_context": text_context,
+            "pages": pages,
+            "tables": [],
+            "debug": {
+                "extractor": "pdf_visual_and_text",
+                "pages": len(pages),
+                "text_chars": len(text_context),
+                "size_bytes": len(file_bytes),
+            },
+        }
 
-                    groups_in_table = self._detect_groups_in_table(table)
-                    detected_groups.update(groups_in_table)
+    def _extract_image(self, filename: str, file_bytes: bytes, extension: str) -> dict[str, Any]:
+        image = Image.open(io.BytesIO(file_bytes)).convert("RGB")
+        image.thumbnail((self.MAX_IMAGE_SIDE, self.MAX_IMAGE_SIDE))
 
-                    target_context = self._target_context_from_table(
-                        table=table,
-                        group_name=group_name,
-                        title=f"PDF PAGE {page_index} TABLE {table_index}",
-                    )
+        output = io.BytesIO()
+        image.save(output, format="PNG")
 
-                    if target_context:
-                        target_parts.append(target_context)
-                        result["debug"]["target_group_found_in_tables"] = True
-
-        result["text_context"] = "\n\n".join(text_parts).strip()
-        result["target_context"] = "\n\n".join(target_parts).strip()
-        result["debug"]["detected_groups"] = sorted(detected_groups)
-        result["debug"]["is_complex_pdf"] = len(detected_groups) >= 4
-
-        return result
-
-    def _detect_groups_from_pdf_words(self, file_bytes: bytes) -> set[str]:
-        try:
-            import fitz
-        except ImportError:
-            return set()
-
-        groups = set()
-
-        document = fitz.open(stream=file_bytes, filetype="pdf")
-
-        for page in document:
-            words = page.get_text("words") or []
-
-            for item in words:
-                text = self._clean_cell(item[4])
-
-                if self._looks_like_group(text):
-                    groups.add(text)
-
-        document.close()
-
-        return groups
-
-    def _render_pdf_pages_to_images(self, file_bytes: bytes) -> list[dict[str, Any]]:
-        try:
-            import fitz
-            from PIL import Image
-        except ImportError as exc:
-            raise RuntimeError("Для PDF потрібно встановити: pip install pymupdf pillow") from exc
-
-        document = fitz.open(stream=file_bytes, filetype="pdf")
-        images = []
-
-        for page_index, page in enumerate(document, start=1):
-            matrix = fitz.Matrix(3, 3)
-            pixmap = page.get_pixmap(matrix=matrix, alpha=False)
-            image_bytes = pixmap.tobytes("png")
-            image = Image.open(io.BytesIO(image_bytes))
-
-            images.append(
-                {
-                    "page_number": page_index,
-                    "mime_type": "image/png",
-                    "base64": base64.b64encode(image_bytes).decode("utf-8"),
-                    "width": image.width,
-                    "height": image.height,
-                }
-            )
-
-        document.close()
-        return images
-
-    # --------------------------------------------------
-    # EXCEL
-    # --------------------------------------------------
-
-    def _extract_excel(
-        self,
-        filename: str,
-        file_bytes: bytes,
-        group_name: str,
-        extension: str,
-    ) -> dict[str, Any]:
-        result = {
+        return {
             "filename": filename,
             "extension": extension,
             "text_context": "",
-            "target_context": "",
-            "images": [],
+            "pages": [
+                {
+                    "page": 1,
+                    "page_text": "",
+                    "full_image": {
+                        "filename": filename,
+                        "mime_type": "image/png",
+                        "base64": base64.b64encode(output.getvalue()).decode("utf-8"),
+                    },
+                }
+            ],
+            "tables": [],
             "debug": {
-                "detected_groups": [],
-                "target_group_found_in_tables": False,
-                "used_extractors": ["excel_cells"],
-                "is_complex_pdf": False,
+                "extractor": "image_visual",
+                "size_bytes": len(file_bytes),
             },
         }
 
-        if extension == "xlsx":
-            return self._extract_xlsx(file_bytes, group_name, result)
-
-        return self._extract_xls(file_bytes, group_name, result)
-
-    def _extract_xlsx(
-        self,
-        file_bytes: bytes,
-        group_name: str,
-        result: dict[str, Any],
-    ) -> dict[str, Any]:
-        from openpyxl import load_workbook
-        from openpyxl.utils import get_column_letter
-
-        workbook = load_workbook(io.BytesIO(file_bytes), data_only=True)
-
-        text_parts = []
-        target_parts = []
-        detected_groups = set()
-
-        for sheet in workbook.worksheets:
-            text_parts.append(f"\n=== EXCEL SHEET: {sheet.title} ===")
-
-            matrix = []
-
-            for row_index in range(1, sheet.max_row + 1):
-                row_values = []
-                text_row_values = []
-
-                for col_index in range(1, sheet.max_column + 1):
-                    cell = sheet.cell(row=row_index, column=col_index)
-                    cleaned = self._clean_cell(cell.value)
-                    row_values.append(cleaned)
-
-                    if cleaned:
-                        coordinate = f"{get_column_letter(col_index)}{row_index}"
-                        text_row_values.append(f"{coordinate}={cleaned}")
-
-                matrix.append(row_values)
-
-                if text_row_values:
-                    text_parts.append(" | ".join(text_row_values))
-
-            detected_groups.update(self._detect_groups_in_table(matrix))
-
-            target_context = self._target_context_from_table(
-                table=matrix,
-                group_name=group_name,
-                title=f"EXCEL SHEET {sheet.title}",
-            )
-
-            if target_context:
-                target_parts.append(target_context)
-                result["debug"]["target_group_found_in_tables"] = True
-
-        result["text_context"] = "\n".join(text_parts).strip()
-        result["target_context"] = "\n\n".join(target_parts).strip()
-        result["debug"]["detected_groups"] = sorted(detected_groups)
-
-        return result
-
-    def _extract_xls(
-        self,
-        file_bytes: bytes,
-        group_name: str,
-        result: dict[str, Any],
-    ) -> dict[str, Any]:
-        text_parts = []
-        target_parts = []
-        detected_groups = set()
-
-        try:
-            excel = pd.ExcelFile(io.BytesIO(file_bytes), engine="xlrd")
-        except Exception:
-            excel = pd.ExcelFile(io.BytesIO(file_bytes))
-
-        for sheet_name in excel.sheet_names:
-            df = pd.read_excel(
-                io.BytesIO(file_bytes),
-                sheet_name=sheet_name,
-                header=None,
-                dtype=str,
-            )
-
-            text_parts.append(f"\n=== EXCEL SHEET: {sheet_name} ===")
-            matrix = []
-
-            for row_index, row in df.iterrows():
-                row_values = []
-                text_row_values = []
-
-                for col_index, value in enumerate(row.tolist()):
-                    cleaned = self._clean_cell(value)
-                    row_values.append(cleaned)
-
-                    if cleaned:
-                        text_row_values.append(f"R{row_index + 1}C{col_index + 1}={cleaned}")
-
-                matrix.append(row_values)
-
-                if text_row_values:
-                    text_parts.append(" | ".join(text_row_values))
-
-            detected_groups.update(self._detect_groups_in_table(matrix))
-
-            target_context = self._target_context_from_table(
-                table=matrix,
-                group_name=group_name,
-                title=f"EXCEL SHEET {sheet_name}",
-            )
-
-            if target_context:
-                target_parts.append(target_context)
-                result["debug"]["target_group_found_in_tables"] = True
-
-        result["text_context"] = "\n".join(text_parts).strip()
-        result["target_context"] = "\n\n".join(target_parts).strip()
-        result["debug"]["detected_groups"] = sorted(detected_groups)
-
-        return result
-
-    # --------------------------------------------------
-    # DOCX
-    # --------------------------------------------------
-
-    def _extract_docx(
-        self,
-        filename: str,
-        file_bytes: bytes,
-        group_name: str,
-    ) -> dict[str, Any]:
-        from docx import Document
-
-        result = {
-            "filename": filename,
-            "extension": "docx",
-            "text_context": "",
-            "target_context": "",
-            "images": [],
-            "debug": {
-                "detected_groups": [],
-                "target_group_found_in_tables": False,
-                "used_extractors": ["docx_text", "docx_tables"],
-                "is_complex_pdf": False,
-            },
-        }
-
+    def _extract_docx(self, filename: str, file_bytes: bytes) -> dict[str, Any]:
         document = Document(io.BytesIO(file_bytes))
         parts = []
-        target_parts = []
-        detected_groups = set()
+        tables = []
 
         for paragraph in document.paragraphs:
-            text = paragraph.text.strip()
-
+            text = self._clean_text(paragraph.text)
             if text:
                 parts.append(text)
 
         for table_index, table in enumerate(document.tables, start=1):
-            parts.append(f"\n=== DOCX TABLE {table_index} ===")
-            matrix = []
+            parts.append(f"\n--- DOCX TABLE {table_index} ---")
 
-            for row_index, row in enumerate(table.rows, start=1):
-                row_values = []
-                text_row_values = []
+            table_rows = []
 
-                for col_index, cell in enumerate(row.cells, start=1):
-                    cleaned = self._clean_cell(cell.text)
-                    row_values.append(cleaned)
+            for row in table.rows:
+                cells = [self._clean_text(cell.text) for cell in row.cells]
+                if any(cells):
+                    table_rows.append(cells)
+                    parts.append(" | ".join(cells))
 
-                    if cleaned:
-                        text_row_values.append(f"R{row_index}C{col_index}={cleaned}")
-
-                matrix.append(row_values)
-
-                if text_row_values:
-                    parts.append(" | ".join(text_row_values))
-
-            detected_groups.update(self._detect_groups_in_table(matrix))
-
-            target_context = self._target_context_from_table(
-                table=matrix,
-                group_name=group_name,
-                title=f"DOCX TABLE {table_index}",
+            tables.append(
+                {
+                    "name": f"DOCX TABLE {table_index}",
+                    "rows": table_rows,
+                }
             )
 
-            if target_context:
-                target_parts.append(target_context)
-                result["debug"]["target_group_found_in_tables"] = True
-
-        result["text_context"] = "\n".join(parts).strip()
-        result["target_context"] = "\n\n".join(target_parts).strip()
-        result["debug"]["detected_groups"] = sorted(detected_groups)
-
-        return result
-
-    # --------------------------------------------------
-    # TABLE HELPERS
-    # --------------------------------------------------
-
-    def _target_context_from_table(
-        self,
-        table: list[list[Any]],
-        group_name: str,
-        title: str,
-    ) -> str:
-        if not group_name:
-            return ""
-
-        header_info = self._find_header_and_group_column(table, group_name)
-
-        if not header_info:
-            return ""
-
-        header_row_index, group_col_index = header_info
-
-        lines = [
-            f"\n=== TARGET GROUP CONTEXT: {title} ===",
-            f"TARGET_GROUP: {group_name}",
-            "Format: ROW | DAY | PAIR | TIME | TARGET_GROUP_CELL",
-        ]
-
-        current_day = ""
-
-        for row_index in range(header_row_index + 1, len(table)):
-            row = table[row_index] or []
-
-            day_cell = self._find_day_in_row(row)
-            pair = self._find_pair_in_row(row)
-            time = self._find_time_in_row(row)
-            target_cell = self._safe_table_cell(row, group_col_index)
-
-            normalized_day = self._normalize_day_label(day_cell)
-
-            if normalized_day:
-                current_day = normalized_day
-
-            if not target_cell:
-                continue
-
-            lines.append(
-                f"ROW {row_index + 1} | DAY={current_day or day_cell} | "
-                f"PAIR={pair} | TIME={time} | CELL={target_cell}"
-            )
-
-        if len(lines) <= 3:
-            return ""
-
-        return "\n".join(lines)
-
-    def _find_header_and_group_column(
-        self,
-        table: list[list[Any]],
-        group_name: str,
-    ) -> tuple[int, int] | None:
-        normalized_target = self._normalize_group(group_name)
-
-        for row_index, row in enumerate(table[:25]):
-            if not row:
-                continue
-
-            for col_index, cell in enumerate(row):
-                if self._normalize_group(cell) == normalized_target:
-                    return row_index, col_index
-
-        return None
-
-    def _find_day_in_row(self, row: list[Any]) -> str:
-        for index in range(min(5, len(row))):
-            cell = self._safe_table_cell(row, index)
-
-            if self._normalize_day_label(cell):
-                return cell
-
-        return self._safe_table_cell(row, 0)
-
-    def _find_pair_in_row(self, row: list[Any]) -> str:
-        for index in range(min(5, len(row))):
-            cell = self._safe_table_cell(row, index)
-
-            if re.fullmatch(r"\d{1,2}", cell):
-                number = int(cell)
-
-                if 1 <= number <= 12:
-                    return cell
-
-            if re.search(r"\b\d{1,2}\s*(?:пара|п\.)\b", cell.lower()):
-                return cell
-
-        return self._safe_table_cell(row, 1)
-
-    def _find_time_in_row(self, row: list[Any]) -> str:
-        for index in range(min(6, len(row))):
-            cell = self._safe_table_cell(row, index)
-
-            if self._looks_like_time_range(cell):
-                return cell
-
-        return self._safe_table_cell(row, 2)
-
-    def _looks_like_time_range(self, value: str) -> bool:
-        text = str(value or "").replace(".", ":")
-        return bool(re.search(r"\d{1,2}:\d{2}\s*[-–—]\s*\d{1,2}:\d{2}", text))
-
-    def _table_to_text(self, table: list[list[Any]], title: str) -> str:
-        lines = [f"\n=== {title} ==="]
-
-        for row_index, row in enumerate(table, start=1):
-            row_values = []
-
-            for col_index, cell in enumerate(row or [], start=1):
-                cleaned = self._clean_cell(cell)
-
-                if cleaned:
-                    row_values.append(f"C{col_index}={cleaned}")
-
-            if row_values:
-                lines.append(f"R{row_index}: " + " | ".join(row_values))
-
-        return "\n".join(lines) if len(lines) > 1 else ""
-
-    def _detect_groups_in_table(self, table: list[list[Any]]) -> set[str]:
-        groups = set()
-
-        for row in table[:30]:
-            if not row:
-                continue
-
-            for cell in row:
-                cleaned = self._clean_cell(cell)
-
-                if self._looks_like_group(cleaned):
-                    groups.add(cleaned)
-
-        return groups
-
-    def _looks_like_group(self, value: str) -> bool:
-        text = str(value or "").strip()
-
-        if not text:
-            return False
-
-        return bool(
-            re.fullmatch(
-                r"[A-Za-zА-Яа-яІіЇїЄєҐґ]{2,8}\s*[-–—]?\s*\d{1,4}\s*[A-Za-zА-Яа-яІіЇїЄєҐґ]?",
-                text,
-            )
+        return self._text_result(
+            filename=filename,
+            extension="docx",
+            text="\n".join(parts),
+            extractor_name="docx_text_and_tables",
+            tables=tables,
         )
 
-    # --------------------------------------------------
-    # GENERAL HELPERS
-    # --------------------------------------------------
+    def _extract_excel(self, filename: str, file_bytes: bytes, extension: str) -> dict[str, Any]:
+        parts = []
+        tables = []
 
-    def _image_to_payload(
+        if extension == "xlsx":
+            workbook = load_workbook(io.BytesIO(file_bytes), data_only=True)
+
+            for sheet_name in workbook.sheetnames:
+                sheet = workbook[sheet_name]
+                parts.append(f"\n--- EXCEL SHEET: {sheet_name} ---")
+
+                sheet_rows = []
+
+                for row in sheet.iter_rows(values_only=True):
+                    cells = [self._clean_text(cell) for cell in row]
+                    if any(cells):
+                        sheet_rows.append(cells)
+                        parts.append(" | ".join(cells))
+
+                tables.append(
+                    {
+                        "name": sheet_name,
+                        "rows": sheet_rows,
+                    }
+                )
+
+        else:
+            excel_file = pd.ExcelFile(io.BytesIO(file_bytes), engine="xlrd")
+
+            for sheet_name in excel_file.sheet_names:
+                dataframe = pd.read_excel(excel_file, sheet_name=sheet_name, header=None)
+                parts.append(f"\n--- EXCEL SHEET: {sheet_name} ---")
+
+                sheet_rows = []
+
+                for _, row in dataframe.iterrows():
+                    cells = [self._clean_text(cell) for cell in row.tolist()]
+                    if any(cells):
+                        sheet_rows.append(cells)
+                        parts.append(" | ".join(cells))
+
+                tables.append(
+                    {
+                        "name": sheet_name,
+                        "rows": sheet_rows,
+                    }
+                )
+
+        return self._text_result(
+            filename=filename,
+            extension=extension,
+            text="\n".join(parts),
+            extractor_name=f"{extension}_tables",
+            tables=tables,
+        )
+
+    def _extract_text_or_csv(self, filename: str, file_bytes: bytes, extension: str) -> dict[str, Any]:
+        decoded = self._decode_bytes(file_bytes)
+
+        if extension == "csv":
+            reader = csv.reader(io.StringIO(decoded))
+            lines = []
+
+            for row in reader:
+                lines.append(" | ".join(self._clean_text(cell) for cell in row))
+
+            text = "\n".join(lines)
+        else:
+            text = decoded
+
+        return self._text_result(filename, extension, text, extension, tables=[])
+
+    def _text_result(
         self,
         filename: str,
-        file_bytes: bytes,
-        page_number: int,
+        extension: str,
+        text: str,
+        extractor_name: str,
+        tables: list[dict[str, Any]] | None = None,
     ) -> dict[str, Any]:
-        mime_type = mimetypes.guess_type(filename)[0] or "image/png"
+        text = self._truncate_text(text)
 
         return {
-            "page_number": page_number,
-            "mime_type": mime_type,
-            "base64": base64.b64encode(file_bytes).decode("utf-8"),
+            "filename": filename,
+            "extension": extension,
+            "text_context": text,
+            "pages": [],
+            "tables": tables or [],
+            "debug": {
+                "extractor": extractor_name,
+                "text_chars": len(text),
+            },
         }
 
-    def _safe_table_cell(self, row: list[Any], index: int) -> str:
-        if index >= len(row):
-            return ""
+    def _decode_bytes(self, file_bytes: bytes) -> str:
+        for encoding in ["utf-8-sig", "utf-8", "cp1251", "latin-1"]:
+            try:
+                return file_bytes.decode(encoding)
+            except Exception:
+                continue
 
-        return self._clean_cell(row[index])
+        return file_bytes.decode("utf-8", errors="ignore")
 
-    def _clean_cell(self, value: Any) -> str:
+    def _truncate_text(self, text: str) -> str:
+        text = str(text or "")
+
+        if len(text) <= self.MAX_TEXT_CHARS:
+            return text
+
+        return text[: self.MAX_TEXT_CHARS] + "\n\n--- TEXT TRUNCATED ---"
+
+    def _clean_text(self, value: Any) -> str:
         if value is None:
             return ""
 
@@ -620,89 +308,12 @@ class ScheduleFileExtractorService:
 
         text = str(value)
         text = text.replace("\r", " ")
-        text = text.replace("\n", " ")
         text = text.replace("\u00a0", " ")
         text = text.replace("￾", "-")
         text = re.sub(r"\s+", " ", text)
 
         return text.strip()
 
-    def _normalize_group(self, value: Any) -> str:
-        text = str(value or "").lower()
-        text = text.replace(" ", "")
-        text = text.replace("-", "")
-        text = text.replace("–", "")
-        text = text.replace("—", "")
-        text = text.replace("_", "")
-        text = text.replace(".", "")
-        text = text.replace("`", "")
-        text = text.replace("'", "")
-        text = text.replace("’", "")
-        text = text.replace("ʼ", "")
-
-        replacements = {
-            "і": "i",
-            "ї": "i",
-            "є": "e",
-            "ґ": "g",
-        }
-
-        for old, new in replacements.items():
-            text = text.replace(old, new)
-
-        return text.strip()
-
-    def _normalize_day_label(self, value: Any) -> str:
-        text = str(value or "").lower()
-        text = text.replace("\n", "")
-        text = text.replace(" ", "")
-        text = text.replace("’", "'")
-        text = text.replace("`", "'")
-        text = text.replace("ʼ", "'")
-
-        day_map = {
-            "понеділок": "Понеділок",
-            "понедiлок": "Понеділок",
-            "вівторок": "Вівторок",
-            "вiвторок": "Вівторок",
-            "середа": "Середа",
-            "четвер": "Четвер",
-            "п'ятниця": "П’ятниця",
-            "пятниця": "П’ятниця",
-            "субота": "Субота",
-            "неділя": "Неділя",
-            "недiля": "Неділя",
-        }
-
-        for raw, normalized in day_map.items():
-            if raw.replace(" ", "") in text:
-                return normalized
-
-        if "понед" in text:
-            return "Понеділок"
-
-        if "вівт" in text or "вiвт" in text:
-            return "Вівторок"
-
-        if "серед" in text:
-            return "Середа"
-
-        if "четв" in text:
-            return "Четвер"
-
-        if "пятн" in text or "п'ятн" in text:
-            return "П’ятниця"
-
-        if "суб" in text:
-            return "Субота"
-
-        if "нед" in text:
-            return "Неділя"
-
-        return ""
-
     def _get_extension(self, filename: str) -> str:
-        if "." not in filename:
-            return ""
-
-        return filename.rsplit(".", 1)[-1].lower().strip()
+        _, extension = os.path.splitext(filename or "")
+        return extension.replace(".", "").lower().strip()
