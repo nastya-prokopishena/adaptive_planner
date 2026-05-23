@@ -22,3 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+backend/infrastructure/ml/models/*.pkl
+backend/infrastructure/ml/models/*.joblib
+backend/infrastructure/ml/datasets/raw/
+backend/infrastructure/ml/datasets/processed/*.csv

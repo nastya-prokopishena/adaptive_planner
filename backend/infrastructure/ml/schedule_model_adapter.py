@@ -1,6 +1,6 @@
 import re
 
-from backend.infrastructure.ml.model_loader import MLModelLoader
+from backend.infrastructure.ml.model_registry import MLModelLoader
 
 
 class ScheduleModelAdapter:

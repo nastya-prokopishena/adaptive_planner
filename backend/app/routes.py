@@ -16,14 +16,16 @@ from backend.domain.recurrence import (
     generate_occurrences,
     time_ranges_overlap,
 )
-
-
+from backend.application.task_nlp_service import TaskNLPService
+from backend.application.task_file_extractor_service import TaskFileExtractorService
 
 main = Blueprint("main", __name__)
 
 calendar_adapter = GoogleCalendarAdapter()
 schedule_service = ScheduleService()
 schedule_import_service = ScheduleImportService()
+task_nlp_service = TaskNLPService()
+task_file_extractor_service = TaskFileExtractorService()
 
 
 def current_user():
@@ -183,22 +185,50 @@ def serialize_subject(subject):
 
 
 def serialize_task(task):
+    keywords = []
+
+    if getattr(task, "keywords", None):
+        try:
+            keywords = json.loads(task.keywords)
+        except Exception:
+            keywords = []
+
     return {
         "id": task.id,
         "user_id": task.user_id,
         "event_id": task.event_id,
         "subject_id": task.subject_id,
+
         "title": task.title,
         "description": task.description,
         "status": task.status,
         "priority": task.priority,
-        "due_date": task.due_date.isoformat() if task.due_date else None,
-        "completed_at": task.completed_at.isoformat() if task.completed_at else None,
-        "missed_at": task.missed_at.isoformat() if task.missed_at else None,
-        "created_at": task.created_at.isoformat() if task.created_at else None,
-        "updated_at": task.updated_at.isoformat() if task.updated_at else None,
-    }
 
+        "due_date": task.due_date.isoformat() if task.due_date else None,
+        "completed_at": task.completed_at.isoformat()
+        if getattr(task, "completed_at", None)
+        else None,
+        "missed_at": task.missed_at.isoformat()
+        if getattr(task, "missed_at", None)
+        else None,
+
+        "task_type": getattr(task, "task_type", "other"),
+        "keywords": keywords,
+        "estimated_duration_hours": getattr(
+            task,
+            "estimated_duration_hours",
+            None,
+        ),
+        "difficulty_score": getattr(task, "difficulty_score", None),
+        "nlp_source": getattr(task, "nlp_source", None),
+
+        "created_at": task.created_at.isoformat()
+        if getattr(task, "created_at", None)
+        else None,
+        "updated_at": task.updated_at.isoformat()
+        if getattr(task, "updated_at", None)
+        else None,
+    }
 
 def serialize_activity_log(log):
     return {
@@ -233,6 +263,17 @@ def create_task_log(
 
     db.add(log)
 
+
+def find_subject_by_name(db, user_id, subject_name):
+    if not subject_name:
+        return None
+
+    return (
+        db.query(Subject)
+        .filter(Subject.user_id == user_id)
+        .filter(Subject.name.ilike(subject_name))
+        .first()
+    )
 
 
 def get_excluded_dates(event):
@@ -504,6 +545,72 @@ def create_subject():
     finally:
         db.close()
 
+@main.route("/api/subjects/<int:subject_id>", methods=["PUT"])
+def update_subject(subject_id):
+    user = current_user()
+
+    if not user:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    data = request.get_json() or {}
+
+    db = SessionLocal()
+
+    try:
+        subject = (
+            db.query(Subject)
+            .filter_by(id=subject_id, user_id=user.id)
+            .first()
+        )
+
+        if not subject:
+            return jsonify({"error": "Subject not found"}), 404
+
+        subject.name = data.get("name", subject.name)
+        subject.teacher = data.get("teacher", subject.teacher)
+        subject.description = data.get("description", subject.description)
+        subject.color = data.get("color", subject.color)
+
+        db.commit()
+        db.refresh(subject)
+
+        return jsonify(serialize_subject(subject)), 200
+
+    finally:
+        db.close()
+
+@main.route("/api/event-types/<int:event_type_id>", methods=["PUT"])
+def update_event_type(event_type_id):
+    user = current_user()
+
+    if not user:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    data = request.get_json() or {}
+
+    db = SessionLocal()
+
+    try:
+        event_type = (
+            db.query(EventType)
+            .filter_by(id=event_type_id, user_id=user.id)
+            .first()
+        )
+
+        if not event_type:
+            return jsonify({"error": "Event type not found"}), 404
+
+        event_type.name = data.get("name", event_type.name)
+        event_type.color = data.get("color", event_type.color)
+
+        db.commit()
+        db.refresh(event_type)
+
+        return jsonify(serialize_event_type(event_type)), 200
+
+    finally:
+        db.close()
+
 @main.route("/api/tasks", methods=["GET"])
 def get_tasks():
     user = current_user()
@@ -550,8 +657,9 @@ def create_task():
     description = data.get("description")
     event_id = data.get("event_id")
     subject_id = data.get("subject_id")
+    subject_name = data.get("subject")
     priority = data.get("priority", "medium")
-    due_date = parse_optional_datetime(data.get("due_date"))
+    due_date = parse_optional_datetime(data.get("due_date") or data.get("deadline"))
 
     if not title:
         return jsonify({"error": "Title is required"}), 400
@@ -559,15 +667,29 @@ def create_task():
     db = SessionLocal()
 
     try:
+        if not subject_id and subject_name:
+            subject = find_subject_by_name(db, user.id, subject_name)
+
+            if subject:
+                subject_id = subject.id
+
+        keywords = data.get("keywords") or []
+
         task = Task(
             user_id=user.id,
             event_id=event_id,
             subject_id=subject_id,
             title=title,
             description=description,
-            status="planned",
+            status=data.get("status", "planned"),
             priority=priority,
             due_date=due_date,
+
+            task_type=data.get("task_type", "other"),
+            keywords=json.dumps(keywords, ensure_ascii=False),
+            estimated_duration_hours=data.get("estimated_duration_hours", 1),
+            difficulty_score=data.get("difficulty_score", 3),
+            nlp_source=data.get("nlp_source", "manual"),
         )
 
         db.add(task)
@@ -590,7 +712,6 @@ def create_task():
     finally:
         db.close()
 
-
 @main.route("/api/tasks/<int:task_id>", methods=["PUT"])
 def update_task(task_id):
     user = current_user()
@@ -598,7 +719,7 @@ def update_task(task_id):
     if not user:
         return jsonify({"error": "Unauthorized"}), 401
 
-    data = request.json or {}
+    data = request.get_json() or {}
 
     db = SessionLocal()
 
@@ -612,42 +733,38 @@ def update_task(task_id):
         if not task:
             return jsonify({"error": "Task not found"}), 404
 
-        old_status = task.status
+        task.title = data.get("title", task.title)
+        task.description = data.get("description", task.description)
+        task.subject_id = data.get("subject_id", task.subject_id)
+        task.event_id = data.get("event_id", task.event_id)
+        task.priority = data.get("priority", task.priority)
+        task.due_date = parse_datetime(data.get("due_date")) if data.get("due_date") else task.due_date
 
-        if "title" in data:
-            task.title = data.get("title")
+        if hasattr(task, "task_type"):
+            task.task_type = data.get("task_type", task.task_type)
 
-        if "description" in data:
-            task.description = data.get("description")
+        if hasattr(task, "estimated_duration_hours"):
+            task.estimated_duration_hours = data.get(
+                "estimated_duration_hours",
+                task.estimated_duration_hours,
+            )
 
-        if "event_id" in data:
-            task.event_id = data.get("event_id")
+        if hasattr(task, "difficulty_score"):
+            task.difficulty_score = data.get(
+                "difficulty_score",
+                task.difficulty_score,
+            )
 
-        if "subject_id" in data:
-            task.subject_id = data.get("subject_id")
+        if hasattr(task, "keywords"):
+            keywords = data.get("keywords")
 
-        if "priority" in data:
-            task.priority = data.get("priority")
-
-        if "due_date" in data:
-            task.due_date = parse_optional_datetime(data.get("due_date"))
-
-        task.updated_at = datetime.utcnow()
-
-        create_task_log(
-            db=db,
-            user_id=user.id,
-            task_id=task.id,
-            action="task_updated",
-            old_status=old_status,
-            new_status=task.status,
-            details=f"Task updated: {task.title}",
-        )
+            if isinstance(keywords, list):
+                task.keywords = json.dumps(keywords, ensure_ascii=False)
 
         db.commit()
         db.refresh(task)
 
-        return jsonify(serialize_task(task))
+        return jsonify(serialize_task(task)), 200
 
     finally:
         db.close()
@@ -701,7 +818,7 @@ def update_task_status(task_id):
 
     new_status = data.get("status")
 
-    allowed_statuses = ["planned", "done", "missed"]
+    allowed_statuses = ["planned", "in_progress", "done", "missed"]
 
     if new_status not in allowed_statuses:
         return jsonify({"error": "Invalid task status"}), 400
@@ -1640,6 +1757,198 @@ def schedule_import_preview():
                 "total_found": 0,
             }
         ), 500
+
+# ---------------------------
+# TASK NLP IMPORT
+# ---------------------------
+
+@main.route("/api/task-import/model-info", methods=["GET"], strict_slashes=False)
+def task_model_info_api():
+    user = current_user()
+
+    if not user:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    try:
+        info = task_nlp_service.difficulty_ml_service.get_model_info()
+        return jsonify(info), 200
+
+    except Exception as error:
+        return jsonify({
+            "loaded": False,
+            "error": str(error),
+        }), 500
+
+
+@main.route("/api/task-import/analyze-text", methods=["POST"], strict_slashes=False)
+def analyze_task_text_api():
+    user = current_user()
+
+    if not user:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    try:
+        data = request.get_json() or {}
+
+        text = data.get("text", "")
+        subject_name = data.get("subject")
+
+        if not text.strip():
+            return jsonify({"error": "Текст завдання порожній"}), 400
+
+        db = SessionLocal()
+
+        try:
+            results = task_nlp_service.analyze_many(
+                text=text,
+                subject_name=subject_name or None,
+            )
+
+            tasks = []
+
+            for result in results:
+                subject = find_subject_by_name(
+                    db=db,
+                    user_id=user.id,
+                    subject_name=result.get("subject"),
+                )
+
+                result["subject_id"] = subject.id if subject else None
+                result["subject_exists"] = subject is not None
+                result["should_create_subject"] = (
+                    bool(result.get("subject")) and subject is None
+                )
+                result["source_filename"] = None
+
+                tasks.append(result)
+
+            return jsonify({
+                "tasks": tasks,
+                "count": len(tasks),
+            }), 200
+
+        finally:
+            db.close()
+
+    except Exception as error:
+        return jsonify({
+            "error": "Не вдалося проаналізувати текст",
+            "details": str(error),
+        }), 500
+
+
+@main.route("/api/task-import/analyze-file", methods=["POST"], strict_slashes=False)
+@main.route("/api/task-import/analyze-files", methods=["POST"], strict_slashes=False)
+def analyze_task_file_api():
+    user = current_user()
+
+    if not user:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    try:
+        subject_name = request.form.get("subject")
+
+        uploaded_files = request.files.getlist("files")
+
+        if not uploaded_files:
+            single_file = request.files.get("file")
+
+            if single_file:
+                uploaded_files = [single_file]
+
+        if not uploaded_files:
+            return jsonify({"error": "Файли не передано"}), 400
+
+        db = SessionLocal()
+        tasks = []
+
+        try:
+            for file in uploaded_files:
+                file_bytes = file.read()
+
+                extracted_text = task_file_extractor_service.extract_text(
+                    file.filename,
+                    file_bytes,
+                )
+
+                if not extracted_text or len(extracted_text.strip()) < 20:
+                    continue
+
+                results = task_nlp_service.analyze_many(
+                    text=extracted_text,
+                    subject_name=subject_name or None,
+                )
+
+                for result in results:
+                    subject = find_subject_by_name(
+                        db=db,
+                        user_id=user.id,
+                        subject_name=result.get("subject"),
+                    )
+
+                    result["subject_id"] = subject.id if subject else None
+                    result["subject_exists"] = subject is not None
+                    result["should_create_subject"] = (
+                            bool(result.get("subject")) and subject is None
+                    )
+                    result["source_filename"] = file.filename
+
+                    tasks.append(result)
+
+            return jsonify({
+                "tasks": tasks,
+                "count": len(tasks),
+            }), 200
+
+        finally:
+            db.close()
+
+    except Exception as error:
+        return jsonify({
+            "error": "Не вдалося проаналізувати файл",
+            "details": str(error),
+        }), 500
+
+
+@main.route("/api/task-import/create-subject", methods=["POST"], strict_slashes=False)
+def create_subject_from_task_import_api():
+    user = current_user()
+
+    if not user:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    data = request.json or {}
+
+    name = data.get("name")
+
+    if not name:
+        return jsonify({"error": "Назва предмету обов'язкова"}), 400
+
+    db = SessionLocal()
+
+    try:
+        existing_subject = find_subject_by_name(db, user.id, name)
+
+        if existing_subject:
+            return jsonify(serialize_subject(existing_subject)), 200
+
+        subject = Subject(
+            user_id=user.id,
+            name=name,
+            teacher=data.get("teacher"),
+            description=data.get("description"),
+            color=data.get("color"),
+        )
+
+        db.add(subject)
+        db.commit()
+        db.refresh(subject)
+
+        return jsonify(serialize_subject(subject)), 201
+
+    finally:
+        db.close()
+
 
 # ---------------------------
 # REACT

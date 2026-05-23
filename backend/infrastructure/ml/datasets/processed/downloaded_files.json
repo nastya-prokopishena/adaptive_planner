@@ -1,0 +1,824 @@
+[
+  {
+    "query": "filetype:pdf site:.edu.ua \"збірник задач\"",
+    "title": "Збірник задач з фізики з прикладами розв'язання",
+    "url": "https://pom.sumdu.edu.ua/Data/For_students/Bakalavr-1k/Med-bil-phis/electricity.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\1_a951d96ffe1b.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"збірник задач\" \"математика\"",
+    "title": "ЗБІРНИК ЗАДАЧ З ВИЩОЇ МАТЕМАТИКИ",
+    "url": "https://new.mmf.lnu.edu.ua/wp-content/uploads/2018/10/%D0%97%D0%91%D0%86%D0%A0%D0%9D%D0%98%D0%9A-%D0%92%D0%B8%D1%89%D0%B0-%D0%9C%D0%B0%D1%82%D0%B5%D0%BC%D0%B0%D1%82%D0%B8%D0%BA%D0%B0.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\2_eeb352c4ebc5.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"збірник задач\" \"математика\"",
+    "title": "збірник задач - з лінійної алгебри та аналітичної геометрії",
+    "url": "http://pdf.lib.vntu.edu.ua/books/2016/Rudav_2002_256.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\3_220466722281.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"збірник задач\"",
+    "title": "Збірник задач з загальної фізики ЕЛЕКТРИКА -2026. ...",
+    "url": "https://elibrary.kdpu.edu.ua/bitstream/123456789/12545/1/%D0%97%D0%B1%D1%96%D1%80%D0%BD%D0%B8%D0%BA%20%D0%B7%D0%B0%D0%B4%D0%B0%D1%87%20%D0%B7%20%D0%B7%D0%B0%D0%B3%D0%B0%D0%BB%D1%8C%D0%BD%D0%BE%D1%97%20%D1%84%D1%96%D0%B7%D0%B8%D0%BA%D0%B8%20%D0%95%D0%9B%D0%95%D0%9A%D0%A2%D0%A0%D0%98%D0%9A%D0%90%20-2026.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\4_9c83b63a7c91.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"збірник задач\"",
+    "title": "Збірник задач",
+    "url": "http://ktf.lnu.edu.ua/books/ZbirnykTM.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\5_7db8c5612793.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"збірник задач\"",
+    "title": "Фізика. 9 клас: Збірник задач / І. Ю. Ненашев.",
+    "url": "https://phys.ippo.kubg.edu.ua/wp-content/uploads/2015/11/UKR-Nenashev-Physics-Zbirnyk-zadach-9-grade-2010.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\6_c15a6862a224.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"збірник задач\"",
+    "title": "ФІЗИКА ЗБІРНИК ЗАДАЧ",
+    "url": "https://lib.lntu.edu.ua/sites/default/files/2021-01/%D0%A4%D0%86%D0%97%D0%98%D0%9A%D0%90_%D0%97%D0%91%D0%86%D0%A0%D0%9D%D0%98%D0%9A%20%D0%97%D0%90%D0%94%D0%90%D0%A7.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\7_befd966a55c7.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"збірник завдань\"",
+    "title": "Збірник завдань для самостійної роботи з теоретичної ...",
+    "url": "https://pdf.lib.vntu.edu.ua/books/2024/LANZ/Vydmysh_2008_128.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\8_33a97b1a852d.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"збірник завдань\"",
+    "title": "ЗБІРНИК ЗАВДАНЬ ДЛЯ САМОСТІЙНИХ ТА ...",
+    "url": "http://eprints.kname.edu.ua/24077/1/2010%20138%D0%9C%20%D0%BF%D0%B5%D1%87%20%D0%92%D0%9C%20%D1%87%202.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\9_691548314d8a.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"збірник завдань\"",
+    "title": "ЗБІРНИК ЗАВДАНЬ ДЛЯ САМОСТІЙНОЇ РОБОТИ З ...",
+    "url": "https://pdf.lib.vntu.edu.ua/books/2024/LAN/Fedotov_2002_110.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\10_db6edeebbebf.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"збірник завдань\"",
+    "title": "Збірник завдань з граматики до практичних занять ...",
+    "url": "https://repository.hneu.edu.ua/bitstream/123456789/6677/1/%D0%97%D0%B1%D1%96%D1%80%D0%BD%D0%B8%D0%BA%20%D0%B7%D0%B0%D0%B2%D0%B4%D0%B0%D0%BD%D1%8C%20%D0%B7%20%D0%B3%D1%80%D0%B0%D0%BC%D0%B0%D1%82%D0%B8%D0%BA%D0%B8%20%D0%B4%D0%BE%20%D0%BF%D1%80%D0%B0%D0%BA%D1%82%D0%B8%D1%87%D0%BD%D0%B8%D1%85%20%D0%B7%D0%B0%D0%BD%D1%8F%D1%82%D1%8C%20%D0%B7%20%D0%B0%D0%BD%D0%B3%D0%BB%D1%96%D0%B9%D1%81%D1%8C%D0%BA%D0%BE%D1%97%20%D0%BC%D0%BE%D0%B2%D0%B8%20%D0%B4%D0%BB%D1%8F%20%D1%81%D1%82%D1%83%D0%B4%D0%B5%D0%BD%D1%82%D1%96%D0%B2%203%20%E2%80%93%204%20%D0%BA%D1%83%D1%80%D1%81%D1%96%D0%B2%20%D0%B3%D0%B0%D0%BB%D1%83%D0%B7%D1%96%20%D0%B7%D0%BD%D0%B0%D0%BD%D1%8C%200501%20%D0%86%D0%BD%D1%84%D0%BE%D1%80%D0%BC%D0%B0%D1%82.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\11_3920a6b6d65d.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"збірник завдань\"",
+    "title": "ЗБІРНИК ЗАВДАНЬ З КРИМІНАЛІСТИКИ",
+    "url": "https://dspace.nadpsu.edu.ua/bitstream/123456789/3817/1/Zbirnik%20zadach%20z%20kriminalistiki.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\12_444873450843.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"збірник завдань\"",
+    "title": "Збірник завдань для лабораторних робіт",
+    "url": "https://elibrary.kdpu.edu.ua/bitstream/123456789/5237/1/%D0%AF%D0%B2%D1%96%D1%80,%20%D0%A1%D0%B8%D0%BD%D1%82%D0%B0%D0%BA%D1%81%D0%B8%D1%81%20%D1%83%D0%BA%D1%80%D1%97%D0%BD%D1%81%D1%8C%D0%BA%D0%BE%D1%97....pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\14_45acf1ecff78.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"лабораторний практикум\"",
+    "title": "ОПТИКА. Лабораторний практикум",
+    "url": "https://physics.lnu.edu.ua/wp-content/uploads/Antonyak_Optyka.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\15_41c9b73b49e0.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"лабораторний практикум\"",
+    "title": "Лабораторний практикум з шкільного курсу фізики та ...",
+    "url": "https://cusu.edu.ua/images/kaphedra_pryrodnychykh_nauk/%D0%9B%D0%91_%D0%9C%D0%9D%D0%A4/%D0%9B-%D0%BF%D1%80_%D0%A8%D0%9A%D0%A4_%D1%82%D0%B0_%D0%9C%D0%92%D0%A4_%D0%A7.3.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\16_cc08c3f7bdea.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"лабораторний практикум\"",
+    "title": "Лабораторний практикум",
+    "url": "http://dspace-s.msu.edu.ua:8080/bitstream/123456789/659/1/Poluda%20S.N.%2C%20Boksha%20N.I.Koval%27%20T.V.%20Tekhnolohiya%20shv.%20vyrobnytstva.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\17_20e163834821.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"лабораторний практикум\"",
+    "title": "ФІЗИЧНИЙ ЛАБОРАТОРНИЙ ПРАКТИКУМ",
+    "url": "https://ep3.nuwm.edu.ua/5115/1/V79.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\19_0b57438643fd.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"лабораторний практикум\"",
+    "title": "МЕХАНІКА ЛАБОРАТОРНИЙ ПРАКТИКУМ З ФІЗИКИ",
+    "url": "https://er.chdtu.edu.ua/bitstream/ChSTU/7741/1/Labor%20pract%20Mehanika.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\20_f4a644111314.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"лабораторний практикум\"",
+    "title": "Фізика_Лабораторний практикум.pdf",
+    "url": "https://lib.lntu.edu.ua/sites/default/files/2021-01/%D0%A4%D1%96%D0%B7%D0%B8%D0%BA%D0%B0_%D0%9B%D0%B0%D0%B1%D0%BE%D1%80%D0%B0%D1%82%D0%BE%D1%80%D0%BD%D0%B8%D0%B9%20%D0%BF%D1%80%D0%B0%D0%BA%D1%82%D0%B8%D0%BA%D1%83%D0%BC.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\21_24c0c3fcee60.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"лабораторний практикум\"",
+    "title": "1 Надобко, В. Б. Лабораторний практикум у студентів ...",
+    "url": "https://reposit.nupp.edu.ua/files/original/16/4796/ff7e0ac918654b5bc156b36fe59ef6d44f40b28f.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\22_377376f37508.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"лабораторні роботи\"",
+    "title": "Муляк О.І., Карп'як В.В., Обушак М.Д.Лабораторні роботи ...",
+    "url": "https://chem.lnu.edu.ua/wp-content/uploads/2016/10/Muliak-O.I.-Karpiak-V.V.-Obushak-M.D.Laboratorni-roboty-i-zadachi-z-orhanichnoi-khimii.-Lviv-2019.-198-s.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\23_9a9d52d6e117.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"лабораторна робота\"",
+    "title": "Лабораторна робота №1",
+    "url": "https://udhtu.edu.ua/wp-content/uploads/2017/08/58f4b154318391d9fdc29f5682364c41.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\24_3d196d02d87a.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"лабораторні роботи\"",
+    "title": "Лабораторна робота №3",
+    "url": "https://elartu.tntu.edu.ua/bitstream/lib/32818/1/%D0%9B%D0%B0%D0%B1%D0%BE%D1%80%D0%B0%D1%82%D0%BE%D1%80%D0%BD%D1%96%20%D1%80%D0%BE%D0%B1%D0%BE%D1%82%D0%B8%2B%2B%2B__%D0%94%D0%B5%D0%B4%D1%96%D0%B2_Palaniza.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\25_16c0ae4c9562.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"лабораторні роботи\"",
+    "title": "ЛАБОРАТОРНІ РОБОТИ",
+    "url": "https://elibrary.kdpu.edu.ua/bitstream/0564/243/1/%D0%9B%D0%B0%D0%B1_%D0%BC%D0%BE%D0%BB_min.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\26_056386597fb5.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"лабораторні роботи\"",
+    "title": "Лабораторні роботи з курсу загальної фізики для ...",
+    "url": "https://elibrary.kdpu.edu.ua/bitstream/0564/244/1/%D0%9B%D0%B0%D0%B1_%D0%86%D0%9F%D0%A4_%D1%87_1.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\27_8c11c2cb2217.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"лабораторні роботи\"",
+    "title": "Лабораторні роботи ТЕХНІКА БЕЗПЕКИ ПІД ЧАС ...",
+    "url": "https://chem.teset.sumdu.edu.ua/images/Dychenko/oil_and_gas/LabJuor_oil_gas.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\28_3643ef3f276d.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"лабораторні роботи\"",
+    "title": "Лабораторна робота № 1",
+    "url": "http://biochem.ontu.edu.ua/pdf/rp_bachelor_mg_bread_workbook_special_181.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\29_918db36a9933.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"лабораторні роботи\"",
+    "title": "ЛАБОРАТОРНІ РОБОТИ для студентів природничих ...",
+    "url": "https://elibrary.kdpu.edu.ua/bitstream/0564/245/1/%D0%9B%D0%B0%D0%B1_%D0%91%D0%9F.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\30_e7acf251bd99.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"лабораторна робота\"",
+    "title": "ЛАБОРАТОРНА РОБОТА",
+    "url": "http://elibrary.donnuet.edu.ua/1269/1/Teoretychni%20osnovy%20kharchovykh%20tekhnolohii.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\31_95968944023e.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"лабораторна робота\"",
+    "title": "ЛАБОРАТОРНИЙ ПРАКТИКУМ З АНАЛІТИЧНОЇ ХІМІЇ",
+    "url": "https://www.library.sspu.edu.ua/wp-content/uploads/2018/04/14.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\32_4ae672e412c1.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"лабораторна робота\"",
+    "title": "Лабораторна робота № 2",
+    "url": "https://ep3.nuwm.edu.ua/20756/1/02-01-484%D0%9C.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\33_5dd62efc262d.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"лабораторна робота\"",
+    "title": "Лабораторна робота 1",
+    "url": "https://ekt.elit.sumdu.edu.ua/wp-content/uploads/2023/09/Metod_vkazivky_z_vykon_laborat_robit_MPT.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\34_f3cd6e17fee9.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"лабораторна робота\"",
+    "title": "Лабораторна робота №1",
+    "url": "https://maees.khmnu.edu.ua/Statti-patenti/%D0%A1%D0%A2%D0%90%D0%A2%D0%A2%D0%86,%20%D0%9F%D0%90%D0%A2%D0%95%D0%9D%D0%A2%D0%98%20%D0%93%D0%9E%D0%A0%D0%AF%D0%A9%D0%95%D0%9D%D0%9A%D0%9E/%D0%95%D0%90_%D0%9B%D0%B0%D0%B1%D0%BE%D1%80%D0%B0%D1%82%D0%BE%D1%80%D0%BD%D1%96_%D1%80%D0%BE%D0%B1%D0%BE%D1%82%D0%B82019.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\35_33b7154b6bb8.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"лабораторна робота\"",
+    "title": "Лабораторна робота №1",
+    "url": "https://sci.ldubgd.edu.ua/bitstream/123456789/1837/1/%D0%BB%D0%B0%D0%B1%D0%BE%D1%80%D0%B0%D1%82%D0%BE%D1%80%D0%BD%D1%96%28%D0%BF%D1%80%D0%B0%D0%B2%D0%BA%D0%B0%29.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\36_57ddb2804412.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"практичні завдання\"",
+    "title": "Король Л.П. Практичні завдання з української мови ...",
+    "url": "https://tk.znu.edu.ua/nmk/Ukr_mova_prof_prakt.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\38_ffed0fb79271.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"практичні завдання\"",
+    "title": "Чисельні методи» Завдання №1 (10 балів) Про",
+    "url": "https://ami.lnu.edu.ua/wp-content/uploads/2016/05/NMLab-1.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\39_50a93db51371.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"практичні завдання\"",
+    "title": "ситуаційних задач. Практичні завдання забезпечуються ...",
+    "url": "https://dspace.zsmu.edu.ua/bitstream/123456789/3908/1/15_lyst_TEMPUS_%D0%97%D0%94%D0%9C%D0%A3_193-195.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\40_af988b8d5226.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"практичні завдання\"",
+    "title": "ПРАКТИЧНІ ЗАВДАННЯ ДО КУРСУ «МЕТОДИКА ОРГАНІЗАЦІЇ ...",
+    "url": "https://kogpa.edu.ua/images/main_dir/kaf_ist/monograph_posibn/Hryts_MOPR.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\41_dd8418f4710f.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"практичні завдання\"",
+    "title": "Тестові та практичні завдання з української мови",
+    "url": "https://elartu.tntu.edu.ua/bitstream/lib/26895/1/2018_%D0%A2%D0%B5%D1%81%D1%82%D0%BE%D0%B2%D1%96%20%D1%82%D0%B0%20%D0%BF%D1%80%D0%B0%D0%BA%D1%82%D0%B8%D1%87%D0%BD%D1%96%20%D0%B7%D0%B0%D0%B2%D0%B4%D0%B0%D0%BD%D0%BD%D1%8F%20%D0%B4%D0%BB%D1%8F%20%D0%B4%D0%B5%D1%80%D0%B6%D1%81%D0%BB%D1%83%D0%B6%D0%B1%D0%BE%D0%B2%D1%86%D1%96%D0%B2.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\42_7b336900eeb5.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"практичні завдання\"",
+    "title": "Практичні завдання до уроку",
+    "url": "https://online.hneu.edu.ua/pluginfile.php/41575/mod_resource/content/2/%D0%A2%D1%80%D0%B5%D0%BD%D1%83%D0%B2%D0%B0%D0%BB%D1%8C%D0%BD%D1%96%20%D0%B2%D0%BF%D1%80%D0%B0%D0%B2%D0%B8%20%E2%84%96%204.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\43_e67bc6dca3b4.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"практикум\" \"українська мова\"",
+    "title": "ПРАКТИКУМ З УКРАЇНСЬКОЇ МОВИ ЗА ПРОФЕСІЙНИМ ...",
+    "url": "http://dspace.msu.edu.ua:8080/bitstream/123456789/4644/1/Workshop_%20on_%20the_%20Ukrainian_%20language_%20for_%20professional_%20orientation_%20a_%20textbook.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\44_dbc8c6af869f.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"практичні завдання\"",
+    "title": "Практичні завдання до уроку",
+    "url": "https://online.hneu.edu.ua/pluginfile.php/41577/mod_resource/content/2/%D0%A2%D1%80%D0%B5%D0%BD%D1%83%D0%B2%D0%B0%D0%BB%D1%8C%D0%BD%D1%96%20%D0%B2%D0%BF%D1%80%D0%B0%D0%B2%D0%B8%20%E2%84%96%206.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\45_6eb8f9aeefac.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"практичні роботи\"",
+    "title": "Практична робота № 1",
+    "url": "https://dspace.mnau.edu.ua/jspui/bitstream/123456789/2129/1/Borian_L.OTP_Prakt.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\46_942ad4e0296a.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"практичні роботи\"",
+    "title": "Шановні студенти! Вам необхідно виконати практичні роботи, ...",
+    "url": "https://college.mphu.edu.ua/upload/distance%20learning-2/MS/1/INFORMATUKA_1MS.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\47_84aa7658fb1c.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"практичні роботи\"",
+    "title": "Практичні роботи з використанням програми Advanced ...",
+    "url": "https://www.soippo.edu.ua/images/%D0%9C%D0%BE%D0%B1%D1%96%D0%BB%D1%8C%D0%BD%D0%B0_%D1%81%D1%82%D0%BE%D1%80%D1%96%D0%BD%D0%BA%D0%B0/%D0%92%D1%87%D0%B8%D1%82%D0%B5%D0%BB%D1%8E_%D0%BC%D0%B0%D1%82%D0%B5%D0%BC%D0%B0%D1%82%D0%B8%D0%BA%D0%B8/%D0%97%D1%80%D1%83%D1%87%D0%BD%D0%B5%20%D0%BD%D0%B0%D0%B2%D1%87%D0%B0%D0%BD%D0%BD%D1%8F/%D0%9F%D1%80%D0%B0%D0%BA%D1%82%D0%B8%D1%87%D0%BD%D1%96%20%D1%80%D0%BE%D0%B1%D0%BE%D1%82%D0%B8%20%D0%B7%20%D0%B2%D0%B8%D0%BA%D0%BE%D1%80%D0%B8%D1%81%D1%82%D0%B0%D0%BD%D0%BD%D1%8F%D0%BC%20%D0%BF%D1%80%D0%BE%D0%B3%D1%80%D0%B0%D0%BC%D0%B8%20Advanced%20Grapher.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\48_6492038ca3d7.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"практичні роботи\"",
+    "title": "РЗіА в ЕС ПРАКТИЧНІ РОБОТИ СЕЕ, ЕЕ",
+    "url": "https://www.tsatu.edu.ua/ea/wp-content/uploads/sites/27/pr-02-1.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\49_2e4679ad0628.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"практичні роботи\" \"хімія\"",
+    "title": "Практична робота № 1",
+    "url": "https://geography.lnu.edu.ua/wp-content/uploads/2024/07/Labinska_Metodychka-SuspilnaHeohr-Ukr_2024.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\50_6aa4e4bab23f.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"практичні роботи\"",
+    "title": "РЗіА в ЕС ПРАКТИЧНІ РОБОТИ СЕЕ, ЕЕ ПРАКТИЧНА ...",
+    "url": "https://www.tsatu.edu.ua/ea/wp-content/uploads/sites/27/pr-05.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\51_aa70315bea6d.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"практичні роботи\"",
+    "title": "РЗіА в ЕС ПРАКТИЧНІ РОБОТИ Енергетиний факультет",
+    "url": "https://www.tsatu.edu.ua/ea/wp-content/uploads/sites/27/pr-vsja-rza.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\52_7c4e1f4f8a7f.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"семінарські завдання\" \"право\"",
+    "title": "види та форми семінарських занять",
+    "url": "https://snau.edu.ua/wp-content/uploads/2023/10/vidi_ta_formi_semin_zanyat.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\53_aa25f93855de.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"семінарські завдання\" \"право\"",
+    "title": "семінарське заняття як одна з форм навчання української ...",
+    "url": "https://www.philol.vernadskyjournals.in.ua/journals/2020/1_2020/part_1/6.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\54_3826e5530967.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"семінарські заняття\"",
+    "title": "ПЛАНИ СЕМІНАРСЬКИХ ЗАНЯТЬ І МЕТОДИЧНІ ...",
+    "url": "https://financial.lnu.edu.ua/wp-content/uploads/2015/10/%D0%9F%D0%BB%D0%B0%D0%BD%D0%B8-%D1%81%D0%B5%D0%BC%D1%96%D0%BD%D0%B0%D1%80%D1%81%D1%8C%D0%BA%D0%B8%D1%85-%D0%95%D0%A4%D0%A1%D0%9F.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\55_74e754c5874b.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"семінарські заняття\" \"історія\"",
+    "title": "Плани практичних і семінарських занять з навчальної ...",
+    "url": "https://pedagogy.lnu.edu.ua/wp-content/uploads/2017/09/%D0%A1%D0%B5%D0%BC%D1%96%D0%BD%D0%B0%D1%80%D1%81%D1%8C%D0%BA%D1%96-%D0%B7%D0%B0%D0%BD%D1%8F%D1%82%D1%82%D1%8F-_%D0%97%D0%B0%D0%B3.-%D0%BF%D0%B5%D0%B4%D0%B0%D0%B3%D0%BE%D0%B3%D1%96%D0%BA%D0%B0.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\56_02fc9995bd30.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"семінарські заняття\"",
+    "title": "ПЛАНИ СЕМІНАРСЬКИХ ЗАНЯТЬ І МЕТОДИЧНІ ...",
+    "url": "https://financial.lnu.edu.ua/wp-content/uploads/2015/10/%D0%A1%D0%97.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\57_9a3926a11db3.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"семінарські заняття\"",
+    "title": "087-98 МЕТОДИЧНІ ВКАЗІВКИ до семінарських занять і ...",
+    "url": "https://ep3.nuwm.edu.ua/813/1/087-98.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\58_ed826689a4ee.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"семінарські заняття\"",
+    "title": "ПЛАНИ СЕМІНАРСЬКИХ ЗАНЯТЬ І МЕТОДИЧНІ ...",
+    "url": "https://financial.lnu.edu.ua/wp-content/uploads/2020/09/seminar_menedzhment_2020.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\59_04e193682b83.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"семінарські заняття\" \"історія\"",
+    "title": "Методичні рекомендації до виконання практичних ...",
+    "url": "https://repository.hneu.edu.ua/bitstream/123456789/6657/1/%D0%9C%D0%B5%D1%82%D0%BE%D0%B4%D0%B8%D1%87%D0%BD%D1%96%20%D1%80%D0%B5%D0%BA%D0%BE%D0%BC%D0%B5%D0%BD.%20%D0%B4%D0%BE%20%D0%B2%D0%B8%D0%BA%D0%BE%D0%BD%D0%B0%D0%BD%D0%BD%D1%8F%20%D0%BF%D1%80%D0%B0%D0%BA%D1%82.%20%D0%B7%D0%B0%D0%B2%D0%B4%D0%B0%D0%BD%D1%8C%20%D1%96%20%D0%BF%D0%BB%D0%B0%D0%BD%D0%B8%20%D1%81%D0%B5%D0%BC%D1%96%D0%BD%D0%B0%D1%80%D1%81%D1%8C%D0%BA%D0%B8%D1%85%20%D0%B7%D0%B0%D0%BD%D1%8F%D1%82%D1%8C%20%D0%B7%20%D0%BD%D0%B0%D0%B2%D1%87.%20%D0%B4%D0%B8%D1%81%D1%86.%20PUBLIC%20M.doc.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\60_6e714b51ee58.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"завдання для самостійної роботи\"",
+    "title": "ЗАВДАННЯ ДЛЯ САМОСТІЙНОЇ РОБОТИ СТУДЕНТА І ...",
+    "url": "https://financial.lnu.edu.ua/wp-content/uploads/2015/12/PSEP_samostiyna-robota_2020.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\61_57b5bf11661e.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"завдання для самостійної роботи\"",
+    "title": "ЗАВДАННЯ ДЛЯ САМОСТІЙНОЇ РОБОТИ СТУДЕНТА І ...",
+    "url": "https://financial.lnu.edu.ua/wp-content/uploads/2015/10/SRS-Startap-vid-stvorennia-do-realizatsii.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\62_27d0a61f506b.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"завдання для самостійної роботи\"",
+    "title": "ЗАВДАННЯ ДЛЯ САМОСТІЙНОЇ РОБОТИ СТУДЕНТА І ...",
+    "url": "https://financial.lnu.edu.ua/wp-content/uploads/2015/10/%D0%A1%D0%A0%D0%A1-%D0%AF%D1%81%D1%96%D0%BD%D0%BE%D0%B2%D1%81%D1%8C%D0%BA%D0%B0.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\63_0cd1dd7569de.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"завдання для самостійної роботи\"",
+    "title": "ЗАВДАННЯ ДЛЯ САМОСТІЙНОЇ РОБОТИ СТУДЕНТА І ...",
+    "url": "https://financial.lnu.edu.ua/wp-content/uploads/2015/10/SRS-Fin-20.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\64_6b89e529e38a.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"завдання для самостійної роботи\"",
+    "title": "ЗАВДАННЯ ДЛЯ САМОСТІЙНОЇ РОБОТИ СТУДЕНТА І ...",
+    "url": "https://financial.lnu.edu.ua/wp-content/uploads/2018/09/%D0%86%D0%9C_%D1%82%D0%B0_%D0%A0%D0%91_%D1%81%D0%B0%D0%BC%D0%BE%D1%81%D1%82%D1%96%D0%B9%D0%BD%D0%B0-%D1%80%D0%BE%D0%B1%D0%BE%D1%82%D0%B0-converted.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\65_1811a913c284.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"завдання для самостійної роботи\"",
+    "title": "ЗАВДАННЯ ДЛЯ САМОСТІЙНОЇ РОБОТИ СТУДЕНТА І ...",
+    "url": "https://financial.lnu.edu.ua/wp-content/uploads/2017/09/%D0%9F%D0%86%D0%A1_%D1%81%D0%B0%D0%BC%D0%BE%D1%81%D1%82%D1%96%D0%B9%D0%BD%D0%B0-%D1%80%D0%BE%D0%B1%D0%BE%D1%82%D0%B0.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\66_bcc86fbe1791.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"завдання для самостійної роботи\"",
+    "title": "ЗАВДАННЯ ДЛЯ САМОСТІЙНОЇ РОБОТИ СТУДЕНТА І ...",
+    "url": "https://financial.lnu.edu.ua/wp-content/uploads/2017/09/%D0%97%D0%B0%D0%B2%D0%B4%D0%B0%D0%BD%D0%BD%D1%8F-%D0%B4%D0%BB%D1%8F-%D1%81%D0%B0%D0%BC%D0%BE%D1%81%D1%82%D1%96%D0%B9%D0%BD%D0%BE%D1%97-%D1%80%D0%BE%D0%B1%D0%BE%D1%82%D0%B8-%D0%B7%D0%B0%D0%BE%D1%87.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\67_8173f4b9a99d.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"завдання для самостійної роботи\"",
+    "title": "завдання для самостійної роботи здобувачів вищої",
+    "url": "https://atl.nuph.edu.ua/wp-content/uploads/2023/11/pitannja-dlja-kontrolju-samostijnoi-roboti-zvo-z-atl.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\68_f5265a543490.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"контрольні питання\"",
+    "title": "Контрольні питання для підготовки до іспиту",
+    "url": "http://ftplec.nlu.edu.ua/%D0%9A%D0%B0%D1%84%D0%B5%D0%B4%D1%80%D0%B0%20%D1%84%D1%96%D0%BB%D0%BE%D1%81%D0%BE%D1%84%D1%96%D1%97/1.%20%D0%9F%D0%B5%D1%80%D1%88%D0%B8%D0%B9%20(%D0%B1%D0%B0%D0%BA%D0%B0%D0%BB%D0%B0%D0%B2%D1%80%D1%81%D1%8C%D0%BA%D0%B8%D0%B9)%20%D1%80%D1%96%D0%B2%D0%B5%D0%BD%D1%8C%20%D0%9E%D0%9F%D0%9F%20%D0%9F%D1%80%D0%B0%D0%B2%D0%BE/%D0%9E%D0%9A%20%D0%9E%D0%B1%D0%BE%D0%B2%E2%80%99%D1%8F%D0%B7%D0%BA%D0%BE%D0%B2%D0%B8%D0%B9%20%D0%BA%D0%BE%D0%BC%D0%BF%D0%BE%D0%BD%D0%B5%D0%BD%D1%82/%D0%A4%D1%96%D0%BB%D0%BE%D1%81%D0%BE%D1%84%D1%96%D1%8F/%D0%9A%D0%BE%D0%BD%D1%82%D1%80%D0%BE%D0%BB%D1%8C%D0%BD%D1%96%20%D0%BF%D0%B8%D1%82%D0%B0%D0%BD%D0%BD%D1%8F%20%D0%B4%D0%BB%D1%8F%20%D0%BF%D1%96%D0%B4%D0%B3%D0%BE%D1%82%D0%BE%D0%B2%D0%BA%D0%B8%20%D0%B4%D0%BE%20%D1%96%D1%81%D0%BF%D0%B8%D1%82%D1%83.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\69_e0676a3b5810.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"контрольні питання\"",
+    "title": "Контрольні питання 1. Суть концепції контролінгу. 2. ...",
+    "url": "https://economica.nuph.edu.ua/wp-content/uploads/2020/12/controling_pmk.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\70_9adf128e4cd8.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"контрольні питання\"",
+    "title": "Контрольні питання самостійної роботи з дисципліни",
+    "url": "https://cnc.nuph.edu.ua/wp-content/uploads/2020/03/%D0%9F%D0%9C%D0%9A-%D0%A1%D0%A0-%D1%84%D0%B8%D1%82%D0%BE.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\71_1521d9abbc9c.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"контрольні питання\"",
+    "title": "Контрольні питання до підсумкового модульного ...",
+    "url": "https://atl.nuph.edu.ua/wp-content/uploads/2021/11/perelik-teoretichnih-pitan-do-pmk-z-vp-atl.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\72_ba5091c30b17.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"контрольні питання\"",
+    "title": "Контрольні питання",
+    "url": "https://www.tsatu.edu.ua/fvs/wp-content/uploads/sites/12/kontrolni-pytannja-12.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\73_f2ca4dc6dfaf.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"контрольні питання\"",
+    "title": "Контрольні питання для підготовки до заліку",
+    "url": "http://ftplec.nlu.edu.ua/%D0%9A%D0%B0%D1%84%D0%B5%D0%B4%D1%80%D0%B0%20%D1%84%D1%96%D0%BB%D0%BE%D1%81%D0%BE%D1%84%D1%96%D1%97/1.%20%D0%9F%D0%B5%D1%80%D1%88%D0%B8%D0%B9%20(%D0%B1%D0%B0%D0%BA%D0%B0%D0%BB%D0%B0%D0%B2%D1%80%D1%81%D1%8C%D0%BA%D0%B8%D0%B9)%20%D1%80%D1%96%D0%B2%D0%B5%D0%BD%D1%8C%20%D0%9E%D0%9F%D0%9F%20%D0%9F%D1%80%D0%B0%D0%B2%D0%BE/%D0%9E%D0%9A%20%D0%9E%D0%B1%D0%BE%D0%B2%E2%80%99%D1%8F%D0%B7%D0%BA%D0%BE%D0%B2%D0%B8%D0%B9%20%D0%BA%D0%BE%D0%BC%D0%BF%D0%BE%D0%BD%D0%B5%D0%BD%D1%82/%D0%A4%D1%96%D0%BB%D0%BE%D1%81%D0%BE%D1%84%D1%96%D1%8F/%D0%9A%D0%BE%D0%BD%D1%82%D1%80%D0%BE%D0%BB%D1%8C%D0%BD%D1%96%20%D0%BF%D0%B8%D1%82%D0%B0%D0%BD%D0%BD%D1%8F%20%D0%B4%D0%BB%D1%8F%20%D0%BF%D1%96%D0%B4%D0%B3%D0%BE%D1%82%D0%BE%D0%B2%D0%BA%D0%B8%20%D0%B4%D0%BE%20%D0%B7%D0%B0%D0%BB%D1%96%D0%BA%D1%83.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\74_d18eab28bae5.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"контрольні питання\"",
+    "title": "Контрольні питання для підготовки до заліку",
+    "url": "http://ftplec.nlu.edu.ua/%D0%9A%D0%B0%D1%84%D0%B5%D0%B4%D1%80%D0%B0%20%D1%84%D1%96%D0%BB%D0%BE%D1%81%D0%BE%D1%84%D1%96%D1%97/1.%20%D0%9F%D0%B5%D1%80%D1%88%D0%B8%D0%B9%20(%D0%B1%D0%B0%D0%BA%D0%B0%D0%BB%D0%B0%D0%B2%D1%80%D1%81%D1%8C%D0%BA%D0%B8%D0%B9)%20%D1%80%D1%96%D0%B2%D0%B5%D0%BD%D1%8C%20%D0%9E%D0%9F%D0%9F%20%D0%9C%D1%96%D0%B6%D0%BD%D0%B0%D1%80%D0%BE%D0%B4%D0%BD%D1%96%20%D0%B2%D1%96%D0%B4%D0%BD%D0%BE%D1%81%D0%B8%D0%BD%D0%B8/%D0%9E%D0%9A%20%D0%9E%D0%B1%D0%BE%D0%B2%E2%80%99%D1%8F%D0%B7%D0%BA%D0%BE%D0%B2%D0%B8%D0%B9%20%D0%BA%D0%BE%D0%BC%D0%BF%D0%BE%D0%BD%D0%B5%D0%BD%D1%82/%D0%9A%D1%80%D0%B8%D1%82%D0%B8%D1%87%D0%BD%D0%B5%20%D0%BC%D0%B8%D1%81%D0%BB%D0%B5%D0%BD%D0%BD%D1%8F/%D0%9A%D0%BE%D0%BD%D1%82%D1%80%D0%BE%D0%BB%D1%8C%D0%BD%D1%96_%D0%BF%D0%B8%D1%82%D0%B0%D0%BD%D0%BD%D1%8F_%D0%B4%D0%BB%D1%8F_%D0%BF%D1%96%D0%B4%D0%B3%D0%BE%D1%82%D0%BE%D0%B2%D0%BA%D0%B8_%D0%B4%D0%BE_%D0%B7%D0%B0%D0%BB%D1%96%D0%BA%D1%83_2025.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\75_4cb5351dae67.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"методичні рекомендації\"",
+    "title": "2.3.1. МЕТОДИЧНІ РЕКОМЕНДАЦІЇ",
+    "url": "https://nauka.udpu.edu.ua/wp-content/uploads/2013/03/2.3.1.-METODYChNI-REKOMENDATsIJi.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\76_135415b84cd3.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"методичні рекомендації\"",
+    "title": "МЕТОДИЧНІ РЕКОМЕНДАЦІЇ",
+    "url": "https://lnup.edu.ua/attachments/article/400/%D0%9C%D0%B5%D1%82%D0%BE%D0%B4%D0%B8%D1%87%D0%BD%D1%96%20%D1%80%D0%B5%D0%BA%D0%BE%D0%BC%D0%B5%D0%BD%D0%B4%D0%B0%D1%86%D1%96%D1%97(%20%D0%B2%D1%80%D0%B5%D0%B3%D1%83%D0%BB%D1%8E%D0%B2%D0%B0%D0%BD%D0%BD%D1%8F%20%D0%BA%D0%BE%D0%BD%D1%84%D0%BB%D1%96%D0%BA%D1%82%D1%83%20%D1%96%D0%BD%D1%82%D0%B5%D1%80%D0%B5%D1%81%D1%96%D0%B2)%2021.10.2022%20%E2%84%9613.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\77_fba6fca712ec.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"методичні рекомендації\"",
+    "title": "МЕТОДИЧНІ РЕКОМЕНДАЦІЇ",
+    "url": "https://odaba.edu.ua/upload/files/METODICHNI_REKOMENDATSIYi.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\78_b3b303ea95af.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"методичні рекомендації\"",
+    "title": "Розроблення освітніх програм. Методичні рекомендації ...",
+    "url": "https://uu.edu.ua/upload/universitet/normativni_documenti/Osnovni_oficiyni_doc_UU/Navch_metod_d-t/MR_schodo_rozrobki_OP_16.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\80_385a4673a8a4.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"методичні рекомендації\"",
+    "title": "Методичні рекомендації",
+    "url": "https://soippo.edu.ua/images/%D0%97%D0%9D%D0%9E/2024/%D1%80%D0%B5%D0%BA%D0%BE%D0%BC%D0%B5%D0%BD%D0%B4%D0%B0%D1%86%D1%96%D1%97.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\81_51aa1757facf.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"методичні рекомендації\"",
+    "title": "МЕТОДИЧНІ РЕКОМЕНДАЦІЇ",
+    "url": "http://dspace.pdpu.edu.ua/bitstream/123456789/15957/1/Metod%20recom.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\82_c958e01afdb6.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"методичні рекомендації\"",
+    "title": "МЕТОДИЧНІ РЕКОМЕНДАЦІЇ ДЛЯ ВИВЧЕННЯ ...",
+    "url": "http://elibrary.donnuet.edu.ua/2587/1/MR_Detali_maschin.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\83_f2a749547391.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"практикум\"",
+    "title": "вимоги до структури та обсягу практикумів",
+    "url": "https://pdatu.edu.ua/images/public-info/redakcyina-diyalnist/rd-2017-20.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\84_ec806b3d5ad7.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"практикум\"",
+    "title": "ПРАКТИКУМ З ПЕДАГОГІКИ",
+    "url": "https://eprints.zu.edu.ua/7574/1/Practic_pos.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\85_02836b72ffc4.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"практикум\"",
+    "title": "ПРАКТИКУМ",
+    "url": "http://dspace.pdpu.edu.ua/bitstream/123456789/12656/3/Prokopenko.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\86_85aa8d7e1b24.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"практикум\"",
+    "title": "ПРАКТИКУМ",
+    "url": "https://library.udpu.edu.ua/library_files/407117.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\87_a02ef921fe17.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"практикум\"",
+    "title": "ПРАКТИКУМ",
+    "url": "https://philology.lnu.edu.ua/wp-content/uploads/2015/02/Mykytiuk-V.-Praktykum-z-metodyky-vykladannia-ukrainskoi-literatury-navch.-posibnyk.-Lviv-LNU-imeni-Ivana-Franka-2011.-186-s.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\89_b9b219dfee5f.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"практикум\"",
+    "title": "НАУКОВИЙ ПРАКТИКУМ ЗІ СПЕЦІАЛЬНОСТІ",
+    "url": "https://journ.sumdu.edu.ua/old/wp-content/uploads/2014/12/praktikum.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\90_b1011bf3e6ac.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"лабораторні роботи\" \"програмування\"",
+    "title": "плани лабораторних занять і методичні рекомендації ...",
+    "url": "https://financial.lnu.edu.ua/wp-content/uploads/2018/09/%D0%95%D0%9F%D0%9F_%D0%BF%D0%BB%D0%B0%D0%BD%D0%B8-%D0%BB%D0%B0%D0%B1%D0%BE%D1%80%D0%B0%D1%82%D0%BE%D1%80%D0%BD%D0%B8%D1%85-%D0%B7%D0%B0%D0%BD%D1%8F%D1%82%D1%8C.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\91_f6a224cac73d.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"лабораторні роботи\" \"програмування\"",
+    "title": "ЛАБОРАТОРНИЙ ПРАКТИКУМ З ПРОГРАМУВАННЯ",
+    "url": "https://ep3.nuwm.edu.ua/14018/1/%D0%9B%D0%90%D0%91%D0%9E%D0%A0%D0%90%D0%A2%D0%9E%D0%A0%D0%9D%D0%98%D0%99%20%D0%9F%D0%A0%D0%90%D0%9A%D0%A2%D0%98%D0%9A%D0%A3%D0%9C.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\92_05aa6e5a1def.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"лабораторні роботи\" \"бази даних\"",
+    "title": "ЛАБОРАТОРНІ РОБОТИ",
+    "url": "https://lib-repo.pnu.edu.ua/bitstream/123456789/18573/1/%D0%9C%D0%B5%D1%82%D0%BE%D0%B4%D0%B8%D1%87%D0%BA%D0%B0%20%D0%A1%D0%90%D0%9F%D0%A0%20%D0%92%D0%86%D0%A1.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\93_a3a6069edff0.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"лабораторні роботи\" \"програмування\"",
+    "title": "Лабораторна робота 8",
+    "url": "https://ep3.nuwm.edu.ua/23285/1/04-03-334M.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\94_a94238422907.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"лабораторні роботи\" \"програмування\"",
+    "title": "Індивідуальні завдання з математичному програмування",
+    "url": "https://dspace.mnau.edu.ua/jspui/bitstream/123456789/9969/3/matem-program-bakalavr-metod.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\95_c266a501188a.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"лабораторні роботи\" \"програмування\"",
+    "title": "Міхеєв В.В. Лабораторні роботи з методики навчання ...",
+    "url": "https://eprints.zu.edu.ua/16648/1/L_roboty_Inform_2.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\96_a2255a8d45d0.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"практичні завдання\" \"економіка\"",
+    "title": "Практичні завдання та методичні рекомендації до їх ...",
+    "url": "https://repository.hneu.edu.ua/bitstream/123456789/3464/1/%D0%9F%D1%80%D0%B0%D0%BA%D1%82%D0%B8%D1%87%D0%BD%D1%96%20%D0%B7%D0%B0%D0%B2%D0%B4%D0%B0%D0%BD%D0%BD%D1%8F%20%D1%82%D0%B0%20%D0%BC%D0%B5%D1%82%D0%BE%D0%B4.%20%D1%80%D0%B5%D0%BA%D0%BE%D0%BC.%20%D0%B4%D0%BE%20%D1%97%D1%85%20%D0%B2%D0%B8%D0%BA%D0%BE%D0%BD%D0%B0%D0%BD%D0%BD%D1%8F%20%D0%B7%20%D0%BD%D0%B0%D0%B2%D1%87.%20%D0%B4%D0%B8%D1%81%D1%86.--%D0%A0%D0%B5%D0%B3%D1%96%D0%BE%D0%BD%D0%B0%D0%BB%D1%8C%D0%BD%D0%B0%20%D0%B5%D0%BA%D0%BE%D0%BD%D0%BE%D0%BC%D1%96%D0%BA%D0%B0-%20%D0%B4%D0%BB%D1%8F%20%D1%81%D1%82%D1%83%D0%B4.%20%D0%BD%D0%B0%D0%BF%D1%80%D1%8F%D0%BC%D1%83%20%D0%BF%D1%96%D0%B4%D0%B3%D0%BE%D1%82.%206.030508%20-%D0%A4%D1%96%D0%BD%D0%B0%D0%BD%D1%81%D0%B8%20%D1%96%20%D0%BA%D1%80%D0%B5%D0%B4%D0%B8%D1%82-%20%D1%83%D1%81%D1%96%D1%85%20%D1%84%D0%BE%D1%80%D0%BC%20%D0%BD%D0%B0%D0%B2%D1%87.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\97_2a71e334e761.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"практичні завдання\" \"економіка\"",
+    "title": "МЕТОДИЧНІ ВКАЗІВКИ ТА ЗАВДАННЯ до проведення ...",
+    "url": "https://epvm.vntu.edu.ua/wp-content/uploads/2018/01/econ_pydpr_prakt_cpc_balzan.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\98_7e0bea4463e8.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"практичні завдання\" \"економіка\"",
+    "title": "мікроекономіка - практикум",
+    "url": "http://files.znu.edu.ua/files/Bibliobooks/Inshi81/0061278.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\99_a277ebac973f.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"практичні завдання\" \"економіка\"",
+    "title": "Тестові та практичні завдання з навчальної дисципліни",
+    "url": "https://repository.hneu.edu.ua/jspui/bitstream/123456789/3466/1/%D0%A2%D0%B5%D1%81%D1%82%D0%BE%D0%B2%D1%96%20%D1%82%D0%B0%20%D0%BF%D1%80%D0%B0%D0%BA%D1%82%D0%B8%D1%87%D0%BD%D1%96%20%D0%B7%D0%B0%D0%B2%D0%B4%D0%B0%D0%BD%D0%BD%D1%8F%20%D0%B7%20%D0%BD%D0%B0%D0%B2%D1%87%D1%8E%20%D0%B4%D0%B8%D1%81%D1%86.%20-%D0%93%D1%80%D0%BE%D1%88%D1%96%20%D1%82%D0%B0%20%D0%BA%D1%80%D0%B5%D0%B4%D0%B8%D1%82-%20%D0%B4%D0%BB%D1%8F%20%D1%81%D1%82%D1%83%D0%B4.%20%D0%BD%D0%B0%D0%BF%D1%80%D1%8F%D0%BC%D1%83%20%D0%BF%D1%96%D0%B4%D0%B3%D0%BE%D1%82.%206.030503%20-%D0%9C%D1%96%D0%B6%D0%BD%D0%B0%D1%80%D0%BE%D0%B4%D0%BD%D0%B0%20%D0%B5%D0%BA%D0%BE%D0%BD%D0%BE%D0%BC%D1%96%D0%BA%D0%B0-%20%D0%B2%D1%81%D1%96%D1%85%20%D1%84%D0%BE%D1%80%D0%BC%20%D0%BD%D0%B0%D0%B2%D1%87.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\100_21ebbf6c10ae.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"практичні завдання\" \"економіка\"",
+    "title": "самостійна робота студентів національна економіка",
+    "url": "https://nubip.edu.ua/sites/default/files/u122/%D0%9D%D0%B0%D1%86%D1%96%D0%BE%D0%BD%D0%B0%D0%BB%D1%8C%D0%BD%D0%B0%20%D0%B5%D0%BA%D0%BE%D0%BD%D0%BE%D0%BC%D1%96%D0%BA%D0%B0.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\101_2a8c60a928b7.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"практичні завдання\" \"економіка\"",
+    "title": "Методичні рекомендації до самостійної роботи з ...",
+    "url": "https://repository.hneu.edu.ua/jspui/bitstream/123456789/2100/1/%D0%9C%D0%B5%D1%82%D0%BE%D0%B4.%20%D1%80%D0%B5%D0%BA%D0%BE%D0%BC.%20%D0%B4%D0%BE%20%D1%81%D0%B0%D0%BC%D0%BE%D1%81%D1%82%D1%96%D0%B9%D0%BD%D0%BE%D1%97%20%D1%80%D0%BE%D0%B1%D0%BE%D1%82%D0%B8%20%D0%B7%20%D0%BD%D0%B0%D0%B2%D1%87%D0%B0%D0%BB%D1%8C%D0%BD%D0%BE%D1%97%20%D0%B4%D0%B8%D1%81%D1%86%D0%B8%D0%BF%D0%BB%D1%96%D0%BD%D0%B8%20-%D0%9D%D0%B0%D1%86%D1%96%D0%BE%D0%BD%D0%B0%D0%BB%D1%8C%D0%BD%D0%B0%20%D0%B5%D0%BA%D0%BE%D0%BD%D0%BE%D0%BC%D1%96%D0%BA%D0%B0-%20%D0%B4%D0%BB%D1%8F%20%D1%81%D1%82%D1%83%D0%B4.%20%D0%BD%D0%B0%D0%BF%D1%80%D1%8F%D0%BC%D1%83%20%D0%BF%D1%96%D0%B4%D0%B3%D0%BE%D1%82.%206.030505%20-%D0%A3%D0%BF%D1%80%D0%B0%D0%B2%D0%BB%D1%96%D0%BD%D0%BD%D1%8F%20%D0%BF%D0%B5%D1%80%D1%81%D0%BE%D0%BD%D0%B0%D0%BB%D0%BE%D0%BC%20%D1%82%D0%B0%20%D0%B5%D0%BA%D0%BE%D0%BD%D0%BE%D0%BC%D1%96%D0%BA%D0%B0%20%D0%BF%D1%80%D0%B0%D1%86%D1%96-%20%D0%B2%D1%81%D1%96%D1%85%20%D1%84%D0%BE%D1%80%D0%BC%20%D0%BD%D0%B0%D0%B2%D1%87.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\102_d32dfe5fdd14.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"семінарські заняття\" \"історія\"",
+    "title": "ПЛАНИ СЕМІНАРСЬКИХ ЗАНЯТЬ І МЕТОДИЧНІ ...",
+    "url": "https://financial.lnu.edu.ua/wp-content/uploads/2018/10/Plan_sem_narskykh_zaniat_zaochne.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\103_5e38f219cc25.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"семінарські заняття\" \"історія\"",
+    "title": "ПЛАНИ СЕМІНАРСЬКИХ ЗАНЯТЬ І МЕТОДИЧНІ ...",
+    "url": "https://financial.lnu.edu.ua/wp-content/uploads/2020/02/Seminars_ki_zaniattia_Administratyvnyy_menedzhment_zaochne.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\104_cf2db037a6f3.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"семінарські заняття\" \"історія\"",
+    "title": "ПЛАНИ СЕМІНАРСЬКИХ ЗАНЯТЬ І МЕТОДИЧНІ ...",
+    "url": "https://financial.lnu.edu.ua/wp-content/uploads/2015/10/%D0%A1%D0%B5%D0%BC%D1%96%D0%BD%D0%B0%D1%80%D1%81%D1%8C%D0%BA%D1%96-%D0%B7%D0%B0%D0%BD%D1%8F%D1%82%D1%82%D1%8F-%D0%9E%D1%81%D0%BD%D0%BE%D0%B2%D0%B8-%D0%B2%D0%B5%D0%B4%D0%B5%D0%BD%D0%BD%D1%8F-%D1%81%D1%83%D1%87%D0%B0%D1%81%D0%BD%D0%BE%D0%B3%D0%BE-%D0%B1%D1%96%D0%B7%D0%BD%D0%B5%D1%81%D1%83.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\105_ecaa371e3cb5.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"збірник задач\" \"математика\"",
+    "title": "Збірник задач з алгебри",
+    "url": "https://vm.kname.edu.ua/images/Files/Articles/Bizuk/Bizuk_Zbornik_zadach_algebra_2010.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\106_b61ef2ff8a6f.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"збірник задач\" \"математика\"",
+    "title": "ОЛІМПІАДНІ ЗАДАЧІ: розв'язання задач",
+    "url": "https://ddpu.edu.ua/fmk/publications/manuals/manual_19.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\107_e8629c0161a3.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"збірник задач\" \"математика\"",
+    "title": "практикум із розв'язування задач шкільного курсу ...",
+    "url": "https://eprints.zu.edu.ua/31258/1/%D1%82%D0%B5%D0%BA%D1%81%D1%82%20%D0%B7%D0%B0%D0%B4%D0%B0%D1%87%D1%96%20%28%D0%92%D0%BE%D1%81%D1%81%D1%82%D0%B0%D0%BD%D0%BE%D0%B2%D0%BB%D0%B5%D0%BD%29_20_1.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\108_df62e24dd313.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"збірник задач\" \"математика\"",
+    "title": "збірник задач з генетики людини",
+    "url": "https://elibrary.kubg.edu.ua/15679/1/Zbirnik_zadach_z_genetiki_Timchik_2016.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\109_65020e297b65.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"збірник задач\" \"математика\"",
+    "title": "збірник завдань «практикум розв'язування логічних задач",
+    "url": "http://www.ir.dspu.edu.ua/jspui/bitstream/123456789/3199/1/%D0%9B.%D0%91%D1%96%D0%BB%D0%B5%D1%86%D1%8C%D0%BA%D0%B0.%20%D0%97%D0%B1%D1%96%D1%80%D0%BD%D0%B8%D0%BA%20%D0%B7%D0%B0%D0%B2%D0%B4%D0%B0%D0%BD%D1%8C.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\110_0a9906941928.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"збірник задач\" \"математика\"",
+    "title": "ОЛІМПІАДНІ ЗАДАЧІ",
+    "url": "https://ddpu.edu.ua/fmk/publications/manuals/manual_06.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\111_63f693c8cea3.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"лабораторний практикум\" \"біологія\"",
+    "title": "Методичні рекомендації для проведення лабораторних ...",
+    "url": "https://biology.udau.edu.ua/assets/files/dokumenti/navch.metod.zabezpennya/leontyuk/metodichka-z-klitinnoi-biohimii-dlya-laboratornih.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\112_c3a0bf002165.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"лабораторний практикум\" \"біологія\"",
+    "title": "методика проведення лабораторного практикуму",
+    "url": "https://elibrary.kdpu.edu.ua/bitstream/0564/1856/1/%D0%BF%D1%80%D0%B5%D0%B4%D0%BC%D0%B5%D1%82.%D0%B7%D0%BD%D0%B0%D0%BD%D0%BD%D1%8F.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\113_a249dc464f2e.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"лабораторний практикум\" \"біологія\"",
+    "title": "ЕКОЛОГІЯ РОСЛИН ЛАБОРАТОРНИЙ ПРАКТИКУМ",
+    "url": "https://ep3.nuwm.edu.ua/8001/1/%D0%B5%D0%BA%D0%BE%D0%BB%D0%BE%D0%B3%D1%96%D1%8F%20%D1%80%D0%BE%D1%81%D0%BB%D0%B8%D0%BD.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\114_ce8f1e86dbe5.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"лабораторний практикум\" \"біологія\"",
+    "title": "лабораторні роботи як ефективна форма професійної",
+    "url": "https://eprints.zu.edu.ua/33365/1/%D0%A0%D0%BE%D0%BC%D0%B0%D0%BD%D1%8E%D0%BA%20%D0%A0.%D0%9A._%D0%A8%D0%B5%D0%B2%D1%87%D1%83%D0%BA%20%D0%A1.%D0%AE._%D1%82%D0%B5%D0%B7%D0%B8%20%281%29.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\115_c81ec824f35b.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"лабораторний практикум\" \"біологія\"",
+    "title": "ЗООЛОГІЯ ХОРДОВИХ лабораторний практикум",
+    "url": "https://eprints.zu.edu.ua/43942/1/1.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\116_3424389fb462.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"лабораторний практикум\" \"біологія\"",
+    "title": "Спецпрактикум (експериментальні дослідження)",
+    "url": "https://media.chnu.edu.ua/media/pznpq2in/ppo1.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\117_1e3e6fa9a803.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"лабораторний практикум\" \"біологія\"",
+    "title": "Лабораторний практикум з аналітичної хімії Якісний ...",
+    "url": "https://www.library.sspu.edu.ua/wp-content/uploads/2018/04/2.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\118_4cb64c8e1366.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"практичні роботи\" \"хімія\"",
+    "title": "АКТУАЛЬНІ ЗАДАЧІ ХІМІЇ",
+    "url": "https://eprints.zu.edu.ua/24695/1/konf_h_2017.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\120_0b5c1fe1fe0d.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"семінарські завдання\" \"право\"",
+    "title": "Практичні завдання з навчальної дисципліни",
+    "url": "https://repository.hneu.edu.ua/bitstream/123456789/1101/1/%D0%9F%D1%80%D0%B0%D0%BA%D1%82%D0%B8%D1%87%D0%BD%D1%96%20%D0%B7%D0%B0%D0%B2%D0%B4%D0%B0%D0%BD%D0%BD%D1%8F%20%D0%B7%20%D0%BD%D0%B0%D0%B2%D1%87%D0%B0%D0%BB%D1%8C%D0%BD%D0%BE%D1%97%20%D0%B4%D0%B8%D1%81%D1%86%D0%B8%D0%BF%D0%BB%D1%96%D0%BD%D0%B8%20-%D0%A1%D1%82%D0%B0%D1%82%D0%B8%D1%81%D1%82%D0%B8%D1%87%D0%BD%D1%96%20%D0%BC%D0%BE%D0%B4%D0%B5%D0%BB%D1%96%20%D0%BF%D1%80%D0%B8%D0%B9%D0%BD%D1%8F%D1%82%D1%82%D1%8F%20%D1%80%D1%96%D1%88%D0%B5%D0%BD%D1%8C-%20%D0%B4%D0%BB%D1%8F%20%D1%81%D1%82%D1%83%D0%B4%D0%B5%D0%BD%D1%82%D1%96%D0%B2%20%D1%81%D0%BF%D0%B5%D1%86%D1%96%D0%B0%D0%BB%D1%8C%D0%BD%D0%BE%D1%81%D1%82%D1%96%208.03050601%20-%D0%9F%D1%80%D0%B8%D0%BA%D0%BB%D0%B0%D0%B4%D0%BD%D0%B0%20%D1%81%D1%82%D0%B0%D1%82%D0%B8%D1%81%D1%82%D0%B8%D0%BA%D0%B0-%20%D0%B4%D0%B5%D0%BD%D0%BD%D0%BE%D1%97%20%D1%84%D0%BE%D1%80%D0%BC%D0%B8%20%D0%BD%D0%B0%D0%B2%D1%87%D0%B0%D0%BD%D0%BD%D1%8F.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\122_a19b3ee9d04f.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"семінарські завдання\" \"право\"",
+    "title": "Мета та завдання навчальної дисципліни",
+    "url": "https://www.knuba.edu.ua/wp-content/uploads/2022/10/%D0%A0%D0%9F-%D0%94%D0%92-07.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\123_bec3717e3e95.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"семінарські завдання\" \"право\"",
+    "title": "Мета та завдання навчальної дисципліни",
+    "url": "https://www.knuba.edu.ua/wp-content/uploads/2022/10/%D0%A0%D0%9F_%D0%9E%D1%80%D0%B3%D0%B0%D0%BD%D1%96%D0%B7%D0%B0%D1%86%D1%96%D1%8F_%D0%BD%D0%B0%D1%83%D0%BA%D0%BE%D0%B2%D0%BE%D1%97_%D0%B4%D1%96%D1%8F%D0%BB%D1%8C%D0%BD%D0%BE%D1%81%D1%82%D1%96_%D1%82%D0%B0_%D1%96%D0%BD%D1%84%D0%BE%D1%80%D0%BC%D0%B0%D1%86%D1%96%D0%B9%D0%BD%D1%96_%D1%82%D0%B5%D1%85%D0%BD%D0%BE%D0%BB%D0%BE%D0%B3%D1%96%D1%97_2020.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\124_700ff682b018.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"семінарські завдання\" \"право\"",
+    "title": "1. Мета та завдання навчальної дисципліни",
+    "url": "https://www.knuba.edu.ua/wp-content/uploads/2024/11/ok04-phd-052-organizacziya-naukovoyi-diyalnosti-ta-informaczijni-tehnologiyi-rp-2023-24.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\125_1f12214bd7c5.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"практичні завдання\" \"маркетинг\"",
+    "title": "Методичні рекомендації для самостійної роботи з дисципліни ...",
+    "url": "https://duikt.edu.ua/uploads/l_512_11685681.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\126_b2d08eca3609.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"практичні завдання\" \"маркетинг\"",
+    "title": "Методичні рекомендації до виконання практичних ...",
+    "url": "https://repository.hneu.edu.ua/bitstream/123456789/3812/1/%D0%9C%D0%B5%D1%82%D0%BE%D0%B4%D0%B8%D1%87%D0%BD%D1%96%20%D1%80%D0%B5%D0%BA%D0%BE%D0%BC%D0%B5%D0%BD%D0%B4%D0%B0%D1%86%D1%96%D1%97%20%D0%B4%D0%BE%20%D0%B2%D0%B8%D0%BA%D0%BE%D0%BD%D0%B0%D0%BD%D0%BD%D1%8F%20%D0%BF%D1%80%D0%B0%D0%BA%D1%82%D0%B8%D1%87%D0%BD%D0%B8%D1%85%20%D0%B7%D0%B0%D0%B2%D0%B4%D0%B0%D0%BD%D1%8C.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\127_d0345a272a71.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"лабораторні роботи\" \"бази даних\"",
+    "title": "ЛАБОРАТОРНА РОБОТА № 1",
+    "url": "https://ea.donntu.edu.ua/bitstream/123456789/7646/1/%D0%BC%D0%B5%D1%82%D0%BE%D0%B4%D0%B8%D1%87%D0%BA%D0%B0%20%D0%B5%D0%BF%D1%80%202008%28%D0%B7%D0%B0%D0%BE%D1%87%D0%BD%D0%B8%D0%BA%D0%B8%29%D0%B4%D0%BB%D1%8F%20%D1%80%D0%B0%D1%81%D0%BF%D0%B5%D1%87%D0%B0%D1%82%D0%BA%D0%B8%281%29.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\128_86ef91cf16ee.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"лабораторні роботи\" \"бази даних\"",
+    "title": "Лабораторний практикум. Створення БД. Федько В. В..pdf",
+    "url": "https://repository.hneu.edu.ua/bitstream/123456789/3107/1/%D0%9B%D0%B0%D0%B1%D0%BE%D1%80%D0%B0%D1%82%D0%BE%D1%80%D0%BD%D0%B8%D0%B9%20%D0%BF%D1%80%D0%B0%D0%BA%D1%82%D0%B8%D0%BA%D1%83%D0%BC.%20%D0%A1%D1%82%D0%B2%D0%BE%D1%80%D0%B5%D0%BD%D0%BD%D1%8F%20%D0%91%D0%94.%20%D0%A4%D0%B5%D0%B4%D1%8C%D0%BA%D0%BE%20%D0%92.%20%D0%92..pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\129_a104a31e63c0.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"лабораторні роботи\" \"бази даних\"",
+    "title": "ЛАБОРАТОРНИЙ ПРАКТИКУМ З ЕЛЕКТРОТЕХНІКИ",
+    "url": "https://elibrary.kdpu.edu.ua/bitstream/0564/2466/1/%D0%9B%D0%B0%D0%B1%D0%BE%D1%80%D0%B0%D1%82%D0%BE%D1%80%D0%BD%D1%8B%D0%B5%20%D1%80%D0%B0%D0%B1%D0%BE%D1%82%D1%8B.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\130_3e4664932f5b.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"лабораторні роботи\" \"javascript\"",
+    "title": "Лабораторна робота № 1",
+    "url": "https://duikt.edu.ua/uploads/l_1667_57891789.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\131_ce4192d3e49a.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"практичні завдання\" \"психологія\"",
+    "title": "ПРАКТИКУМ ІЗ ПСИХОЛОГІЇ",
+    "url": "https://eprints.kname.edu.ua/55297/1/2019%2045%D0%9D%20%D0%BF%D0%B5%D1%87%20%D0%9F%D1%80%D0%B0%D0%BA%D1%82%D0%B8%D0%BA%D1%83%D0%BC.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\132_135e6898f664.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"практичні завдання\" \"психологія\"",
+    "title": "Психологія управління: практичні завдання",
+    "url": "https://dspace.chmnu.edu.ua/jspui/bitstream/123456789/2672/1/%D0%9F%D1%81%D0%B8%D1%85%D0%BE%D0%BB%D0%BE%D0%B3%D1%96%D1%8F%20%D1%83%D0%BF%D1%80%D0%B0%D0%B2%D0%BB%D1%96%D0%BD%D0%BD%D1%8F%20%D0%BF%D1%80%D0%B0%D0%BA%D1%82%D0%B8%D1%87%D0%BD%D1%96%20%D0%B7%D0%B0%D0%B2%D0%B4%D0%B0%D0%BD%D0%BD%D1%8F.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\133_6960278b976b.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"практичні завдання\" \"психологія\"",
+    "title": "Соціально-психологічний практикум” 1. Опис дисципліни ...",
+    "url": "http://chnnipb.wunu.edu.ua/wp-content/uploads/2024/09/Sots-psykh_prakt_work.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\134_e372a8018e17.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"практичні завдання\" \"психологія\"",
+    "title": "ПРАКТИКУМ З СОЦІАЛЬНО- ПСИХОЛОГІЧНИХ ...",
+    "url": "https://eprints.zu.edu.ua/30631/1/%D0%86%D0%9C%D0%9C_%D0%9F%D1%80%D0%B0%D0%BA%D1%82%D0%B8%D0%BA%D1%83%D0%BC%20%D0%B7%20%D1%81%D0%BE%D1%86%D1%96%D0%B0%D0%BB%D1%8C%D0%BD%D0%BE-%D0%BF%D1%81%D0%B8%D1%85%D0%BE%D0%BB%D0%BE%D0%B3%D1%96%D1%87%D0%BD%D0%B8%D1%85%20%D0%B4%D0%BE%D1%81%D0%BB%D1%96%D0%B4%D0%B6%D0%B5%D0%BD%D1%8C%20%282018%29.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\135_792f7cf65726.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"практичні завдання\" \"психологія\"",
+    "title": "МЕТОДИЧНІ РЕКОМЕНДАЦІЇ ДО ПРАКТИЧНИХ ЗАНЯТЬ ...",
+    "url": "http://dspace.pdpu.edu.ua/bitstream/123456789/17801/1/Foorman%20Anatoliy%20Anatoliy%D0%BEvych.PDF",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\136_8aac78c86669.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"практичні завдання\" \"психологія\"",
+    "title": "Практикум із психологічної роботи з сім'єю",
+    "url": "http://eprints.zu.edu.ua/30700/1/%D0%9F%D0%BE%D1%80%D1%82%D0%BD%D0%B8%D1%86%D1%8C%D0%BA%D0%B0%20%D0%9D.%D0%A4.%2C%20%D0%A1%D0%B0%D0%B2%D0%B8%D1%87%D0%B5%D0%BD%D0%BA%D0%BE%20%D0%9E.%D0%9C.%20%D0%A1%D0%B8%D0%BB%D0%B0%D0%B1%D1%83%D1%81%20_%D0%9F%D1%80%D0%B0%D0%BA%D1%82%D0%BA%D1%83%D0%BC%20%D1%96%D0%B7%20%D0%BF%D1%81%D0%B8%D1%85%D0%BE%D0%BB%D0%BE%D0%B3%D1%96%D1%87%D0%BD%D0%BE%D1%97%20%D1%80%D0%BE%D0%B1%D0%BE%D1%82%D0%B8%20%D0%B7%20%D1%81%D1%96%D0%BC%D1%94%D1%8E.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\137_c1dc8892b164.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"практичні завдання\" \"психологія\"",
+    "title": "МЕТОДИЧНІ РЕКОМЕНДАЦІЇ З КУРСУ «Клінічна психологія»",
+    "url": "https://eprints.zu.edu.ua/29319/1/%D0%9C%D0%A0%20%D0%9A%D0%BB%D1%96%D0%BD%D1%96%D1%87%D0%BD%D0%B0%20%D0%BF%D1%81%D0%B8%D1%85%D0%BE%D0%BB%D0%BE%D0%B3%D1%96%D1%8F%206.030102%20%D0%9F%D1%81%D0%B8%D1%85%D0%BE%D0%BB%D0%BE%D0%B3%D1%96%D1%8F.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\138_07f45f5271a4.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"практикум\" \"українська мова\"",
+    "title": "ПРАКТИКУМ З УКРАЇНСЬКОЇ МОВИ ЗА ПРОФЕСІЙНИМ ...",
+    "url": "https://dspace.lvduvs.edu.ua/bitstream/1234567890/4891/1/%D0%9A%D0%BB%D0%B0%D0%BA%20%D0%9E.%D0%A1.--%D0%9F%D1%80%D0%B0%D0%BA%D1%82%D0%B8%D0%BA%D1%83%D0%BC---%D0%92%D0%95%D0%A0%D0%A1%D0%A2%D0%9A%D0%90.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\139_94381835b6a1.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"практикум\" \"українська мова\"",
+    "title": "ПРАКТИКУМ З УКРАЇНСЬКОЇ МОВИ",
+    "url": "https://www.tsatu.edu.ua/shn/wp-content/uploads/sites/59/maksymec-o.-m.-adamovych-a.-ye.-praktykum-z-ukrayinskoyi-movy-za-profesijnym-sprjamuvannjam..pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\140_312d3277863a.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"практикум\" \"українська мова\"",
+    "title": "ПРАКТИКУМ З УКРАЇНСЬКОЇ МОВИ",
+    "url": "https://lib.oa.edu.ua/files/funds/vudavnutstvo/Shulzhuk_praktykum_z_pravopysu.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\141_c4609956ad57.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"практикум\" \"українська мова\"",
+    "title": "Практикум з української мови за професійним спрямуванням",
+    "url": "https://dspace.udpu.edu.ua/bitstream/123456789/16730/1/UMPS.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\142_7b36e80795b8.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"практикум\" \"українська мова\"",
+    "title": "Практикум з методики навчання української мови ...",
+    "url": "https://elibrary.kdpu.edu.ua/bitstream/0564/396/1/%D0%9F%D1%80%D0%B0%D0%BA%D1%82%D0%B8%D0%BA%D1%83%D0%BC%20%D0%B7%20%D0%BC%D0%B5%D1%82%D0%BE%D0%B4%D0%B8%D0%BA%D0%B8%20%D0%BD%D0%B0%D0%B2%D1%87%D0%B0%D0%BD%D0%BD%D1%8F%20%D1%83%D0%BA%D1%80%D0%B0%D1%97%D0%BD%D1%81%D1%8C%D0%BA%D0%BE%D1%97%20%D0%BC%D0%BE%D0%B2%D0%B8%20%D0%B2%20%D0%B7%D0%B0%D0%B3%D0%B0%D0%BB%D1%8C%D0%BD%D0%BE%D0%BE%D1%81%D0%B2%D1%96%D1%82%D0%BD%D1%96%D1%85%20%D0%B7%D0%B0%D0%BA%D0%BB%D0%B0%D0%B4%D0%B0%D1%85.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\143_ca8f82ee3f0d.pdf"
+  },
+  {
+    "query": "filetype:pdf site:.edu.ua \"практикум\" \"українська мова\"",
+    "title": "Українська мова професійного спрямування з практикумом",
+    "url": "https://pedcollege.lnu.edu.ua/wp-content/uploads/2021/03/TSyhylyk-O.-Ukrainska-mova-profesiynoho-spriamuvannia.pdf",
+    "file_path": "backend/infrastructure/ml/datasets/raw\\144_d4ddfc8b59a9.pdf"
+  }
+]

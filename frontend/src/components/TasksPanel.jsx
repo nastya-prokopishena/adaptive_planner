@@ -16,112 +16,76 @@ const COLORS = [
   "#4f46e5",
 ];
 
-const TRANSLATIONS = {
-  uk: {
-    title: "Задачі та предмети",
-    subtitle:
-      "Тут можна створювати предмети, типи подій і задачі, а також відстежувати виконання.",
-    subjects: "Предмети",
-    eventTypes: "Типи подій",
-    tasks: "Задачі",
-    activity: "Історія активності",
+const t = {
+  title: "Задачі та предмети",
+  subtitle:
+    "Тут можна створювати предмети, типи подій і задачі, а також відстежувати виконання.",
+  subjects: "Предмети",
+  eventTypes: "Типи подій",
+  tasks: "Задачі",
+  activity: "Історія активності",
 
-    subjectName: "Назва предмету",
-    teacher: "Викладач",
-    description: "Опис",
-    color: "Колір",
-    createSubject: "Створити предмет",
+  subjectName: "Назва предмету",
+  teacher: "Викладач",
+  description: "Опис",
+  createSubject: "Створити предмет",
 
-    eventTypeName: "Назва типу",
-    createEventType: "Створити тип",
+  eventTypeName: "Назва типу",
+  createEventType: "Створити тип",
 
-    taskTitle: "Назва задачі",
-    taskDescription: "Опис задачі",
-    subject: "Предмет",
-    event: "Подія",
-    noSubject: "Без предмету",
-    noEvent: "Без події",
-    priority: "Пріоритет",
-    low: "Низький",
-    medium: "Середній",
-    high: "Високий",
-    dueDate: "Дедлайн",
-    createTask: "Створити задачу",
+  taskTitle: "Назва задачі",
+  taskDescription: "Опис задачі",
+  noSubject: "Без предмету",
+  noEvent: "Без події",
 
-    all: "Всі",
-    planned: "Заплановано",
-    done: "Виконано",
-    missed: "Пропущено",
+  low: "Низький",
+  medium: "Середній",
+  high: "Високий",
 
-    markPlanned: "Заплановано",
-    markDone: "Виконано",
-    markMissed: "Пропущено",
-    delete: "Видалити",
+  createTask: "Створити задачу",
 
-    noTasks: "Задач поки немає",
-    noLogs: "Історія поки порожня",
-    saved: "Збережено",
-    error: "Сталася помилка",
-  },
+  all: "Всі",
+  planned: "Заплановано",
+  done: "Виконано",
+  missed: "Пропущено",
 
-  en: {
-    title: "Tasks and subjects",
-    subtitle:
-      "Here you can create subjects, event types and tasks, and track completion.",
-    subjects: "Subjects",
-    eventTypes: "Event types",
-    tasks: "Tasks",
-    activity: "Activity history",
+  edit: "Редагувати",
+  save: "Зберегти",
+  cancel: "Скасувати",
+  delete: "Видалити",
 
-    subjectName: "Subject name",
-    teacher: "Teacher",
-    description: "Description",
-    color: "Color",
-    createSubject: "Create subject",
+  noTasks: "Задач поки немає",
+  noLogs: "Історія поки порожня",
+  saved: "Збережено",
+  error: "Сталася помилка",
 
-    eventTypeName: "Type name",
-    createEventType: "Create type",
+  duration: "Час",
+  difficulty: "Складність",
+  taskType: "Тип",
+  keywords: "Ключові слова",
 
-    taskTitle: "Task title",
-    taskDescription: "Task description",
-    subject: "Subject",
-    event: "Event",
-    noSubject: "No subject",
-    noEvent: "No event",
-    priority: "Priority",
-    low: "Low",
-    medium: "Medium",
-    high: "High",
-    dueDate: "Due date",
-    createTask: "Create task",
-
-    all: "All",
-    planned: "Planned",
-    done: "Done",
-    missed: "Missed",
-
-    markPlanned: "Planned",
-    markDone: "Done",
-    markMissed: "Missed",
-    delete: "Delete",
-
-    noTasks: "No tasks yet",
-    noLogs: "Activity history is empty",
-    saved: "Saved",
-    error: "Something went wrong",
-  },
+  groupedView: "За предметами",
+  listView: "Списком",
 };
 
-export default function TasksPanel({ events = [], lang = "uk" }) {
-  const t = TRANSLATIONS[lang] || TRANSLATIONS.uk;
-
+export default function TasksPanel({ events = [] }) {
   const [subjects, setSubjects] = useState([]);
   const [eventTypes, setEventTypes] = useState([]);
   const [tasks, setTasks] = useState([]);
   const [logs, setLogs] = useState([]);
 
   const [statusFilter, setStatusFilter] = useState("all");
+  const [taskViewMode, setTaskViewMode] = useState("grouped");
   const [message, setMessage] = useState("");
+  const [selectedTask, setSelectedTask] = useState(null);
+
+  const [editingSubjectId, setEditingSubjectId] = useState(null);
+  const [editingEventTypeId, setEditingEventTypeId] = useState(null);
+  const [editingTaskId, setEditingTaskId] = useState(null);
+
+  const [editSubjectForm, setEditSubjectForm] = useState({});
+  const [editEventTypeForm, setEditEventTypeForm] = useState({});
+  const [editTaskForm, setEditTaskForm] = useState({});
 
   const [subjectForm, setSubjectForm] = useState({
     name: "",
@@ -145,39 +109,58 @@ export default function TasksPanel({ events = [], lang = "uk" }) {
   });
 
   const filteredTasks = useMemo(() => {
-    if (statusFilter === "all") {
-      return tasks;
-    }
-
+    if (statusFilter === "all") return tasks;
     return tasks.filter((task) => task.status === statusFilter);
   }, [tasks, statusFilter]);
 
   const subjectById = useMemo(() => {
     const map = {};
-
     subjects.forEach((subject) => {
       map[String(subject.id)] = subject;
     });
-
     return map;
   }, [subjects]);
 
   const eventById = useMemo(() => {
     const map = {};
-
     events.forEach((event) => {
       map[String(event.master_id || event.id)] = event;
     });
-
     return map;
   }, [events]);
 
+  const groupedTasks = useMemo(() => {
+    const groups = {};
+
+    filteredTasks.forEach((task) => {
+      const subject = task.subject_id
+        ? subjectById[String(task.subject_id)]
+        : null;
+
+      const subjectName = subject?.name || task.subject || "Без предмету";
+      const subjectColor = subject?.color || COLORS[9];
+
+      if (!groups[subjectName]) {
+        groups[subjectName] = {
+          name: subjectName,
+          color: subjectColor,
+          tasks: [],
+        };
+      }
+
+      groups[subjectName].tasks.push(task);
+    });
+
+    return Object.values(groups);
+  }, [filteredTasks, subjectById]);
+
+  useEffect(() => {
+    loadAll();
+  }, []);
+
   const showMessage = (text) => {
     setMessage(text);
-
-    setTimeout(() => {
-      setMessage("");
-    }, 2500);
+    setTimeout(() => setMessage(""), 2500);
   };
 
   const loadSubjects = async () => {
@@ -214,14 +197,8 @@ export default function TasksPanel({ events = [], lang = "uk" }) {
     }
   };
 
-  useEffect(() => {
-    loadAll();
-  }, []);
-
   const createSubject = async () => {
-    if (!subjectForm.name.trim()) {
-      return;
-    }
+    if (!subjectForm.name.trim()) return;
 
     try {
       await axios.post("/api/subjects", subjectForm);
@@ -241,10 +218,33 @@ export default function TasksPanel({ events = [], lang = "uk" }) {
     }
   };
 
-  const createEventType = async () => {
-    if (!eventTypeForm.name.trim()) {
-      return;
+  const startEditSubject = (subject) => {
+    setEditingSubjectId(subject.id);
+    setEditSubjectForm({
+      name: subject.name || "",
+      teacher: subject.teacher || "",
+      description: subject.description || "",
+      color: subject.color || COLORS[0],
+    });
+  };
+
+  const saveSubject = async (subjectId) => {
+    if (!editSubjectForm.name?.trim()) return;
+
+    try {
+      await axios.put(`/api/subjects/${subjectId}`, editSubjectForm);
+      setEditingSubjectId(null);
+      setEditSubjectForm({});
+      await loadSubjects();
+      showMessage(t.saved);
+    } catch (error) {
+      console.error(error);
+      showMessage(t.error);
     }
+  };
+
+  const createEventType = async () => {
+    if (!eventTypeForm.name.trim()) return;
 
     try {
       await axios.post("/api/event-types", eventTypeForm);
@@ -262,20 +262,39 @@ export default function TasksPanel({ events = [], lang = "uk" }) {
     }
   };
 
-  const createTask = async () => {
-    if (!taskForm.title.trim()) {
-      return;
-    }
+  const startEditEventType = (eventType) => {
+    setEditingEventTypeId(eventType.id);
+    setEditEventTypeForm({
+      name: eventType.name || "",
+      color: eventType.color || COLORS[1],
+    });
+  };
 
-    const payload = {
-      ...taskForm,
-      subject_id: taskForm.subject_id || null,
-      event_id: taskForm.event_id || null,
-      due_date: taskForm.due_date || null,
-    };
+  const saveEventType = async (eventTypeId) => {
+    if (!editEventTypeForm.name?.trim()) return;
 
     try {
-      await axios.post("/api/tasks", payload);
+      await axios.put(`/api/event-types/${eventTypeId}`, editEventTypeForm);
+      setEditingEventTypeId(null);
+      setEditEventTypeForm({});
+      await loadEventTypes();
+      showMessage(t.saved);
+    } catch (error) {
+      console.error(error);
+      showMessage(t.error);
+    }
+  };
+
+  const createTask = async () => {
+    if (!taskForm.title.trim()) return;
+
+    try {
+      await axios.post("/api/tasks", {
+        ...taskForm,
+        subject_id: taskForm.subject_id || null,
+        event_id: taskForm.event_id || null,
+        due_date: taskForm.due_date || null,
+      });
 
       setTaskForm({
         title: "",
@@ -294,10 +313,62 @@ export default function TasksPanel({ events = [], lang = "uk" }) {
     }
   };
 
+  const startEditTask = (task) => {
+    setEditingTaskId(task.id);
+
+    setEditTaskForm({
+      title: task.title || "",
+      description: task.description || "",
+      subject_id: task.subject_id || "",
+      event_id: task.event_id || "",
+      priority: task.priority || "medium",
+      due_date: task.due_date ? task.due_date.slice(0, 16) : "",
+      task_type: task.task_type || "homework",
+      estimated_duration_hours: task.estimated_duration_hours || 1,
+      difficulty_score: task.difficulty_score || 3,
+      keywords: Array.isArray(task.keywords) ? task.keywords.join(", ") : "",
+    });
+  };
+
+  const saveTask = async (taskId) => {
+    if (!editTaskForm.title?.trim()) return;
+
+    const keywords = editTaskForm.keywords
+      ? editTaskForm.keywords
+          .split(",")
+          .map((item) => item.trim())
+          .filter(Boolean)
+      : [];
+
+    try {
+      await axios.put(`/api/tasks/${taskId}`, {
+        title: editTaskForm.title,
+        description: editTaskForm.description,
+        subject_id: editTaskForm.subject_id || null,
+        event_id: editTaskForm.event_id || null,
+        priority: editTaskForm.priority || "medium",
+        due_date: editTaskForm.due_date || null,
+        task_type: editTaskForm.task_type || "homework",
+        estimated_duration_hours: Number(
+          editTaskForm.estimated_duration_hours || 1
+        ),
+        difficulty_score: Number(editTaskForm.difficulty_score || 3),
+        keywords,
+      });
+
+      setEditingTaskId(null);
+      setEditTaskForm({});
+      await Promise.all([loadTasks(), loadLogs()]);
+      showMessage(t.saved);
+    } catch (error) {
+      console.error(error);
+      showMessage(t.error);
+    }
+  };
+
   const updateTaskStatus = async (taskId, status) => {
     try {
       await axios.put(`/api/tasks/${taskId}/status`, { status });
-
       await Promise.all([loadTasks(), loadLogs()]);
       showMessage(t.saved);
     } catch (error) {
@@ -309,7 +380,6 @@ export default function TasksPanel({ events = [], lang = "uk" }) {
   const deleteTask = async (taskId) => {
     try {
       await axios.delete(`/api/tasks/${taskId}`);
-
       await Promise.all([loadTasks(), loadLogs()]);
       showMessage(t.saved);
     } catch (error) {
@@ -321,7 +391,7 @@ export default function TasksPanel({ events = [], lang = "uk" }) {
   const formatDate = (value) => {
     if (!value) return "";
 
-    return new Intl.DateTimeFormat(lang === "uk" ? "uk-UA" : "en-US", {
+    return new Intl.DateTimeFormat("uk-UA", {
       day: "2-digit",
       month: "short",
       hour: "2-digit",
@@ -339,6 +409,422 @@ export default function TasksPanel({ events = [], lang = "uk" }) {
     if (priority === "low") return t.low;
     if (priority === "high") return t.high;
     return t.medium;
+  };
+
+  const getTaskTypeLabel = (type) => {
+    const labels = {
+      laboratory: "Лабораторна",
+      homework: "Практична / домашня",
+      project: "Проєкт",
+      reading: "Самостійна / читання",
+      exam_preparation: "Підготовка до іспиту",
+      other: "Інше",
+    };
+
+    return labels[type] || labels.other;
+  };
+
+  const getDifficultyLabel = (score) => {
+    const labels = {
+      1: "Легка",
+      2: "Нижче середньої",
+      3: "Середня",
+      4: "Складна",
+      5: "Дуже складна",
+    };
+
+    return labels[Number(score)] || "Не визначено";
+  };
+
+  const getTaskSubjectName = (task, subject) => {
+    if (subject?.name) return subject.name;
+    if (task.subject) return task.subject;
+    return null;
+  };
+
+  const getTaskDetails = (task) => {
+    const subject = task.subject_id ? subjectById[String(task.subject_id)] : null;
+
+    return {
+      subject,
+      subjectName: getTaskSubjectName(task, subject),
+    };
+  };
+
+  const renderStatusSelect = (task) => (
+    <select
+      className={`status-select status-${task.status || "planned"}`}
+      value={task.status || "planned"}
+      onClick={(event) => event.stopPropagation()}
+      onChange={(event) => updateTaskStatus(task.id, event.target.value)}
+    >
+      <option value="planned">Заплановано</option>
+      <option value="done">Виконано</option>
+      <option value="missed">Пропущено</option>
+    </select>
+  );
+
+  const renderTaskEditForm = (task) => (
+    <div className="task-edit-form">
+      <input
+        value={editTaskForm.title || ""}
+        placeholder={t.taskTitle}
+        onChange={(event) =>
+          setEditTaskForm({
+            ...editTaskForm,
+            title: event.target.value,
+          })
+        }
+      />
+
+      <textarea
+        value={editTaskForm.description || ""}
+        placeholder={t.taskDescription}
+        onChange={(event) =>
+          setEditTaskForm({
+            ...editTaskForm,
+            description: event.target.value,
+          })
+        }
+      />
+
+      <select
+        value={editTaskForm.subject_id || ""}
+        onChange={(event) =>
+          setEditTaskForm({
+            ...editTaskForm,
+            subject_id: event.target.value,
+          })
+        }
+      >
+        <option value="">{t.noSubject}</option>
+
+        {subjects.map((subject) => (
+          <option key={subject.id} value={subject.id}>
+            {subject.name}
+          </option>
+        ))}
+      </select>
+
+      <select
+        value={editTaskForm.event_id || ""}
+        onChange={(event) =>
+          setEditTaskForm({
+            ...editTaskForm,
+            event_id: event.target.value,
+          })
+        }
+      >
+        <option value="">{t.noEvent}</option>
+
+        {events.map((event) => (
+          <option key={event.id} value={event.master_id || event.id}>
+            {event.title}
+          </option>
+        ))}
+      </select>
+
+      <select
+        value={editTaskForm.task_type || "homework"}
+        onChange={(event) =>
+          setEditTaskForm({
+            ...editTaskForm,
+            task_type: event.target.value,
+          })
+        }
+      >
+        <option value="laboratory">Лабораторна</option>
+        <option value="homework">Практична / домашня</option>
+        <option value="project">Проєкт</option>
+        <option value="reading">Самостійна / читання</option>
+        <option value="exam_preparation">Підготовка до іспиту</option>
+        <option value="other">Інше</option>
+      </select>
+
+      <select
+        value={editTaskForm.difficulty_score || 3}
+        onChange={(event) =>
+          setEditTaskForm({
+            ...editTaskForm,
+            difficulty_score: event.target.value,
+          })
+        }
+      >
+        <option value={1}>Легка</option>
+        <option value={2}>Нижче середньої</option>
+        <option value={3}>Середня</option>
+        <option value={4}>Складна</option>
+        <option value={5}>Дуже складна</option>
+      </select>
+
+      <input
+        type="number"
+        min="0.5"
+        step="0.5"
+        value={editTaskForm.estimated_duration_hours || 1}
+        onChange={(event) =>
+          setEditTaskForm({
+            ...editTaskForm,
+            estimated_duration_hours: event.target.value,
+          })
+        }
+      />
+
+      <select
+        value={editTaskForm.priority || "medium"}
+        onChange={(event) =>
+          setEditTaskForm({
+            ...editTaskForm,
+            priority: event.target.value,
+          })
+        }
+      >
+        <option value="low">{t.low}</option>
+        <option value="medium">{t.medium}</option>
+        <option value="high">{t.high}</option>
+      </select>
+
+      <input
+        type="datetime-local"
+        value={editTaskForm.due_date || ""}
+        onChange={(event) =>
+          setEditTaskForm({
+            ...editTaskForm,
+            due_date: event.target.value,
+          })
+        }
+      />
+
+      <input
+        value={editTaskForm.keywords || ""}
+        placeholder={t.keywords}
+        onChange={(event) =>
+          setEditTaskForm({
+            ...editTaskForm,
+            keywords: event.target.value,
+          })
+        }
+      />
+
+      <div className="edit-actions">
+        <button type="button" onClick={() => saveTask(task.id)}>
+          {t.save}
+        </button>
+
+        <button
+          type="button"
+          className="secondary-mini-btn"
+          onClick={() => setEditingTaskId(null)}
+        >
+          {t.cancel}
+        </button>
+      </div>
+    </div>
+  );
+
+  const renderTaskMeta = (task, subjectName) => (
+    <div className="task-meta">
+      {task.task_type && (
+        <span className="task-chip task-chip-type">
+          {t.taskType}: {getTaskTypeLabel(task.task_type)}
+        </span>
+      )}
+
+      {task.difficulty_score && (
+        <span className="task-chip task-chip-difficulty">
+          {t.difficulty}: {getDifficultyLabel(task.difficulty_score)}
+        </span>
+      )}
+
+      {task.estimated_duration_hours && (
+        <span className="task-chip task-chip-duration">
+          ⏱ {t.duration}: {task.estimated_duration_hours} год
+        </span>
+      )}
+
+      {subjectName && (
+        <span className="task-chip task-chip-subject">{subjectName}</span>
+      )}
+
+      <span className="task-chip task-chip-priority">
+        {getPriorityLabel(task.priority)}
+      </span>
+    </div>
+  );
+
+  const renderListTask = (task) => {
+    const { subjectName } = getTaskDetails(task);
+
+    return (
+      <article
+        key={task.id}
+        className={`task-item compact-list-task ${task.status}`}
+        onClick={() => setSelectedTask(task)}
+      >
+        <div className="compact-list-main">
+          <div className="task-item-top">
+            <h4>{task.title}</h4>
+          </div>
+
+          {editingTaskId === task.id ? (
+            <div onClick={(event) => event.stopPropagation()}>
+              {renderTaskEditForm(task)}
+            </div>
+          ) : (
+            renderTaskMeta(task, subjectName)
+          )}
+        </div>
+
+        <div
+          className="task-actions"
+          onClick={(event) => event.stopPropagation()}
+        >
+          <button type="button" onClick={() => startEditTask(task)}>
+            {t.edit}
+          </button>
+
+          {renderStatusSelect(task)}
+
+          <button
+            type="button"
+            className="danger-button"
+            onClick={() => deleteTask(task.id)}
+          >
+            {t.delete}
+          </button>
+        </div>
+      </article>
+    );
+  };
+
+  const renderCompactTask = (task) => (
+    <article
+      key={task.id}
+      className={`compact-task-card ${task.status}`}
+      onClick={() => setSelectedTask(task)}
+    >
+      {editingTaskId === task.id ? (
+        <div onClick={(event) => event.stopPropagation()}>
+          {renderTaskEditForm(task)}
+        </div>
+      ) : (
+        <>
+          <div className="compact-task-title">
+            <span className="task-doc-icon">▧</span>
+            <h4>{task.title}</h4>
+          </div>
+
+          <div className="compact-task-footer">
+            <span className={`compact-status ${task.status}`}>
+              {getStatusLabel(task.status)}
+            </span>
+
+            {task.estimated_duration_hours && (
+              <span>{task.estimated_duration_hours} год</span>
+            )}
+
+            {task.difficulty_score && (
+              <span>{getDifficultyLabel(task.difficulty_score)}</span>
+            )}
+          </div>
+
+          <div
+            className="compact-task-actions"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <button type="button" onClick={() => startEditTask(task)}>
+              {t.edit}
+            </button>
+
+            {renderStatusSelect(task)}
+
+            <button
+              type="button"
+              className="danger-button"
+              onClick={() => deleteTask(task.id)}
+            >
+              {t.delete}
+            </button>
+          </div>
+        </>
+      )}
+    </article>
+  );
+
+  const renderTaskModal = () => {
+    if (!selectedTask) return null;
+
+    const { subjectName } = getTaskDetails(selectedTask);
+
+    return (
+      <div
+        className="task-modal-backdrop"
+        onClick={() => setSelectedTask(null)}
+      >
+        <div
+          className="task-modal"
+          onClick={(event) => event.stopPropagation()}
+        >
+          <div className="task-modal-header">
+            <div>
+              <p className="eyebrow">Деталі задачі</p>
+              <h2>{selectedTask.title}</h2>
+            </div>
+
+            <button type="button" onClick={() => setSelectedTask(null)}>
+              ✕
+            </button>
+          </div>
+
+          <p className="task-modal-description">
+            {selectedTask.description || "Опис відсутній"}
+          </p>
+
+          <div className="task-modal-meta">
+            {selectedTask.task_type && (
+              <span>Тип: {getTaskTypeLabel(selectedTask.task_type)}</span>
+            )}
+
+            {selectedTask.difficulty_score && (
+              <span>
+                Складність: {getDifficultyLabel(selectedTask.difficulty_score)}
+              </span>
+            )}
+
+            <span>Час: {selectedTask.estimated_duration_hours || "—"} год</span>
+            <span>Статус: {getStatusLabel(selectedTask.status)}</span>
+            <span>Пріоритет: {getPriorityLabel(selectedTask.priority)}</span>
+
+            {subjectName && <span>Предмет: {subjectName}</span>}
+          </div>
+
+          <div className="task-modal-actions">
+            <button
+              type="button"
+              onClick={() => {
+                startEditTask(selectedTask);
+                setSelectedTask(null);
+              }}
+            >
+              {t.edit}
+            </button>
+
+            {renderStatusSelect(selectedTask)}
+
+            <button
+              type="button"
+              className="danger-button"
+              onClick={() => {
+                deleteTask(selectedTask.id);
+                setSelectedTask(null);
+              }}
+            >
+              {t.delete}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -415,12 +901,105 @@ export default function TasksPanel({ events = [], lang = "uk" }) {
             + {t.createSubject}
           </button>
 
-          <div className="mini-list">
+          <div className="compact-edit-list">
             {subjects.map((subject) => (
-              <span key={subject.id}>
-                <i style={{ backgroundColor: subject.color || COLORS[0] }} />
-                {subject.name}
-              </span>
+              <div
+                key={subject.id}
+                className={`compact-edit-item ${
+                  editingSubjectId === subject.id ? "editing" : ""
+                }`}
+                onClick={() => {
+                  if (editingSubjectId !== subject.id) {
+                    startEditSubject(subject);
+                  }
+                }}
+              >
+                {editingSubjectId === subject.id ? (
+                  <div
+                    className="inline-edit-form"
+                    onClick={(event) => event.stopPropagation()}
+                  >
+                    <input
+                      value={editSubjectForm.name || ""}
+                      placeholder={t.subjectName}
+                      onChange={(event) =>
+                        setEditSubjectForm({
+                          ...editSubjectForm,
+                          name: event.target.value,
+                        })
+                      }
+                    />
+
+                    <input
+                      value={editSubjectForm.teacher || ""}
+                      placeholder={t.teacher}
+                      onChange={(event) =>
+                        setEditSubjectForm({
+                          ...editSubjectForm,
+                          teacher: event.target.value,
+                        })
+                      }
+                    />
+
+                    <textarea
+                      value={editSubjectForm.description || ""}
+                      placeholder={t.description}
+                      onChange={(event) =>
+                        setEditSubjectForm({
+                          ...editSubjectForm,
+                          description: event.target.value,
+                        })
+                      }
+                    />
+
+                    <div className="color-row compact-colors">
+                      {COLORS.map((color) => (
+                        <button
+                          key={color}
+                          type="button"
+                          className={
+                            editSubjectForm.color === color
+                              ? "color-dot active"
+                              : "color-dot"
+                          }
+                          style={{ backgroundColor: color }}
+                          onClick={() =>
+                            setEditSubjectForm({
+                              ...editSubjectForm,
+                              color,
+                            })
+                          }
+                        />
+                      ))}
+                    </div>
+
+                    <div className="edit-actions">
+                      <button
+                        type="button"
+                        onClick={() => saveSubject(subject.id)}
+                      >
+                        {t.save}
+                      </button>
+
+                      <button
+                        type="button"
+                        className="secondary-mini-btn"
+                        onClick={() => setEditingSubjectId(null)}
+                      >
+                        {t.cancel}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="compact-view-row">
+                    <span
+                      className="subject-color-dot"
+                      style={{ backgroundColor: subject.color || COLORS[0] }}
+                    />
+                    <span>{subject.name}</span>
+                  </div>
+                )}
+              </div>
             ))}
           </div>
         </div>
@@ -446,7 +1025,9 @@ export default function TasksPanel({ events = [], lang = "uk" }) {
                 key={color}
                 type="button"
                 className={
-                  eventTypeForm.color === color ? "color-dot active" : "color-dot"
+                  eventTypeForm.color === color
+                    ? "color-dot active"
+                    : "color-dot"
                 }
                 style={{ backgroundColor: color }}
                 onClick={() =>
@@ -463,12 +1044,83 @@ export default function TasksPanel({ events = [], lang = "uk" }) {
             + {t.createEventType}
           </button>
 
-          <div className="mini-list">
+          <div className="compact-edit-list">
             {eventTypes.map((eventType) => (
-              <span key={eventType.id}>
-                <i style={{ backgroundColor: eventType.color || COLORS[1] }} />
-                {eventType.name}
-              </span>
+              <div
+                key={eventType.id}
+                className={`compact-edit-item ${
+                  editingEventTypeId === eventType.id ? "editing" : ""
+                }`}
+                onClick={() => {
+                  if (editingEventTypeId !== eventType.id) {
+                    startEditEventType(eventType);
+                  }
+                }}
+              >
+                {editingEventTypeId === eventType.id ? (
+                  <div
+                    className="inline-edit-form"
+                    onClick={(event) => event.stopPropagation()}
+                  >
+                    <input
+                      value={editEventTypeForm.name || ""}
+                      placeholder={t.eventTypeName}
+                      onChange={(event) =>
+                        setEditEventTypeForm({
+                          ...editEventTypeForm,
+                          name: event.target.value,
+                        })
+                      }
+                    />
+
+                    <div className="color-row compact-colors">
+                      {COLORS.map((color) => (
+                        <button
+                          key={color}
+                          type="button"
+                          className={
+                            editEventTypeForm.color === color
+                              ? "color-dot active"
+                              : "color-dot"
+                          }
+                          style={{ backgroundColor: color }}
+                          onClick={() =>
+                            setEditEventTypeForm({
+                              ...editEventTypeForm,
+                              color,
+                            })
+                          }
+                        />
+                      ))}
+                    </div>
+
+                    <div className="edit-actions">
+                      <button
+                        type="button"
+                        onClick={() => saveEventType(eventType.id)}
+                      >
+                        {t.save}
+                      </button>
+
+                      <button
+                        type="button"
+                        className="secondary-mini-btn"
+                        onClick={() => setEditingEventTypeId(null)}
+                      >
+                        {t.cancel}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="compact-view-row">
+                    <span
+                      className="subject-color-dot"
+                      style={{ backgroundColor: eventType.color || COLORS[1] }}
+                    />
+                    <span>{eventType.name}</span>
+                  </div>
+                )}
+              </div>
             ))}
           </div>
         </div>
@@ -570,86 +1222,62 @@ export default function TasksPanel({ events = [], lang = "uk" }) {
         <div className="task-board-header">
           <h3>{t.tasks}</h3>
 
-          <div className="task-filters">
-            {["all", "planned", "done", "missed"].map((status) => (
+          <div className="task-board-controls">
+            <div className="task-view-toggle">
               <button
-                key={status}
                 type="button"
-                className={statusFilter === status ? "active" : ""}
-                onClick={() => setStatusFilter(status)}
+                className={taskViewMode === "grouped" ? "active" : ""}
+                onClick={() => setTaskViewMode("grouped")}
               >
-                {status === "all" ? t.all : getStatusLabel(status)}
+                {t.groupedView}
               </button>
-            ))}
+
+              <button
+                type="button"
+                className={taskViewMode === "list" ? "active" : ""}
+                onClick={() => setTaskViewMode("list")}
+              >
+                {t.listView}
+              </button>
+            </div>
+
+            <div className="task-filters">
+              {["all", "planned", "done", "missed"].map((status) => (
+                <button
+                  key={status}
+                  type="button"
+                  className={statusFilter === status ? "active" : ""}
+                  onClick={() => setStatusFilter(status)}
+                >
+                  {status === "all" ? t.all : getStatusLabel(status)}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
         {filteredTasks.length === 0 ? (
           <p className="empty-tasks">{t.noTasks}</p>
+        ) : taskViewMode === "grouped" ? (
+          <div className="subject-task-board">
+            {groupedTasks.map((group) => (
+              <section key={group.name} className="subject-column">
+                <div
+                  className="subject-column-title"
+                  style={{ backgroundColor: group.color }}
+                >
+                  {group.name}
+                </div>
+
+                <div className="subject-column-list">
+                  {group.tasks.map((task) => renderCompactTask(task))}
+                </div>
+              </section>
+            ))}
+          </div>
         ) : (
           <div className="task-list">
-            {filteredTasks.map((task) => {
-              const subject = task.subject_id
-                ? subjectById[String(task.subject_id)]
-                : null;
-
-              const relatedEvent = task.event_id
-                ? eventById[String(task.event_id)]
-                : null;
-
-              return (
-                <article key={task.id} className={`task-item ${task.status}`}>
-                  <div>
-                    <div className="task-item-top">
-                      <h4>{task.title}</h4>
-                      <span className={`status-pill ${task.status}`}>
-                        {getStatusLabel(task.status)}
-                      </span>
-                    </div>
-
-                    {task.description && <p>{task.description}</p>}
-
-                    <div className="task-meta">
-                      {subject && <span>{subject.name}</span>}
-                      {relatedEvent && <span>{relatedEvent.title}</span>}
-                      <span>{getPriorityLabel(task.priority)}</span>
-                      {task.due_date && <span>{formatDate(task.due_date)}</span>}
-                    </div>
-                  </div>
-
-                  <div className="task-actions">
-                    <button
-                      type="button"
-                      onClick={() => updateTaskStatus(task.id, "planned")}
-                    >
-                      {t.markPlanned}
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => updateTaskStatus(task.id, "done")}
-                    >
-                      {t.markDone}
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => updateTaskStatus(task.id, "missed")}
-                    >
-                      {t.markMissed}
-                    </button>
-
-                    <button
-                      type="button"
-                      className="danger-button"
-                      onClick={() => deleteTask(task.id)}
-                    >
-                      {t.delete}
-                    </button>
-                  </div>
-                </article>
-              );
-            })}
+            {filteredTasks.map((task) => renderListTask(task))}
           </div>
         )}
       </div>
@@ -677,6 +1305,8 @@ export default function TasksPanel({ events = [], lang = "uk" }) {
           </div>
         )}
       </div>
+
+      {renderTaskModal()}
     </section>
   );
 }

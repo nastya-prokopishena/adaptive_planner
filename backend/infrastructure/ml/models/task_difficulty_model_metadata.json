@@ -1,0 +1,25 @@
+{
+  "model_name": "task_difficulty_model",
+  "model_type": "hybrid_hierarchical",
+  "fine_model_name": "Fine LinearSVC",
+  "group_model_name": "Group LinearSVC",
+  "fine_accuracy": 0.7669902912621359,
+  "group_accuracy": 0.8252427184466019,
+  "dataset_size": 514,
+  "difficulty_distribution": {
+    "1": 44,
+    "2": 135,
+    "3": 157,
+    "4": 118,
+    "5": 60
+  },
+  "group_distribution": {
+    "easy": 179,
+    "hard": 178,
+    "medium": 157
+  },
+  "version": "20260519_215519",
+  "saved_at": "2026-05-19T21:55:19.775495",
+  "latest_model_path": "backend/infrastructure/ml/models\\task_difficulty_model.pkl",
+  "versioned_model_path": "backend/infrastructure/ml/models\\task_difficulty_model_20260519_215519.pkl"
+}

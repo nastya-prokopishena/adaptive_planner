@@ -112,6 +112,10 @@ export default function Dashboard({
               {t.uploadSchedule}
             </Link>
 
+            <Link to="/tasks/import" className="planner-tool-link">
+              🧠 Імпортувати задачу
+            </Link>
+
             <button type="button" onClick={openAutoPlanModal}>
               ✨ {t.autoPlanning}
             </button>

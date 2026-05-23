@@ -1,0 +1,496 @@
+<!doctype html>
+<html lang='uk'>
+	<head>
+		<meta charset=utf-8>
+		<title>ФІЗИКА. ЛАБОРАТОРНИЙ ПРАКТИКУМ  :: Державний університет інформаційно-комунікаційних технологій</title>
+		<meta name='description' content=""> 
+		<meta name='keywords' content=""> 
+		<meta name='robots' content='index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1'><link rel='canonical' href='https://duikt.edu.ua/ua/lib/1/category/2179/view/2287'><link rel='image_src' href="https://duikt.edu.ua/img/logo_thumb_new.jpg" ><meta name='viewport' content='width=device-width, initial-scale=1.0'><link rel='shortcut icon' href='/duikt_ico.ico'><link rel='stylesheet' href='/css_bootstrap?1' ><link rel='stylesheet' href='/css_fancybox?1' type='text/css' media='all'><link rel='stylesheet' href='/css_sliderpro?1779221692' type='text/css' media='all' ><link rel='stylesheet' href='/css_owl?1779221692' type='text/css' media='all' ><link rel='stylesheet' href='/css_owl_theme?1779221692' type='text/css' media='all' ><link rel='stylesheet' href='/css_fonts?1779221692' type='text/css' media='all' ><link rel='stylesheet' href='/css_style?1779221692' type='text/css' media='all' ><script  src='/js_jquery?1' ></script><script  src='/js_sliderpro?1'></script><script  src='/js_owl_carousel'></script><script  src='/js_lazyload'></script><script  src='/js_stiky'></script><script  src='/js_bootstrap?1'></script><script  src='/js_lib?1779221692'></script><script src='https://www.google.com/recaptcha/api.js' async defer></script>
+	<script>
+        var onSubmit = function(token) {
+          console.log('success!');
+		 document.forms['news_form'].submit();
+        };
+
+        var onloadCallback = function() {
+          grecaptcha.render('news_sumit', {
+            'sitekey' : '6LfTQvkUAAAAAI6eSlsX3yqYXz7ODaWliv7-mtk8',
+            'callback' : onSubmit
+          });
+        };
+    </script> 
+	
+		<script  src='/js_maskinput'></script>
+		<script>
+		$(function(){
+		  $('.reg_phone').mask('+38(999)999-99-99');
+		});
+		</script><script  src='/js_fancybox?1'></script> 
+		<!-- Google tag (gtag.js) -->
+			<script async src='https://www.googletagmanager.com/gtag/js?id=G-B02NRZ9CY0'></script>
+			<script >
+			  window.dataLayer = window.dataLayer || [];
+			  function gtag(){dataLayer.push(arguments);}
+			  gtag('js', new Date());
+			  gtag('config', 'G-B02NRZ9CY0');
+			  gtag('config', 'AW-16636689922');
+			</script> 
+			
+			
+			
+			
+			<!-- Meta Pixel Code --><script>!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js'); fbq('init', '675621605059694'); fbq('track', 'PageView');</script><noscript> <img height='1' width='1' src='https://www.facebook.com/tr?id=675621605059694&ev=PageView&noscript=1'/></noscript><!-- End Meta Pixel Code -->
+		</head><body style='' onkeypress='' onload='  '> <div style='display:none;'><img src='/img/logo_thumb_new.jpg'  alt='Державний університет інформаційно-комунікаційних технологій'></div>
+		<div class='screen_size' style='position:fixed; z-index:100000; opacity:0.7; display:none   !important;'>
+			<div class='d-block d-sm-none'>XS</div>
+			<div class='d-none d-sm-block d-md-none'>SM</div>
+			<div class='d-none d-md-block d-lg-none'>MD</div>
+			<div class='d-none d-lg-block d-xl-none'>LG</div>
+			<div class='d-none d-xl-block d-xxl-none'>XL</div>
+			<div class='d-none d-xxl-block'>XXL</div>
+		</div>      
+		<div class='head  d-block d-lg-none  '>
+			<div class='page'>
+				<div class='' id='navtoggler' onclick='fancy("mob_menu")' style='top:30px;'>
+					<div class='TipText calendar_popup_content fancy_fullscreen' id='mob_menu' style='width:100%;   margin-top:0px;'>
+						<div class=' '>
+							  
+							<div style='text-align:center;'>
+								<a href='/ua/' class='no_bg'><img src='/img/logo_new.png?2' style='width:130px;'  alt='Державний університет інформаційно-комунікаційних технологій'></a>
+								<div class='clear'></div>  
+								<div class='spacer_half'></div>  
+								<div class='mob_site_title' onclick='document.location.href="/ua/"'><h1>Державний університет інформаційно-комунікаційних технологій</h1></div> 
+								<div class='spacer '></div>  
+								
+								 
+							</div>
+						</div> 
+						<div class='clear'></div>   
+						 
+						<div class='clear'></div> 
+						<hr> 
+						
+						 <ul class='menu_mobile'><li><a href='/ua/2-pro-universitet'>Про університет</a></li><li><a href='/ua/1587-novini'>Новини</a></li><li><a href='/ua/3-vstupniku'>Вступнику</a></li><li><a href='/ua/4-navchannya'>Навчання</a></li><li><a href='/ua/6-studentske-zhittya'>Студентське життя</a></li><li><a href='/ua/5-nauka'>Наука</a></li><li><a href='/ua/11-mizhnarodna-diyalnist-pro-universitet'>Міжнародна діяльність</a></li><li><a href='/ua/2932-cifrovi-treningi'>Цифрові тренінги</a></li><li><a href='/ua/1588-fotogalereya'>Фотогалерея</a></li><li><a href='/ua/2821-biblioteka'>Бібліотека</a></li> </ul>  
+						 
+						
+						
+					</div>
+				</div>
+				<div class='' id='head_search' onclick='document.location.href="/ua/search"' style='top:30px; right:60px;'></div>
+				<div class='' id='head_phone'  onclick='fancy("mob_call_menu")' style='top:30px;'>
+					<div class='TipText calendar_popup_content fancy_fullscreen' id='mob_call_menu' style='width:100%;   margin-top:0px;'>
+						<div class=' '>
+							<div class=' '>
+							  
+							<div style='text-align:center;'>
+								<a href='/ua/' class='no_bg'><img src='/img/logo_new.png?2' style='width:130px;' alt='Державний університет інформаційно-комунікаційних технологій'></a>
+								<div class='clear'></div>  
+								<div class='spacer_half'></div>  
+								<div class='mob_site_title' onclick='document.location.href="/ua/"'>Державний університет інформаційно-комунікаційних технологій </div> 
+								<div class='spacer '></div>										
+							</div>
+						</div> 
+						</div> 
+						<div class='clear'></div> 
+						<div class='spacer'></div>   
+						 
+						<div class='clear'></div> 
+						<hr> 
+						
+						<div class='head_adress ' style='text-align:left;  padding-left:80px;  background: url(/img/head_adress.png) 30px 30px no-repeat; background-size: 32px;   '>
+							<div class='head_small_title'>Адреса:</div>
+							<div class='head_small_text'>03110, Україна</div> 
+							<div class='head_small_text'>м. Київ, вул. Солом'янська, 7</div>
+							<div class='head_small_text'>E-mail:   <a href='mailto:info@duikt.edu.ua'>info@duikt.edu.ua</a></div> 							
+						</div>
+						<div class='clear'></div>   
+						<div class='spacer_3'></div>   
+						<div class='head_contacts ' style='text-align:left; padding-left:80px;  background: url(/img/head_contacts.png) 30px 30px no-repeat; background-size: 32px; '>
+							<div class='head_small_title'>Контактна інформація:</div>
+							
+							<div class='head_small_text' style='font-weight:700;'>Консультаційний центр (Приймальна комісія): </div> 
+							<div class='head_small_text'>Телефон: <a href='tel:0442492591'>(044) 249-25-91</a>, <br>Телефон: <a href='tel:+380662274660'>(066) 227-46-60</a></div> 
+							<div class='spacer'></div>
+							<div class='spacer'></div>
+							<div class='head_small_text' style='font-weight:700;'>Відділ документообігу</div> 
+							<div class='head_small_text'>Телефон / факс:  <a href='tel:0442492512'>(044) 249-25-12</a></div> 
+							<div class='spacer'></div>
+							<div class='spacer'></div>
+							<div class='head_small_text' style='font-weight:700;'>Відділ медіакомунікацій</div> 
+							<div class='head_small_text'>Телефон:  <a href='tel:+380991094123'>(099) 109-41-23</a></div> 
+							<div class='head_small_text'>E-mail:  <a href='mailto:media@duikt.edu.ua'>media@duikt.edu.ua</a></div> 
+							 
+							  
+						</div>
+					</div>
+				</div>
+				<div class='spacer'></div>  
+				<div class=' '>
+					<div class=' '> 
+						<div style='text-align:center;'>
+							<a href='/ua/' class='no_bg'><img src='/img/logo_new.png?2' style='width:130px;'  alt=''></a>
+							<div class='clear'></div>  
+							<div class='spacer_half'></div>  
+							<div class='mob_site_title' onclick='document.location.href="/ua/"'>Державний університет інформаційно-комунікаційних технологій </div> 
+								<div class='spacer_half'></div>  
+											
+								<div style='text-align:left; float:left;'>&nbsp;&nbsp;<div class='head_lang_current notranslate' style='display:inline-block; float:none;'>Укр.</div>&nbsp;<div class='head_lang notranslate' style='display:inline-block; float:none;'><a href='/en/lib/1/category/2179/view/2287'>Eng.</a></div>
+								<div class='head_lang' id='other_langs_btn_2' style='display: inline-block;    float: none;    font-size: 10px;    line-height: 11px;    top: 3px;    padding-top: 9px;  font-weight: 500;  position: relative;' >Select lang</div>
+								 
+								</div> 
+							<div class=' d-block d-lg-none' style='float:right;'> 
+								<a href='https://www.facebook.com/duikt.edu.ua' class='no_bg' target=_blank><img src='/img/facebook.png' style='width:32px;' alt=''></a> &nbsp; 
+								<a href='https://www.instagram.com/duikt_official/' class='no_bg' target=_blank><img src='/img/instagram.png' style='width:32px;' alt=''></a> &nbsp;
+								<a href='https://www.youtube.com/channel/UCrkaw_RZIE7scOoOAZy_j8g' class='no_bg' target=_blank><img src='/img/youtube.png' style='width:32px;' alt=''></a>   &nbsp;
+								<a href='https://www.linkedin.com/company/92614256' class='no_bg' target=_blank><img src='/img/linkedin.png' style='width:32px;' alt=''></a> 
+								&nbsp;&nbsp;
+							</div> 
+							<div class='clear'></div>
+							<div class='spacer'></div> 
+						</div>
+					</div> 
+				</div> 
+				<div class='clear'></div> 
+				<div class='spacer'></div>   
+				<div class='clear'></div> 
+			</div>
+		</div><div id='gtranslate' style=''>
+									<div id='google_translate_element'  ></div>
+								</div>
+									<script type='text/javascript'>
+									function googleTranslateElementInit() 
+									   {
+										 new google.translate.TranslateElement({pageLanguage: 'uk', includedLanguages: 'en,de,fr,es,pl,zh-CN,ja,ar,tr,fa,he,sv,lt,lv,et', layout:    google.translate.TranslateElement.InlineLayout.SIMPLE, autoDisplay: false}, 'google_translate_element'); 
+									   }
+									  
+									</script>
+									<script type='text/javascript' src='//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit'></script>
+				
+				 
+			<div class='head_holder  d-none d-lg-block'>   
+				<div class='page'>  
+					<div class='spacer_3'></div> 
+					<a href='/ua/' class='no_bg'><img class='logo_img' src='/img/logo_new.png?2' alt=''></a>
+					<div class='head_full_title'><h2><a href='/ua/'>Державний університет інформаційно-комунікаційних технологій</a></h2></title></div>
+					<div class='head_holder_social'> 
+							 
+						<a href='https://www.facebook.com/duikt.edu.ua/' class='no_bg' target=_blank><img src='/img/facebook.png' alt='' style='width:32px;'></a> &nbsp; 
+						<a href='https://www.instagram.com/duikt_official/' class='no_bg' target=_blank><img src='/img/instagram.png' alt='' style='width:32px;'></a> &nbsp;
+						<a href='https://www.youtube.com/channel/UCrkaw_RZIE7scOoOAZy_j8g' class='no_bg' target=_blank><img src='/img/youtube.png' alt='' style='width:32px;'></a> &nbsp;  
+						<a href='https://www.linkedin.com/company/92614256' class='no_bg' target=_blank><img src='/img/linkedin.png' style='width:32px;' alt=''></a> 
+
+						&nbsp;  &nbsp; 
+						<a href='/ua/search' class='no_bg' style='border-bottom:1px solid #1f3c8f; padding:10px 0px 7px 0px;'><span class=' '>&nbsp;Пошук &nbsp; &nbsp; </span><img src='/img/search_blue_xs.png?1' alt='' style='width:24px;'></a>
+						
+						<div style='text-align:left; display:inline; margin-left:10px;'>&nbsp;&nbsp;<div class='head_lang_current notranslate ' style='display:inline-block; float:none;'>Укр.</div>&nbsp;<div class='head_lang notranslate' style='display:inline-block; float:none;'><a href='/en/lib/1/category/2179/view/2287'>Eng.</a></div>
+								<div class='head_lang' id='other_langs_btn_1' style='display: inline-block;    float: none;    font-size: 10px;    line-height: 11px;    top: 3px;    padding-top: 9px;  font-weight: 500;  position: relative;' >Select lang</div>
+								
+				</div> 
+					</div> 
+					<div class='head_right'> 
+						<div class='head_team '><a href='/360tours/gmap/' target=_blank>Віртуальний тур</a></div>
+						<div class='spacer_2'></div> 
+						<div class='head_contacts '><a href='/ua/13-kontaktna-informaciya-pro-universitet'>Контактна інформація</a></div>
+						   
+					</div> 
+					<div class='spacer_3'></div> 
+				</div> 
+				
+				
+				<div class='menu  d-none d-lg-block'>
+					<div class='page'> 
+						<div class='menu_content'> 
+							<ul class='menu_desktop '><li><a class='no_bg' href='/ua/2-pro-universitet'>Про університет</a><ul class=''><li><a class='no_bg' href='/ua/7-kerivnictvo-pro-universitet'>Керівництво</a></li><li><a class='no_bg' href='/ua/8-struktura-universitetu-pro-universitet'>Структура університету</a></li><li><a class='no_bg' href='/ua/2699-istoriya-duikt-pro-universitet'>Історія ДУІКТ</a></li><li><a class='no_bg' href='/ua/377-sistema-zabezpechennya--yakosti-vischoi-osviti-ta-osvitnoi-diyalnosti-pro-universitet'>Система забезпечення  якості вищої освіти та освітньої діяльності</a></li><li><a class='no_bg' href='/ua/news/1/category/9'>Новини та події</a></li><li><a class='no_bg' href='/ua/117-vchena-rada-nauka'>Вчена рада</a></li><li><a class='no_bg' href='/ua/11-mizhnarodna-diyalnist-pro-universitet'>Міжнародна діяльність</a></li><li><a class='no_bg' href='/ua/2954-partneri'>Партнери ДУІКТ</a></li><li><a class='no_bg' href='/ua/661-publichni-zakupivli-pro-universitet'>Публічні закупівлі</a></li><li><a class='no_bg' href='/ua/949-publichna-informaciya-pro-universitet'>Публічна інформація</a></li><li><a class='no_bg' href='/ua/1392-profspilkoviy-komitet-pro-universitet'>Профспілковий комітет</a></li><li><a class='no_bg' href='/ua/1471-protidii-korupcii-pro-universitet'>Протидії корупції</a></li><li><a class='no_bg' href='/ua/13-kontaktna-informaciya-pro-universitet'>Контактна інформація</a></li></ul></li><li><a class='no_bg' href='/ua/1587-novini'>Новини</a><ul class=''><li><a class='no_bg' href='/ua/2690-novini-kafedr-novini'>Новини кафедр</a></li><li><a class='no_bg' href='/ua/2688-novini-it-novini'>Новини ІТ</a></li><li><a class='no_bg' href='/ua/2687-novini-kiberzahistu-novini'>Новини кіберзахисту</a></li></ul></li><li><a class='no_bg' href='/ua/3-vstupniku'>Вступнику</a><ul class=''><li><a class='no_bg' href='/ua/107-priymalna-komisiya-vstupniku'>Консультаційний центр (Приймальна комісія)</a></li><li><a class='no_bg' href='/ua/2838-pravila-priyomu-vstupniku'>Правила прийому</a></li><li><a class='no_bg' href='/ua/2056-vartist-navchannya-vstupniku'>Вартість навчання</a></li><li><a class='no_bg' href='/ua/1326-perelik-specialnostey-dlya-vstupu-vstupniku'>Вступ на 1 курс</a></li><li><a class='no_bg' href='/ua/1872-vstup-na-2-kurs-vstupniku'>Вступ на 2 курс</a></li><li><a class='no_bg' href='/ua/1873-vstup-na-3-kurs-vstupniku'>Вступ на 3 курс</a></li><li><a class='no_bg' href='/ua/113-vstup-do-magistraturi-vstupniku'>Вступ до магістратури</a></li><li><a class='no_bg' href='/ua/114-vstup-do-aspiranturi-vstupniku'>Вступ до аспірантури</a></li><li><a class='no_bg' href='/ua/453-den-vidkritih-dverey-vstupniku'>Ознайомча екскурсія</a></li><li><a class='no_bg' href='/ua/2680-osobam-z-timchasovo-okupovanih-teritoriy-vstupniku'>Особам з тимчасово окупованих територій</a></li><li><a class='no_bg' href='/ua/1340-ya-hochu-navchatis-u-derzhavnomu-universiteti-telekomunikaciy-vstupniku'>Записатись на навчання</a></li><li><a class='no_bg' href='/ua/1874-innovaciyniy-zmist-navchannya-v-universiteti-vstupniku'>Інноваційний зміст навчання в університеті</a></li><li><a class='no_bg' href='/ua/2072-zvernennya-do-vipusknikiv-shkil-ta-ih-batkiv-vstupniku'>Звернення до випускників шкіл та їх батьків</a></li><li><a class='no_bg' href='https://duikt.edu.ua/ua/news-1-1054-12621-7-prichin-obrati-dlya-navchannya-derzhavniy-universitet-informaciyno-komunikaciynih-tehnologiy_golovna' target=_blank>7 причин обрати для навчання Державний університет інформаційно-комунікаційних технологій</a></li><li><a class='no_bg' href='/ua/112-kontaktna-informaciya-vstupniku'>Контактна інформація</a></li></ul></li><li><a class='no_bg' href='/ua/4-navchannya'>Навчання</a><ul class=''><li><a class='no_bg' href='/ua/136-navchalniy-proces-navchannya'>Навчальний процес</a></li><li><a class='no_bg' href='/ua/137-grafik-navchalnogo-procesu-navchannya'>Графік навчального процесу</a></li><li><a class='no_bg' href='/ua/2676-grafik-zahistu-kvalifikaciynih-robit-navchannya'>Графік складання випускних атестаційних екзаменів та захисту атестаційних кваліфікаційних робіт</a></li><li><a class='no_bg' href='/ua/2994-katalog-osvitnih-komponentiv-vilnogo-viboru'>Каталог освітніх компонентів вільного вибору</a></li><li><a class='no_bg' href='/ua/139-konferencii-seminari-ta-olimpiadi-navchannya'>Конференції, семінари та олімпіади</a></li><li><a class='no_bg' href='/ua/140-rozklad-zanyat-asu-navchannya'>Розклад занять (АСУ)</a></li><li><a class='no_bg' href='/ua/149-e-navchannya-navchannya'>Е-навчання</a></li><li><a class='no_bg' href='/ua/1890-reyting-studentiv-navchannya'>Рейтинг студентів</a></li><li><a class='no_bg' href='/ua/432-normativni-dokumenti-navchannya'>Нормативні документи</a></li><li><a class='no_bg' href='https://duikt.edu.ua/ua/reposit' target=_blank>Електронний репозиторій</a></li><li><a class='no_bg' href='/ua/2115-rekviziti-dlya-oplati-za-navchannya-navchannya'>Реквізити для оплати за навчання</a></li><li><a class='no_bg' href='/ua/2703-reyting-naukovo-pedagogichnih-pracivnikiv-navchannya'>Рейтинг науково-педагогічних працівників</a></li><li><a class='no_bg' href='/ua/2704-komisiya-z-pitan-akademichnoi-dobrochesnosti-navchannya'>Комісія з питань академічної доброчесності</a></li></ul></li><li><a class='no_bg' href='/ua/6-studentske-zhittya'>Студентське життя</a><ul class=''><li><a class='no_bg' href='/ua/144-gurtozhitok-studentske-zhittya'>Гуртожиток</a></li><li><a class='no_bg' href='/ua/147-studentska-rada-studentske-zhittya'>Студентська рада</a></li><li><a class='no_bg' href='/ua/143-pravila-povedinki-v-universiteti-studentske-zhittya'>Правила поведінки в Університеті</a></li><li><a class='no_bg' href='/ua/848-vidguki-studentiv-pro-universitet'>Відгуки студентів</a></li><li><a class='no_bg' href='/ua/148-pracevlashtuvannya-pro-universitet'>Працевлаштування</a></li><li><a class='no_bg' href='/ua/2145-viddil-po-roboti-zi-studentami-studentske-zhittya'>Відділ по роботі зі студентами</a></li></ul></li><li><a class='no_bg' href='/ua/5-nauka'>Наука</a><ul class=''><li><a class='no_bg' href='/ua/115-naukova-ta-naukovo-tehnichna-diyalnist-nauka'>Наукова та науково-технічна діяльність</a></li><li><a class='no_bg' href='/ua/2802-naukovo-tehnichna-rada-nauka'>Науково-технічна рада</a></li><li><a class='no_bg' href='/ua/118-specializovani-radi-nauka'>Спеціалізовані ради</a></li><li><a class='no_bg' href='/ua/2803-razovi-specializovani-vcheni-radi-nauka'>Разові спеціалізовані вчені ради</a></li><li><a class='no_bg' href='/ua/121-konferencii-ta-seminari-nauka'>Конференції та семінари</a></li><li><a class='no_bg' href='/ua/122-aspirantura-i-doktorantura-nauka'>Аспірантура і докторантура</a></li><li><a class='no_bg' href='/ua/123-periodichni-vidannya-nauka'>Періодичні видання</a></li><li><a class='no_bg' href='/ua/124-naukove-tovaristvo-studentiv-nauka'>Наукове товариство студентів та аспірантів</a></li><li><a class='no_bg' href='/ua/896-rada-molodih-vchenih-nauka'>Рада молодих вчених</a></li><li><a class='no_bg' href='/ua/119-tehnichniy-komitet-tk-107-tehnichniy-zahist-informacii-nauka'>Технiчний комiтет ТК 107 &quot;Технiчний захист iнформацii&quot;</a></li><li><a class='no_bg' href='/ua/1896-vinahidnicka-diyalnist-nauka'>Винахідницька діяльність</a></li><li><a class='no_bg' href='/ua/2110-vseukrainski-konkursi-studentskih-naukovih-robit-nauka'>Всеукраїнські конкурси студентських наукових робіт</a></li><li><a class='no_bg' href='/ua/2995-mizhvidomchiy-mizhregionalniy-naukovo-praktichniy-seminar-kiberbezpeka-ta-zahist-informacii-nauka'>Міжвідомчий міжрегіональний науково-практичний семінар «Кібербезпека та захист інформації»</a></li><li><a class='no_bg' href='/ua/3087-digital-transformation-ai-and-cybersecurity-shaping-a-trusted-digital-future'>Міжнародна науково-практична конференція DIGITAL TRANSFORMATION, AI AND CYBERSECURITY: SHAPING A TRUSTED DIGITAL FUTURE</a></li></ul></li><li><a class='no_bg' href='/ua/2932-cifrovi-treningi'>Цифрові тренінги</a><ul class=''><li><a class='no_bg' href='https://forms.gle/23jDiAKCZBH8BTeU9' target=_blank>ІТ – сучасний розвиток штучного інтелекту</a></li><li><a class='no_bg' href='https://forms.gle/3F7AWRv9EPtkZaMh6' target=_blank>Кібербезпека: від етичного хакінгу до інноваційних технологій захисту</a></li><li><a class='no_bg' href='https://forms.gle/GM6UaDTiGpK83RDx7' target=_blank>Виклик та реалії сьогодення – безпілотні системи</a></li><li><a class='no_bg' href='https://forms.gle/K31qdBjDK2q3L5gJ9' target=_blank>Digital Marketing: цифрові трансформації бізнесу</a></li></ul></li><li><a class='no_bg' href='/ua/1588-fotogalereya'>Фотогалерея</a></li><li><a class='no_bg' href='/ua/2821-biblioteka'>Бібліотека</a><ul class=''><li><a class='no_bg' href='/ua/2822-scopus-biblioteka'>Scopus</a></li><li><a class='no_bg' href='/ua/2823-web-of-science-biblioteka'>Web of Science</a></li><li><a class='no_bg' href='/ua/2824-orcid-biblioteka'>ORCID</a></li><li><a class='no_bg' href='/ua/2825-reserch4life-biblioteka'>Reserch4Life</a></li><li><a class='no_bg' href='/ua/2826-siencedirect-biblioteka'>SienceDirect</a></li><li><a class='no_bg' href='/ua/2827-oer4ukraine-biblioteka'>OER4Ukraine</a></li><li><a class='no_bg' href='/ua/2828-viznachennya-indeksiv-udk-biblioteka'>Визначення індексів УДК</a></li><li><a class='no_bg' href='/ua/lib/1/category/2122'>Каталог навчальної літератури</a></li><li><a class='no_bg' href='/ua/2914-enciklopediya-bezpeki-biblioteka'>Енциклопедія безпеки</a></li><li><a class='no_bg' href='/ua/2933-periodichni-vidannya-biblioteka'>Періодичні видання</a></li></ul></li></ul> 
+						</div>
+					</div>
+				</div> 
+				
+				<div class='menu header' id='menu_header' style='display:none; position:absolute; top:-60px;'>
+					<div class='page'>
+						<div class='menu_logo' id='menu_logo'><a class='no_bg' href='/ua/'><img src='/img/logo_new.png?2'></a></div>
+						<div class='menu_content' style='text-align:right; padding:0px 10px 0px 120px; '> 
+							<ul class='menu_desktop '><li><a class='no_bg' href='/ua/2-pro-universitet'>Про університет</a><ul class=''><li><a class='no_bg' href='/ua/7-kerivnictvo-pro-universitet'>Керівництво</a></li><li><a class='no_bg' href='/ua/8-struktura-universitetu-pro-universitet'>Структура університету</a></li><li><a class='no_bg' href='/ua/2699-istoriya-duikt-pro-universitet'>Історія ДУІКТ</a></li><li><a class='no_bg' href='/ua/377-sistema-zabezpechennya--yakosti-vischoi-osviti-ta-osvitnoi-diyalnosti-pro-universitet'>Система забезпечення  якості вищої освіти та освітньої діяльності</a></li><li><a class='no_bg' href='/ua/news/1/category/9'>Новини та події</a></li><li><a class='no_bg' href='/ua/117-vchena-rada-nauka'>Вчена рада</a></li><li><a class='no_bg' href='/ua/11-mizhnarodna-diyalnist-pro-universitet'>Міжнародна діяльність</a></li><li><a class='no_bg' href='/ua/2954-partneri'>Партнери ДУІКТ</a></li><li><a class='no_bg' href='/ua/661-publichni-zakupivli-pro-universitet'>Публічні закупівлі</a></li><li><a class='no_bg' href='/ua/949-publichna-informaciya-pro-universitet'>Публічна інформація</a></li><li><a class='no_bg' href='/ua/1392-profspilkoviy-komitet-pro-universitet'>Профспілковий комітет</a></li><li><a class='no_bg' href='/ua/1471-protidii-korupcii-pro-universitet'>Протидії корупції</a></li><li><a class='no_bg' href='/ua/13-kontaktna-informaciya-pro-universitet'>Контактна інформація</a></li></ul></li><li><a class='no_bg' href='/ua/1587-novini'>Новини</a><ul class=''><li><a class='no_bg' href='/ua/2690-novini-kafedr-novini'>Новини кафедр</a></li><li><a class='no_bg' href='/ua/2688-novini-it-novini'>Новини ІТ</a></li><li><a class='no_bg' href='/ua/2687-novini-kiberzahistu-novini'>Новини кіберзахисту</a></li></ul></li><li><a class='no_bg' href='/ua/3-vstupniku'>Вступнику</a><ul class=''><li><a class='no_bg' href='/ua/107-priymalna-komisiya-vstupniku'>Консультаційний центр (Приймальна комісія)</a></li><li><a class='no_bg' href='/ua/2838-pravila-priyomu-vstupniku'>Правила прийому</a></li><li><a class='no_bg' href='/ua/2056-vartist-navchannya-vstupniku'>Вартість навчання</a></li><li><a class='no_bg' href='/ua/1326-perelik-specialnostey-dlya-vstupu-vstupniku'>Вступ на 1 курс</a></li><li><a class='no_bg' href='/ua/1872-vstup-na-2-kurs-vstupniku'>Вступ на 2 курс</a></li><li><a class='no_bg' href='/ua/1873-vstup-na-3-kurs-vstupniku'>Вступ на 3 курс</a></li><li><a class='no_bg' href='/ua/113-vstup-do-magistraturi-vstupniku'>Вступ до магістратури</a></li><li><a class='no_bg' href='/ua/114-vstup-do-aspiranturi-vstupniku'>Вступ до аспірантури</a></li><li><a class='no_bg' href='/ua/453-den-vidkritih-dverey-vstupniku'>Ознайомча екскурсія</a></li><li><a class='no_bg' href='/ua/2680-osobam-z-timchasovo-okupovanih-teritoriy-vstupniku'>Особам з тимчасово окупованих територій</a></li><li><a class='no_bg' href='/ua/1340-ya-hochu-navchatis-u-derzhavnomu-universiteti-telekomunikaciy-vstupniku'>Записатись на навчання</a></li><li><a class='no_bg' href='/ua/1874-innovaciyniy-zmist-navchannya-v-universiteti-vstupniku'>Інноваційний зміст навчання в університеті</a></li><li><a class='no_bg' href='/ua/2072-zvernennya-do-vipusknikiv-shkil-ta-ih-batkiv-vstupniku'>Звернення до випускників шкіл та їх батьків</a></li><li><a class='no_bg' href='https://duikt.edu.ua/ua/news-1-1054-12621-7-prichin-obrati-dlya-navchannya-derzhavniy-universitet-informaciyno-komunikaciynih-tehnologiy_golovna' target=_blank>7 причин обрати для навчання Державний університет інформаційно-комунікаційних технологій</a></li><li><a class='no_bg' href='/ua/112-kontaktna-informaciya-vstupniku'>Контактна інформація</a></li></ul></li><li><a class='no_bg' href='/ua/4-navchannya'>Навчання</a><ul class=''><li><a class='no_bg' href='/ua/136-navchalniy-proces-navchannya'>Навчальний процес</a></li><li><a class='no_bg' href='/ua/137-grafik-navchalnogo-procesu-navchannya'>Графік навчального процесу</a></li><li><a class='no_bg' href='/ua/2676-grafik-zahistu-kvalifikaciynih-robit-navchannya'>Графік складання випускних атестаційних екзаменів та захисту атестаційних кваліфікаційних робіт</a></li><li><a class='no_bg' href='/ua/2994-katalog-osvitnih-komponentiv-vilnogo-viboru'>Каталог освітніх компонентів вільного вибору</a></li><li><a class='no_bg' href='/ua/139-konferencii-seminari-ta-olimpiadi-navchannya'>Конференції, семінари та олімпіади</a></li><li><a class='no_bg' href='/ua/140-rozklad-zanyat-asu-navchannya'>Розклад занять (АСУ)</a></li><li><a class='no_bg' href='/ua/149-e-navchannya-navchannya'>Е-навчання</a></li><li><a class='no_bg' href='/ua/1890-reyting-studentiv-navchannya'>Рейтинг студентів</a></li><li><a class='no_bg' href='/ua/432-normativni-dokumenti-navchannya'>Нормативні документи</a></li><li><a class='no_bg' href='https://duikt.edu.ua/ua/reposit' target=_blank>Електронний репозиторій</a></li><li><a class='no_bg' href='/ua/2115-rekviziti-dlya-oplati-za-navchannya-navchannya'>Реквізити для оплати за навчання</a></li><li><a class='no_bg' href='/ua/2703-reyting-naukovo-pedagogichnih-pracivnikiv-navchannya'>Рейтинг науково-педагогічних працівників</a></li><li><a class='no_bg' href='/ua/2704-komisiya-z-pitan-akademichnoi-dobrochesnosti-navchannya'>Комісія з питань академічної доброчесності</a></li></ul></li><li><a class='no_bg' href='/ua/6-studentske-zhittya'>Студентське життя</a><ul class=''><li><a class='no_bg' href='/ua/144-gurtozhitok-studentske-zhittya'>Гуртожиток</a></li><li><a class='no_bg' href='/ua/147-studentska-rada-studentske-zhittya'>Студентська рада</a></li><li><a class='no_bg' href='/ua/143-pravila-povedinki-v-universiteti-studentske-zhittya'>Правила поведінки в Університеті</a></li><li><a class='no_bg' href='/ua/848-vidguki-studentiv-pro-universitet'>Відгуки студентів</a></li><li><a class='no_bg' href='/ua/148-pracevlashtuvannya-pro-universitet'>Працевлаштування</a></li><li><a class='no_bg' href='/ua/2145-viddil-po-roboti-zi-studentami-studentske-zhittya'>Відділ по роботі зі студентами</a></li></ul></li><li><a class='no_bg' href='/ua/5-nauka'>Наука</a><ul class=''><li><a class='no_bg' href='/ua/115-naukova-ta-naukovo-tehnichna-diyalnist-nauka'>Наукова та науково-технічна діяльність</a></li><li><a class='no_bg' href='/ua/2802-naukovo-tehnichna-rada-nauka'>Науково-технічна рада</a></li><li><a class='no_bg' href='/ua/118-specializovani-radi-nauka'>Спеціалізовані ради</a></li><li><a class='no_bg' href='/ua/2803-razovi-specializovani-vcheni-radi-nauka'>Разові спеціалізовані вчені ради</a></li><li><a class='no_bg' href='/ua/121-konferencii-ta-seminari-nauka'>Конференції та семінари</a></li><li><a class='no_bg' href='/ua/122-aspirantura-i-doktorantura-nauka'>Аспірантура і докторантура</a></li><li><a class='no_bg' href='/ua/123-periodichni-vidannya-nauka'>Періодичні видання</a></li><li><a class='no_bg' href='/ua/124-naukove-tovaristvo-studentiv-nauka'>Наукове товариство студентів та аспірантів</a></li><li><a class='no_bg' href='/ua/896-rada-molodih-vchenih-nauka'>Рада молодих вчених</a></li><li><a class='no_bg' href='/ua/119-tehnichniy-komitet-tk-107-tehnichniy-zahist-informacii-nauka'>Технiчний комiтет ТК 107 &quot;Технiчний захист iнформацii&quot;</a></li><li><a class='no_bg' href='/ua/1896-vinahidnicka-diyalnist-nauka'>Винахідницька діяльність</a></li><li><a class='no_bg' href='/ua/2110-vseukrainski-konkursi-studentskih-naukovih-robit-nauka'>Всеукраїнські конкурси студентських наукових робіт</a></li><li><a class='no_bg' href='/ua/2995-mizhvidomchiy-mizhregionalniy-naukovo-praktichniy-seminar-kiberbezpeka-ta-zahist-informacii-nauka'>Міжвідомчий міжрегіональний науково-практичний семінар «Кібербезпека та захист інформації»</a></li><li><a class='no_bg' href='/ua/3087-digital-transformation-ai-and-cybersecurity-shaping-a-trusted-digital-future'>Міжнародна науково-практична конференція DIGITAL TRANSFORMATION, AI AND CYBERSECURITY: SHAPING A TRUSTED DIGITAL FUTURE</a></li></ul></li><li><a class='no_bg' href='/ua/2932-cifrovi-treningi'>Цифрові тренінги</a><ul class=''><li><a class='no_bg' href='https://forms.gle/23jDiAKCZBH8BTeU9' target=_blank>ІТ – сучасний розвиток штучного інтелекту</a></li><li><a class='no_bg' href='https://forms.gle/3F7AWRv9EPtkZaMh6' target=_blank>Кібербезпека: від етичного хакінгу до інноваційних технологій захисту</a></li><li><a class='no_bg' href='https://forms.gle/GM6UaDTiGpK83RDx7' target=_blank>Виклик та реалії сьогодення – безпілотні системи</a></li><li><a class='no_bg' href='https://forms.gle/K31qdBjDK2q3L5gJ9' target=_blank>Digital Marketing: цифрові трансформації бізнесу</a></li></ul></li><li><a class='no_bg' href='/ua/1588-fotogalereya'>Фотогалерея</a></li><li><a class='no_bg' href='/ua/2821-biblioteka'>Бібліотека</a><ul class=''><li><a class='no_bg' href='/ua/2822-scopus-biblioteka'>Scopus</a></li><li><a class='no_bg' href='/ua/2823-web-of-science-biblioteka'>Web of Science</a></li><li><a class='no_bg' href='/ua/2824-orcid-biblioteka'>ORCID</a></li><li><a class='no_bg' href='/ua/2825-reserch4life-biblioteka'>Reserch4Life</a></li><li><a class='no_bg' href='/ua/2826-siencedirect-biblioteka'>SienceDirect</a></li><li><a class='no_bg' href='/ua/2827-oer4ukraine-biblioteka'>OER4Ukraine</a></li><li><a class='no_bg' href='/ua/2828-viznachennya-indeksiv-udk-biblioteka'>Визначення індексів УДК</a></li><li><a class='no_bg' href='/ua/lib/1/category/2122'>Каталог навчальної літератури</a></li><li><a class='no_bg' href='/ua/2914-enciklopediya-bezpeki-biblioteka'>Енциклопедія безпеки</a></li><li><a class='no_bg' href='/ua/2933-periodichni-vidannya-biblioteka'>Періодичні видання</a></li></ul></li></ul> 
+						</div>
+					</div>
+				</div> 
+				
+				
+			</div>
+			
+<div class='page'><div class='container-fluid'><div class='navigation'><a href='/ua/'>Головна</a> &nbsp;&nbsp;/&nbsp;&nbsp;  <a href='/ua/pages/2821'>Бібліотека</a> &nbsp;&nbsp;/&nbsp;&nbsp;  <a href='/ua/lib/1/category/2122'>Каталог навчальної літератури</a> &nbsp;&nbsp;/&nbsp;&nbsp;  <a href='/ua/lib/1/category/2123'>Сектор Інформаційних технологій</a> &nbsp;&nbsp;/&nbsp;&nbsp;   <a href='/ua/lib/1/category/2179'>Електронна платформа вищої математики, математичного моделювання та фізики</a> &nbsp;&nbsp;/&nbsp;&nbsp; </div></div></div><div class='page'><div class='spacer_3'></div><div class='spacer'></div><div class='spacer'></div><div class='row'><div class='col-lg-9 col-md-9 col-sm-12 col-xs-12'> 	<div class='container-fluid'> <div class='content_title' style='margin-top:0px;'><div class='content_title_img'></div><h1>ФІЗИКА. ЛАБОРАТОРНИЙ ПРАКТИКУМ</h1></div><div class='lib_view_subtitle'>Деталі</div><div class='spacer_half'></div> 	<div class='lib_details'> <div class='row  '>
+								<div class='col-lg-4 col-md-5 col-sm-5 col-xs-6 lib_details_left' style=''>Автор: </div>
+								<div class='col-lg-7 col-md-7 col-sm-7 col-xs-6 lib_details_right' style=''>Нафєєв Р. К., Морозова С. В., Сімченко С. В.</div>
+							</div>
+							<div class='row  '>
+								<div class='col-lg-4 col-md-5 col-sm-5 col-xs-6 lib_details_left' style=''>Мова документу: </div>
+								<div class='col-lg-7 col-md-7 col-sm-7 col-xs-6 lib_details_right' style=''>Українська</div>
+							</div>
+							<div class='clear'></div>
+									<div class='row  '>
+										<div class='col-lg-4 col-md-5 col-sm-5 col-xs-6 lib_details_left' style=''>Розмір документу: </div>
+										<div class='col-lg-7 col-md-7 col-sm-7 col-xs-6 lib_details_right' style=''>3.79 Мб</div>
+									</div>
+								<div class='row  '>
+								<div class='col-lg-4 col-md-5 col-sm-5 col-xs-6 lib_details_left' style=''>Рік публікації: </div>
+								<div class='col-lg-7 col-md-7 col-sm-7 col-xs-6 lib_details_right' style=''>2023</div>
+							</div><div class='row  '>
+								<div class='col-lg-4 col-md-5 col-sm-5 col-xs-6 lib_details_left' style=''>Видавництво: </div>
+								<div class='col-lg-7 col-md-7 col-sm-7 col-xs-6 lib_details_right' style=''>ДУТ, Київ</div>
+							</div><div class='row  '>
+								<div class='col-lg-4 col-md-5 col-sm-5 col-xs-6 lib_details_left' style=''>Країна, місто: </div>
+								<div class='col-lg-7 col-md-7 col-sm-7 col-xs-6 lib_details_right' style=''>Київ</div>
+							</div><div class='row  '>
+								<div class='col-lg-4 col-md-5 col-sm-5 col-xs-6 lib_details_left' style=''>Кількість сторінок: </div>
+								<div class='col-lg-7 col-md-7 col-sm-7 col-xs-6 lib_details_right' style=''>236</div>
+							</div><div class='row '>
+								<div class='col-lg-4 col-md-5 col-sm-5 col-xs-6 lib_details_left' style=''>Наявність у бібліотеці: </div>
+								<div class='col-lg-7 col-md-7 col-sm-7 col-xs-6 lib_details_right' style=''>Так</div>
+							</div><div class='row '>
+								<div class='col-lg-4 col-md-5 col-sm-5 col-xs-6 lib_details_left' style=''>Наявність в електронному вигляді: </div>
+								<div class='col-lg-7 col-md-7 col-sm-7 col-xs-6 lib_details_right' style=''>Так</div>
+							</div>
+							<div class='row  '>
+								<div class='col-lg-4 col-md-5 col-sm-5 col-xs-6 lib_details_left' style=''>Створено: </div>
+								<div class='col-lg-7 col-md-7 col-sm-7 col-xs-6 lib_details_right' style=''>995 дн. тому</div>
+							</div><div class='clear'></div>
+							<div class='row '>
+								<div class='col-lg-4 col-md-5 col-sm-5 col-xs-6 lib_details_left' style=''>Категорія: </div>
+								<div class='col-lg-7 col-md-7 col-sm-7 col-xs-6 lib_details_right' style=''><a href='/ua/lib/1/category/2179'>Електронна платформа вищої математики, математичного моделювання та фізики</a></div>
+							</div>
+							
+							<div class='row '>
+								<div class='col-lg-4 col-md-5 col-sm-5 col-xs-6 lib_details_left' style=''>Тип документу: </div>
+								<div class='col-lg-7 col-md-7 col-sm-7 col-xs-6 lib_details_right' style=''>Підручник</div>
+							</div><div class='clear'></div>
+							<div class='row  '>
+								<div class='col-lg-4 col-md-5 col-sm-5 col-xs-6 lib_details_left' style=''>Посилання для списку використаної літератури: </div>
+								<div class='col-lg-7 col-md-7 col-sm-7 col-xs-6 lib_details_right' style=''>Нафєєв Р. К., Морозова С. В., Сімченко С. В.. «ФІЗИКА. ЛАБОРАТОРНИЙ ПРАКТИКУМ». -  2023. </div>
+							</div><div class='clear'></div>
+							
+							<div class='clear'></div></div><div class='spacer_3'></div><div class='lib_view_subtitle'>Анотація</h3></div><div class='content_text'></div><div class='spacer'></div><div class='spacer_half'></div><div class='files'><div class=''><h3>Документи</h3></div><div class='file'><a href='/uploads/l_2287_50866337.pdf' target='_blank'><img src='/img/filetypes/pdf.png'>Фізика_Лаб_практикум</a></div></div></div></div><div class='clear d-block d-md-none'></div><div class='spacer_3 d-block d-md-none'></div><div class='col-sm-3 visible-sm'></div><div class='col-lg-3 col-md-3 col-sm-12 col-xs-12'><div class='sub_pages_news'><div class='sub_pages_navigation_holder'><div class='sub_pages_title_bg'><h2><div class='spacer_half'></div>Абітурієнту<div class='spacer_half'></div></h2></div><div class='spacer'></div><div class='spacer'></div><div class='spacer_half'></div><div class='sub_pages_title_hr'></div><div class='spacer'></div><div class='spacer'></div><div class='spacer_half'></div>
+												<div class='sub_pages_social_holder  '>
+														<div class='centertext bold'>Документознавство та інформаційна діяльність</div>
+														<div class='sub_pages_abit_info_text'>
+															<p style="text-align: center;"><img alt="" src="https://dut.edu.ua/uploads/p_475_14038747.jpg" style="width: 215px; height: 140px;" /></p>
+
+<p>Бакалавр з цього фаху підготовлений до роботи в інформаційних, аналітичних, архівних, адміністративних, кадрових підрозділах і службах, службах діловодства підприємств, організацій, установ, фірм різного профілю та форм власності, а також в органах державного управління усіх рівнів. Бакалавр з документознавства та інформаційної діяльності за умов набуття відповідних знань і практичних вмінь може адаптуватись до таких суміжних напрямів діяльності, як маркетингова, рекламна, зв&rsquo;язки з громадськістю, обліково-контрольна та ін.</p>
+
+														</div>	
+														<div class='spacer'></div>
+														<center><input class='index_block_button' style='width:100%' name='vstup' onclick='document.location.href="/ua/vstup/form"'  type='submit' value='Записатись на вступ'  /></center>
+													</div>
+													<div class='allow_tip_vstup'>
+															<div class='TipText '>
+																<div class='TipTitle'>
+																	Документознавство та інформаційна діяльність
+																</div>
+																<div class='TipContent'>
+																	<p style="text-align: center;"><img alt="" src="https://dut.edu.ua/uploads/p_475_14038747.jpg" style="width: 215px; height: 140px;" /></p>
+
+<p>Бакалавр з цього фаху підготовлений до роботи в інформаційних, аналітичних, архівних, адміністративних, кадрових підрозділах і службах, службах діловодства підприємств, організацій, установ, фірм різного профілю та форм власності, а також в органах державного управління усіх рівнів. Бакалавр з документознавства та інформаційної діяльності за умов набуття відповідних знань і практичних вмінь може адаптуватись до таких суміжних напрямів діяльності, як маркетингова, рекламна, зв&rsquo;язки з громадськістю, обліково-контрольна та ін.</p>
+
+																</div>
+															</div>
+														</div></div></div>
+		</div><div class='col-sm-3 visible-sm'></div></div><div style='clear:both;'></div><br></div><div class='content_border'></div><div class='page container-fluid'> <div class='content_view'>Переглядів: 2 636</div> </div><div class='spacer' ></div>
+
+			<script> 
+				$('.popup').fancybox({
+					 
+				});
+			</script>
+			
+			 
+	<div class='footer'>
+		
+		
+		
+		
+		<div class='page  '>
+			<div class='container-fluid'>
+				<div class='row'>
+				
+					<div class='col-lg-4 col-md-4 col-sm-12 col-xs-12 xs_left sm_left d-block d-md-block'>
+						<div class='spacer_3'></div>
+						<div class='center'><img src='/img/logo_new_w.png' alt='' style='width:200px;'></div>
+						<div class='spacer'></div>
+						<div class='spacer'></div>
+						<div class='footer_main_title center'>Державний університет інформаційно-комунікаційних технологій</div> 
+							
+							<div class='spacer'></div>
+							<div class='spacer'></div>
+							<div class='spacer'></div>
+							<div class='footer_content_text footer_content center'>Адреса: 03110, м. Київ, вул. Солом'янська, 7</div>   
+							<div class='footer_content_text footer_content center'>E-mail:   <a href='mailto:info@duikt.edu.ua'>info@duikt.edu.ua</a></div> 
+							<div class='footer_content_text footer_content center'>Скринька довіри:   <a href='mailto:vps@duikt.edu.ua'>vps@duikt.edu.ua</a></div> 
+							
+							
+							
+							
+							
+						<div class='center d-none d-md-block'>
+							<div class='spacer_3'></div>
+								<a href='https://www.facebook.com/duikt.edu.ua/' class='no_bg' target=_blank><img src='/img/facebook.png' alt='' style='width:32px;'></a> &nbsp; 
+								<a href='https://www.instagram.com/duikt_official/' class='no_bg' target=_blank><img src='/img/instagram.png' alt='' style='width:32px;'></a> &nbsp;
+								<a href='https://www.youtube.com/channel/UCrkaw_RZIE7scOoOAZy_j8g' class='no_bg' target=_blank><img src='/img/youtube.png' alt='' style='width:32px;'></a>  &nbsp; 
+								<a href='https://www.linkedin.com/company/92614256' class='no_bg' target=_blank><img src='/img/linkedin.png' style='width:32px;' alt=''></a> 
+								
+								<div class='spacer_3'></div>
+							</div> 
+					</div> 
+					
+					<div class='col-lg-4 col-md-4 d-none d-md-block' >
+						
+						<div class='spacer_5'></div> 
+						
+						<div class='footer_title'>Частовідвідувані сторінки</div>
+						<div class='spacer d-none d-md-block'></div>  
+						<div class='spacer_half d-none d-md-block'></div>  
+						<div class='spacer_half d-none d-md-block'></div>  
+						
+						 
+						<div class='footer_content'> 
+							<div class='container-fluid'> 
+							<div class='row'> 
+								<div class='col-lg-6' style='padding-left:0px;'>
+									<div class='footer_link'><a href='/ua/pages/107'>Консультаційний центр (Приймальна комісія)</a></div>
+									<div class='footer_link'><a href='/ua/pages/108'>Правила прийому</a></div> 
+									<div class='footer_link'><a href='/ua/pages/430'>Вартість навчання та реквізити</a></div> 
+								</div> 
+								<div class='col-lg-6 d-none d-lg-block'>
+									<div class='footer_link'><a href='/ua/pages/140'>Розклад занять</a></div>
+									<div class='footer_link'><a href='/ua/pages/8'>Структура університету</a></div>
+									<div class='footer_link'><a href='/ua/news/1/category/9'>Новини</a></div> 
+								</div> 
+							</div>
+							</div>
+						</div>
+					</div>
+					
+					<div class='col-lg-4 col-md-4 d-block d-md-block'>
+						<div class='spacer_3 d-block d-md-none'></div> 
+						<div class='spacer_5 d-none d-md-block'></div> 
+						
+						<div class='footer_title'>Зв'язатись з нами</div>
+						<div class='spacer d-none d-md-block'></div>  
+						<div class='spacer_half d-none d-md-block'></div>  
+						<div class='spacer_half d-none d-md-block'></div>  
+						
+						 
+						<div class='footer_content'> 
+							<div class='footer_content_text' style='font-weight:700;'>Консультаційний центр (Приймальна комісія) </div> 
+							<div class='footer_content_text'>Телефон: 
+								<a href='tel:+380442492591'>(044) 249-25-91;</a>
+								<a href='tel:+38 (095) 931-37-42'>(095) 931-37-42;</a></li><br>
+								<a href='tel:+38 (068) 420-74-65'>(068) 420-74-65</a></li>
+							</div> 
+							<div class='spacer'></div>
+							<div class='spacer'></div>
+							<div class='footer_content_text' style='font-weight:700;'>Відділ документообігу</div> 
+							<div class='footer_content_text'>Телефон / факс:  <a href='tel:0442492512'>(044) 249-25-12</a></div> 
+							<div class='spacer'></div>
+							<div class='spacer'></div>
+							<div class='footer_content_text' style='font-weight:700;'>Відділ медіакомунікацій</div> 
+							<div class='footer_content_text'>Телефон:  <a href='tel:+380442983443'>(044) 298-34-43</a>; <a href='tel:+380991094123'>(099) 109-41-23</a></div> 
+							<div class='footer_content_text'>E-mail:  <a href='mailto:media@duikt.edu.ua'>media@duikt.edu.ua</a></div> 
+							 
+						</div> 
+					<div class='spacer'></div> 
+					</div>
+				
+				
+				</div>
+			</div>
+			
+			<div class='clear'></div> 
+			
+			
+			
+			
+		</div>
+		
+		<div class='center d-block d-md-none'>
+			<div class='spacer'></div>
+			<a href='https://www.facebook.com/duikt.edu.ua' class='no_bg' target=_blank><img src='/img/facebook.png' style='width:32px;' alt=''></a> &nbsp; 
+			<a href='https://www.instagram.com/duikt_official/' class='no_bg' target=_blank><img src='/img/instagram.png' style='width:32px;' alt=''></a> &nbsp; 
+			<a href='https://www.youtube.com/channel/UCrkaw_RZIE7scOoOAZy_j8g' class='no_bg' target=_blank><img src='/img/youtube.png' style='width:32px;' alt=''></a> &nbsp; 
+			<a href='https://www.linkedin.com/company/92614256' class='no_bg' target=_blank><img src='/img/linkedin.png' style='width:32px;' alt=''></a> 
+			
+			<div class='spacer'></div>
+		</div> 
+		
+		<div class='footer_after'>
+			<div style='height:4px;'></div> 
+			<div class='page center'> © 2026, Всі права захищені </div>
+		</div>
+	</div> 
+	
+	 
+	
+	 
+			<div class='d-none d-lg-block fixed_adv_left_holder'>
+				<a href='https://duikt.edu.ua/ua/453-den-vidkritih-dverey-vstupniku' target=_blank><img src='https://duikt.edu.ua/uploads/n_15495_31244215.jpg'></a>
+			</div>
+		
+		<div class='d-none d-lg-block fixed_adv_right_holder'>
+			<a href='https://duikt.edu.ua/ua/3087-digital-transformation-ai-and-cybersecurity-shaping-a-trusted-digital-future' target=_blank><img src='https://duikt.edu.ua/uploads/p_3087_26299434.jpg'></a>
+		</div>
+	<div class='calendar_popup_content' id='callback_form' style='display: none;'>
+				<form>
+					<div class='head_bg_callback_form' style='  width:310px;'>   
+						<div class='head_bg_callback_form_title'>Отримати консультацію</div>
+						<div class='spacer_half'></div>
+						<div class='head_bg_callback_form_text'>з питань вступу 2024</div>
+						<div class='spacer'></div>
+						<div class='spacer'></div>
+						<div id='callback_popup_content_send' style='display:block;'></div>
+						<div class='spacer'></div>
+						<div class='head_bg_callback_form_line'>
+							<input type='text' name='name' class='callback_name' id='callback_f_name' value='' placeholder='Ваше ім`я' required>
+						</div>
+						<div class='spacer'></div>
+						<div class='spacer'></div>
+						<div class='head_bg_callback_form_line '>
+							<input type='text' name='phone' class='callback_phone reg_phone' onclick='this.selectionStart = 4;this.selectionEnd = 4;' id='callback_f_phone' value='' placeholder='Номер телефону' required>
+						</div>
+						<div class='spacer'></div>
+						<div class='spacer'></div>
+						<div class='head_bg_callback_form_line ' style='width:90%;'>
+							<textarea style='max-width:100%;' class='callback_email' id='callback_f_text' name='callback_text' placeholder='Текст повідомлення (необов`язково)'></textarea>
+						</div>
+						<input type='hidden' name='kaf_id' id='page_id' value='0' >
+						<div class='spacer'></div>
+						<div class='spacer'></div>
+						<div class='head_bg_callback_form_line '>
+							<input type='submit' onclick='submit_callback();' id='callback_submit_button' style='display:none;'>
+							<div class='callback_form_button' onclick='submit_callback();'>Надіслати</div>
+						</div> 
+						<div class='spacer'></div>
+						<div class='news_index_date'>Натискаючи на кнопку "Надіслати", ви даєте згоду на обробку персональних даних та погоджуєтеся з політикою конфіденційності.</div>
+
+					</div>
+				</form>
+			</div>
+			<div class='calendar_popup_content' id='thanks_form' style='display: none;'>
+				<div class='head_bg_callback_form_text'>
+					<div class='thanks_form_img' style='width:350px; height:150px;  margin:0 auto; background:url(/img/logo.png) center center no-repeat; background-size:contain;'></div>
+					<div class='spacer' style='height:10px; width:100%;'></div>
+					<div class='spacer' style='height:10px; width:100%;'></div>
+					<div class='spacer' style='height:10px; width:100%;'></div>
+				</div>
+				<div class='head_bg_callback_form_title_thanks' style=' '> 
+					<div style='color: #00486c; font-weight:700;    font-size: 18px;'>Дякуємо Вам за звернення до Державного університету інформаційно-комунікаційних технологій </div>
+					<div class='spacer' style='height:10px; width:100%;'></div>
+					<div class='spacer' style='height:10px; width:100%;'></div>
+					<div class='thanks_green_text' style='text-align:center; color:#4fc043; font-size:16px;'>
+						<img src='/img/checked.png' alt='' style='position:relative; top:-2px; width:24px; height:24px;'> Ваш запит успішно надіслано
+					</div>
+					<div class='spacer' style='height:10px; width:100%;'></div>
+					<div class='spacer' style='height:10px; width:100%;'></div>
+					<div class='thanks_text'>
+						<p>Завідуючий кафедрою зателефонує Вам як тільки отримає повідомлення.</p>
+					</div>
+				</div> 
+			</div> 
+		</body>
+	</html>

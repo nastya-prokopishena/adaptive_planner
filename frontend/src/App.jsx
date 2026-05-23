@@ -16,6 +16,7 @@ import Profile from "./pages/Profile";
 import ScheduleImportPage from "./pages/ScheduleImportPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import WelcomePage from "./pages/WelcomePage";
+import TaskImportPage from "./pages/TaskImportPage";
 
 axios.defaults.withCredentials = true;
 
@@ -1066,6 +1067,14 @@ function AppContent() {
           element={
             <ProtectedRoute user={user}>
               <ScheduleImportPage loadEvents={loadEvents} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/tasks/import"
+          element={
+            <ProtectedRoute user={user}>
+              <TaskImportPage />
             </ProtectedRoute>
           }
         />

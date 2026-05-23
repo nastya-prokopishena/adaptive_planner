@@ -1,0 +1,90 @@
+Hybrid hierarchical difficulty model
+
+Best fine model: Fine LinearSVC
+Fine accuracy: 0.7669902912621359
+
+Best group model: Group LinearSVC
+Group accuracy: 0.8252427184466019
+
+================================================================================
+Fine models:
+
+Model: Fine LogisticRegression
+Accuracy: 0.7475728155339806
+              precision    recall  f1-score   support
+
+           1     1.0000    1.0000    1.0000         9
+           2     0.7576    0.9259    0.8333        27
+           3     0.7500    0.5806    0.6545        31
+           4     0.7895    0.6250    0.6977        24
+           5     0.5556    0.8333    0.6667        12
+
+    accuracy                         0.7476       103
+   macro avg     0.7705    0.7930    0.7704       103
+weighted avg     0.7604    0.7476    0.7431       103
+
+Confusion matrix:
+[[ 9  0  0  0  0]
+ [ 0 25  1  1  0]
+ [ 0  6 18  3  4]
+ [ 0  1  4 15  4]
+ [ 0  1  1  0 10]]
+
+Model: Fine LinearSVC
+Accuracy: 0.7669902912621359
+              precision    recall  f1-score   support
+
+           1     1.0000    1.0000    1.0000         9
+           2     0.8065    0.9259    0.8621        27
+           3     0.7826    0.5806    0.6667        31
+           4     0.7619    0.6667    0.7111        24
+           5     0.5789    0.9167    0.7097        12
+
+    accuracy                         0.7670       103
+   macro avg     0.7860    0.8180    0.7899       103
+weighted avg     0.7793    0.7670    0.7624       103
+
+Confusion matrix:
+[[ 9  0  0  0  0]
+ [ 0 25  1  1  0]
+ [ 0  5 18  3  5]
+ [ 0  1  4 16  3]
+ [ 0  0  0  1 11]]
+
+================================================================================
+Group models:
+
+Model: Group LogisticRegression
+Accuracy: 0.7961165048543689
+              precision    recall  f1-score   support
+
+        easy     0.8293    0.9444    0.8831        36
+        hard     0.8056    0.8056    0.8056        36
+      medium     0.7308    0.6129    0.6667        31
+
+    accuracy                         0.7961       103
+   macro avg     0.7885    0.7876    0.7851       103
+weighted avg     0.7913    0.7961    0.7909       103
+
+Confusion matrix:
+[[34  1  1]
+ [ 1 29  6]
+ [ 6  6 19]]
+
+Model: Group LinearSVC
+Accuracy: 0.8252427184466019
+              precision    recall  f1-score   support
+
+        easy     0.8537    0.9722    0.9091        36
+        hard     0.8333    0.8333    0.8333        36
+      medium     0.7692    0.6452    0.7018        31
+
+    accuracy                         0.8252       103
+   macro avg     0.8187    0.8169    0.8147       103
+weighted avg     0.8211    0.8252    0.8202       103
+
+Confusion matrix:
+[[35  0  1]
+ [ 1 30  5]
+ [ 5  6 20]]
+

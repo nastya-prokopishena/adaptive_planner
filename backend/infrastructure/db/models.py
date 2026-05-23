@@ -134,6 +134,13 @@ class Task(Base):
     completed_at = Column(DateTime, nullable=True)
     missed_at = Column(DateTime, nullable=True)
 
+    # NLP fields
+    task_type = Column(String(50), default="other")
+    keywords = Column(Text, nullable=True)
+    estimated_duration_hours = Column(Integer, default=1)
+    difficulty_score = Column(Integer, default=3)
+    nlp_source = Column(String(50), default="manual")
+
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow)
 
@@ -163,3 +170,4 @@ class TaskActivityLog(Base):
     details = Column(Text, nullable=True)
 
     created_at = Column(DateTime, default=datetime.utcnow)
+
