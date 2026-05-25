@@ -1,7 +1,16 @@
-
 from datetime import datetime
 
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import (
+    Boolean,
+    Column,
+    DateTime,
+    Float,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+)
+
 from sqlalchemy.orm import declarative_base
 
 
@@ -70,6 +79,7 @@ class Event(Base):
     )
 
     title = Column(String, nullable=False)
+
     start_time = Column(DateTime, nullable=False)
     end_time = Column(DateTime, nullable=False)
 
@@ -90,6 +100,7 @@ class Event(Base):
 
     recurrence_type = Column(String, default="none")
     recurrence_interval = Column(Integer, default=1)
+
     recurrence_unit = Column(String, nullable=True)
     recurrence_days = Column(String, nullable=True)
 
@@ -131,18 +142,40 @@ class Task(Base):
     priority = Column(String(50), default="medium")
 
     due_date = Column(DateTime, nullable=True)
+
     completed_at = Column(DateTime, nullable=True)
     missed_at = Column(DateTime, nullable=True)
 
-    # NLP fields
+    # NLP / ML fields
     task_type = Column(String(50), default="other")
-    keywords = Column(Text, nullable=True)
-    estimated_duration_hours = Column(Integer, default=1)
-    difficulty_score = Column(Integer, default=3)
-    nlp_source = Column(String(50), default="manual")
 
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow)
+    keywords = Column(Text, nullable=True)
+
+    estimated_duration_hours = Column(
+        Float,
+        default=1.0,
+    )
+
+    difficulty_score = Column(
+        Integer,
+        default=3,
+    )
+
+    nlp_source = Column(
+        String(50),
+        default="manual",
+    )
+
+    created_at = Column(
+        DateTime,
+        default=datetime.utcnow,
+    )
+
+    updated_at = Column(
+        DateTime,
+        default=datetime.utcnow,
+        onupdate=datetime.utcnow,
+    )
 
 
 class TaskActivityLog(Base):
@@ -169,5 +202,7 @@ class TaskActivityLog(Base):
 
     details = Column(Text, nullable=True)
 
-    created_at = Column(DateTime, default=datetime.utcnow)
-
+    created_at = Column(
+        DateTime,
+        default=datetime.utcnow,
+    )

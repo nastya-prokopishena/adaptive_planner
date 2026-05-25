@@ -63,6 +63,9 @@ const t = {
   difficulty: "Складність",
   taskType: "Тип",
   keywords: "Ключові слова",
+  dueDate: "Дата дедлайну",
+  dueTime: "Час дедлайну",
+  noDueDate: "Без дати",
 
   groupedView: "За предметами",
   listView: "Списком",
@@ -105,7 +108,8 @@ export default function TasksPanel({ events = [] }) {
     subject_id: "",
     event_id: "",
     priority: "medium",
-    due_date: "",
+    due_date_date: "",
+    due_date_time: "",
   });
 
   const filteredTasks = useMemo(() => {
@@ -285,6 +289,44 @@ export default function TasksPanel({ events = [] }) {
     }
   };
 
+
+  const splitDueDate = (value) => {
+    if (!value) {
+      return {
+        date: "",
+        time: "",
+      };
+    }
+
+    const normalized = String(value).slice(0, 16);
+    const [date = "", time = ""] = normalized.split("T");
+
+    return {
+      date,
+      time,
+    };
+  };
+
+  const buildDueDate = (date, time) => {
+    if (!date) {
+      return null;
+    }
+
+    return `${date}T${time || "12:00"}`;
+  };
+
+  const openNativePicker = (event) => {
+    const input = event.currentTarget;
+
+    if (typeof input.showPicker === "function") {
+      try {
+        input.showPicker();
+      } catch {
+        input.focus();
+      }
+    }
+  };
+
   const createTask = async () => {
     if (!taskForm.title.trim()) return;
 
@@ -293,7 +335,7 @@ export default function TasksPanel({ events = [] }) {
         ...taskForm,
         subject_id: taskForm.subject_id || null,
         event_id: taskForm.event_id || null,
-        due_date: taskForm.due_date || null,
+        due_date: buildDueDate(taskForm.due_date_date, taskForm.due_date_time),
       });
 
       setTaskForm({
@@ -302,7 +344,8 @@ export default function TasksPanel({ events = [] }) {
         subject_id: "",
         event_id: "",
         priority: "medium",
-        due_date: "",
+        due_date_date: "",
+        due_date_time: "",
       });
 
       await Promise.all([loadTasks(), loadLogs()]);
@@ -316,13 +359,16 @@ export default function TasksPanel({ events = [] }) {
   const startEditTask = (task) => {
     setEditingTaskId(task.id);
 
+    const dueDateParts = splitDueDate(task.due_date);
+
     setEditTaskForm({
       title: task.title || "",
       description: task.description || "",
       subject_id: task.subject_id || "",
       event_id: task.event_id || "",
       priority: task.priority || "medium",
-      due_date: task.due_date ? task.due_date.slice(0, 16) : "",
+      due_date_date: dueDateParts.date,
+      due_date_time: dueDateParts.time,
       task_type: task.task_type || "homework",
       estimated_duration_hours: task.estimated_duration_hours || 1,
       difficulty_score: task.difficulty_score || 3,
@@ -347,7 +393,10 @@ export default function TasksPanel({ events = [] }) {
         subject_id: editTaskForm.subject_id || null,
         event_id: editTaskForm.event_id || null,
         priority: editTaskForm.priority || "medium",
-        due_date: editTaskForm.due_date || null,
+        due_date: buildDueDate(
+          editTaskForm.due_date_date,
+          editTaskForm.due_date_time
+        ),
         task_type: editTaskForm.task_type || "homework",
         estimated_duration_hours: Number(
           editTaskForm.estimated_duration_hours || 1
@@ -584,13 +633,34 @@ export default function TasksPanel({ events = [] }) {
         <option value="high">{t.high}</option>
       </select>
 
+      <label className="task-date-label">{t.dueDate}</label>
+
       <input
-        type="datetime-local"
-        value={editTaskForm.due_date || ""}
+        className="task-date-input"
+        type="date"
+        value={editTaskForm.due_date_date || ""}
+        onClick={openNativePicker}
+        onFocus={openNativePicker}
         onChange={(event) =>
           setEditTaskForm({
             ...editTaskForm,
-            due_date: event.target.value,
+            due_date_date: event.target.value,
+          })
+        }
+      />
+
+      <label className="task-date-label">{t.dueTime}</label>
+
+      <input
+        className="task-time-input"
+        type="time"
+        value={editTaskForm.due_date_time || ""}
+        onClick={openNativePicker}
+        onFocus={openNativePicker}
+        onChange={(event) =>
+          setEditTaskForm({
+            ...editTaskForm,
+            due_date_time: event.target.value,
           })
         }
       />
@@ -1201,13 +1271,34 @@ export default function TasksPanel({ events = [] }) {
             <option value="high">{t.high}</option>
           </select>
 
+          <label className="task-date-label">{t.dueDate}</label>
+
           <input
-            type="datetime-local"
-            value={taskForm.due_date}
+            className="task-date-input"
+            type="date"
+            value={taskForm.due_date_date}
+            onClick={openNativePicker}
+            onFocus={openNativePicker}
             onChange={(event) =>
               setTaskForm({
                 ...taskForm,
-                due_date: event.target.value,
+                due_date_date: event.target.value,
+              })
+            }
+          />
+
+          <label className="task-date-label">{t.dueTime}</label>
+
+          <input
+            className="task-time-input"
+            type="time"
+            value={taskForm.due_date_time}
+            onClick={openNativePicker}
+            onFocus={openNativePicker}
+            onChange={(event) =>
+              setTaskForm({
+                ...taskForm,
+                due_date_time: event.target.value,
               })
             }
           />

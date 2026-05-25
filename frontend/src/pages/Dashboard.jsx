@@ -108,6 +108,10 @@ export default function Dashboard({
               + {t.addEvent}
             </button>
 
+            <Link to="/analytics" className="planner-tool-link">
+              📊 Аналітика
+            </Link>
+
             <Link to="/schedule-import" className="planner-tool-link">
               {t.uploadSchedule}
             </Link>

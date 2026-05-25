@@ -17,6 +17,7 @@ import ScheduleImportPage from "./pages/ScheduleImportPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import WelcomePage from "./pages/WelcomePage";
 import TaskImportPage from "./pages/TaskImportPage";
+import AnalyticsPage from "./pages/AnalyticsPage";
 
 axios.defaults.withCredentials = true;
 
@@ -1075,6 +1076,14 @@ function AppContent() {
           element={
             <ProtectedRoute user={user}>
               <TaskImportPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/analytics"
+          element={
+            <ProtectedRoute user={user}>
+              <AnalyticsPage />
             </ProtectedRoute>
           }
         />

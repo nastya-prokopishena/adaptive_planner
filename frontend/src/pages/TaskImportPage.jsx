@@ -44,6 +44,80 @@ export default function TaskImportPage() {
     }
   };
 
+  const makeReadableDescription = (value) => {
+    const text = String(value || "")
+      .replace(/\s+/g, " ")
+      .replace(/Рис\.\s*\d+[^.]*\./gi, "")
+      .replace(/Таблиця\s*\d+[^.]*\./gi, "")
+      .replace(/Варіанти завдань[^.]*\./gi, "")
+      .trim();
+
+    if (text.length <= 700) {
+      return text;
+    }
+
+    return `${text.slice(0, 700).trim()}...`;
+  };
+
+  const normalizePreview = (preview) => {
+    return {
+      title: preview?.title || "Нова навчальна задача",
+      subject: preview?.subject || selectedSubject || "Інше",
+      subject_id: preview?.subject_id || null,
+      subject_exists: Boolean(preview?.subject_exists),
+      should_create_subject: Boolean(preview?.should_create_subject),
+
+      task_type: preview?.task_type || "homework",
+      description: makeReadableDescription(preview?.description || ""),
+      keywords: Array.isArray(preview?.keywords) ? preview.keywords : [],
+
+      estimated_duration_hours: Number(
+        preview?.estimated_duration_hours || 1
+      ),
+
+      difficulty_score: Number(preview?.difficulty_score || 3),
+
+      // Єдина нормальна назва для frontend/backend/БД
+      due_date: preview?.due_date || preview?.deadline || "",
+
+      source_filename: preview?.source_filename || "",
+      nlp_source: preview?.nlp_source || "ml_nlp",
+    };
+  };
+
+  const normalizeDueDateForApi = (value) => {
+    if (!value) return null;
+
+    // datetime-local повертає YYYY-MM-DDTHH:mm
+    // backend datetime.fromisoformat це нормально приймає
+    return value;
+  };
+
+  const buildTaskPayload = (preview, subjectId = preview.subject_id) => {
+    return {
+      title: preview.title,
+      description: preview.description || "",
+
+      subject: preview.subject || "",
+      subject_id: subjectId || null,
+
+      task_type: preview.task_type || "other",
+      keywords: Array.isArray(preview.keywords) ? preview.keywords : [],
+
+      estimated_duration_hours: Number(
+        preview.estimated_duration_hours || 1
+      ),
+
+      difficulty_score: Number(preview.difficulty_score || 3),
+
+      due_date: normalizeDueDateForApi(preview.due_date),
+
+      status: "planned",
+      priority: preview.priority || "medium",
+      nlp_source: preview.source_filename ? "file" : "text",
+    };
+  };
+
   const analyzeText = async () => {
     if (!text.trim()) {
       showToast("Встав текст завдання", "error");
@@ -122,41 +196,6 @@ export default function TaskImportPage() {
     }
   };
 
-  const normalizePreview = (preview) => {
-    return {
-      title: preview?.title || "Нова навчальна задача",
-      subject: preview?.subject || selectedSubject || "Інше",
-      subject_id: preview?.subject_id || null,
-      subject_exists: Boolean(preview?.subject_exists),
-      should_create_subject: Boolean(preview?.should_create_subject),
-      task_type: preview?.task_type || "homework",
-      description: makeReadableDescription(preview?.description || ""),
-      keywords: Array.isArray(preview?.keywords) ? preview.keywords : [],
-      estimated_duration_hours: Number(
-        preview?.estimated_duration_hours || 1
-      ),
-      difficulty_score: Number(preview?.difficulty_score || 3),
-      deadline: preview?.deadline || "",
-      source_filename: preview?.source_filename || "",
-      nlp_source: preview?.nlp_source || "ml_nlp",
-    };
-  };
-
-  const makeReadableDescription = (value) => {
-    const text = String(value || "")
-      .replace(/\s+/g, " ")
-      .replace(/Рис\.\s*\d+[^.]*\./gi, "")
-      .replace(/Таблиця\s*\d+[^.]*\./gi, "")
-      .replace(/Варіанти завдань[^.]*\./gi, "")
-      .trim();
-
-    if (text.length <= 700) {
-      return text;
-    }
-
-    return `${text.slice(0, 700).trim()}...`;
-  };
-
   const updatePreview = (index, field, value) => {
     setPreviews((prev) =>
       prev.map((item, itemIndex) =>
@@ -209,20 +248,9 @@ export default function TaskImportPage() {
     }
 
     try {
-      await axios.post("/api/tasks", {
-        title: preview.title,
-        description: preview.description,
-        subject: preview.subject,
-        subject_id: subjectId,
-        task_type: preview.task_type,
-        keywords: preview.keywords,
-        estimated_duration_hours: preview.estimated_duration_hours,
-        difficulty_score: preview.difficulty_score,
-        due_date: preview.deadline || null,
-        status: "planned",
-        priority: "medium",
-        nlp_source: preview.source_filename ? "file" : "text",
-      });
+      const payload = buildTaskPayload(preview, subjectId);
+
+      await axios.post("/api/tasks", payload);
 
       removePreview(index);
 
@@ -233,7 +261,9 @@ export default function TaskImportPage() {
       return true;
     } catch (error) {
       showToast(
-        error.response?.data?.error || "Не вдалося створити задачу",
+        error.response?.data?.details ||
+          error.response?.data?.error ||
+          "Не вдалося створити задачу",
         "error"
       );
 
@@ -246,20 +276,42 @@ export default function TaskImportPage() {
       return;
     }
 
-    let createdCount = 0;
+    setLoading(true);
 
-    for (let index = previews.length - 1; index >= 0; index -= 1) {
-      const created = await createTask(previews[index], index, false);
+    try {
+      const payloadTasks = [];
 
-      if (created) {
-        createdCount += 1;
+      for (let index = 0; index < previews.length; index += 1) {
+        const preview = previews[index];
+
+        let subjectId = preview.subject_id;
+
+        if (preview.should_create_subject) {
+          subjectId = await createSubjectIfNeeded(preview, index);
+        }
+
+        payloadTasks.push(buildTaskPayload(preview, subjectId));
       }
-    }
 
-    if (createdCount === 1) {
-      showToast("Створено 1 задачу", "success");
-    } else {
+      const response = await axios.post("/api/task-import/create-tasks", {
+        tasks: payloadTasks,
+      });
+
+      const createdCount = response.data?.count || 0;
+
+      setPreviews([]);
+      await loadSubjects();
+
       showToast(`Створено задач: ${createdCount}`, "success");
+    } catch (error) {
+      showToast(
+        error.response?.data?.details ||
+          error.response?.data?.error ||
+          "Не вдалося створити задачі",
+        "error"
+      );
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -529,13 +581,13 @@ export default function TaskImportPage() {
                   </div>
                 </div>
 
-                <label>Дедлайн</label>
+                <label>Дата і час дедлайну</label>
 
                 <input
                   type="datetime-local"
-                  value={preview.deadline ? preview.deadline.slice(0, 16) : ""}
+                  value={preview.due_date ? preview.due_date.slice(0, 16) : ""}
                   onChange={(event) =>
-                    updatePreview(index, "deadline", event.target.value)
+                    updatePreview(index, "due_date", event.target.value)
                   }
                 />
 
@@ -560,4 +612,3 @@ export default function TaskImportPage() {
     </main>
   );
 }
-

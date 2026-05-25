@@ -1,6 +1,6 @@
 from flask import Blueprint, redirect, request, session, jsonify, current_app
 from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import datetime, time
+from datetime import datetime, time, timedelta
 import json
 import requests
 
@@ -16,9 +16,11 @@ from backend.domain.recurrence import (
     generate_occurrences,
     time_ranges_overlap,
 )
+
 from backend.application.task_nlp_service import TaskNLPService
 from backend.application.task_file_extractor_service import TaskFileExtractorService
-
+from backend.application.analytics_service import AnalyticsService
+from backend.application.productivity_model_service import ProductivityModelService
 main = Blueprint("main", __name__)
 
 calendar_adapter = GoogleCalendarAdapter()
@@ -26,7 +28,8 @@ schedule_service = ScheduleService()
 schedule_import_service = ScheduleImportService()
 task_nlp_service = TaskNLPService()
 task_file_extractor_service = TaskFileExtractorService()
-
+analytics_service = AnalyticsService()
+productivity_model_service = ProductivityModelService()
 
 def current_user():
     user_id = session.get("user_id")
@@ -654,42 +657,35 @@ def create_task():
     data = request.json or {}
 
     title = data.get("title")
-    description = data.get("description")
-    event_id = data.get("event_id")
-    subject_id = data.get("subject_id")
-    subject_name = data.get("subject")
-    priority = data.get("priority", "medium")
-    due_date = parse_optional_datetime(data.get("due_date") or data.get("deadline"))
 
     if not title:
-        return jsonify({"error": "Title is required"}), 400
+        return jsonify({"error": "Task title is required"}), 400
 
     db = SessionLocal()
 
     try:
-        if not subject_id and subject_name:
-            subject = find_subject_by_name(db, user.id, subject_name)
-
-            if subject:
-                subject_id = subject.id
-
-        keywords = data.get("keywords") or []
+        due_date = parse_optional_datetime(
+            data.get("due_date") or data.get("deadline")
+        )
 
         task = Task(
             user_id=user.id,
-            event_id=event_id,
-            subject_id=subject_id,
+            event_id=data.get("event_id"),
+            subject_id=data.get("subject_id"),
             title=title,
-            description=description,
+            description=data.get("description"),
             status=data.get("status", "planned"),
-            priority=priority,
+            priority=data.get("priority", "medium"),
             due_date=due_date,
-
             task_type=data.get("task_type", "other"),
-            keywords=json.dumps(keywords, ensure_ascii=False),
-            estimated_duration_hours=data.get("estimated_duration_hours", 1),
-            difficulty_score=data.get("difficulty_score", 3),
+            keywords=json.dumps(data.get("keywords", []), ensure_ascii=False),
+            estimated_duration_hours=float(
+                data.get("estimated_duration_hours") or 1
+            ),
+            difficulty_score=int(data.get("difficulty_score") or 3),
             nlp_source=data.get("nlp_source", "manual"),
+            created_at=datetime.utcnow(),
+            updated_at=datetime.utcnow(),
         )
 
         db.add(task)
@@ -719,7 +715,7 @@ def update_task(task_id):
     if not user:
         return jsonify({"error": "Unauthorized"}), 401
 
-    data = request.get_json() or {}
+    data = request.json or {}
 
     db = SessionLocal()
 
@@ -738,28 +734,67 @@ def update_task(task_id):
         task.subject_id = data.get("subject_id", task.subject_id)
         task.event_id = data.get("event_id", task.event_id)
         task.priority = data.get("priority", task.priority)
-        task.due_date = parse_datetime(data.get("due_date")) if data.get("due_date") else task.due_date
+        task.task_type = data.get("task_type", task.task_type)
 
-        if hasattr(task, "task_type"):
-            task.task_type = data.get("task_type", task.task_type)
+        if "due_date" in data:
+            task.due_date = parse_optional_datetime(data.get("due_date"))
 
-        if hasattr(task, "estimated_duration_hours"):
-            task.estimated_duration_hours = data.get(
+        task.estimated_duration_hours = float(
+            data.get(
                 "estimated_duration_hours",
-                task.estimated_duration_hours,
+                task.estimated_duration_hours or 1,
             )
+        )
 
-        if hasattr(task, "difficulty_score"):
-            task.difficulty_score = data.get(
+        task.difficulty_score = int(
+            data.get(
                 "difficulty_score",
-                task.difficulty_score,
+                task.difficulty_score or 3,
             )
+        )
 
-        if hasattr(task, "keywords"):
-            keywords = data.get("keywords")
+        keywords = data.get("keywords")
 
-            if isinstance(keywords, list):
-                task.keywords = json.dumps(keywords, ensure_ascii=False)
+        if isinstance(keywords, list):
+            task.keywords = json.dumps(keywords, ensure_ascii=False)
+
+        task.updated_at = datetime.utcnow()
+
+        db.commit()
+        db.refresh(task)
+
+        return jsonify(serialize_task(task)), 200
+
+    finally:
+        db.close()
+
+@main.route("/api/tasks/<int:task_id>/deadline", methods=["PUT"])
+def update_task_deadline(task_id):
+    user = current_user()
+
+    if not user:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    data = request.json or {}
+    due_date = parse_optional_datetime(data.get("due_date"))
+
+    if not due_date:
+        return jsonify({"error": "Invalid due_date"}), 400
+
+    db = SessionLocal()
+
+    try:
+        task = (
+            db.query(Task)
+            .filter_by(id=task_id, user_id=user.id)
+            .first()
+        )
+
+        if not task:
+            return jsonify({"error": "Task not found"}), 404
+
+        task.due_date = due_date
+        task.updated_at = datetime.utcnow()
 
         db.commit()
         db.refresh(task)
@@ -847,6 +882,7 @@ def update_task_status(task_id):
         elif new_status == "missed":
             task.missed_at = datetime.utcnow()
             task.completed_at = None
+            auto_replan = bool(data.get("auto_replan", False))
 
         else:
             task.completed_at = None
@@ -1949,7 +1985,256 @@ def create_subject_from_task_import_api():
     finally:
         db.close()
 
+@main.route("/api/task-import/create-tasks", methods=["POST"], strict_slashes=False)
+def create_tasks_from_import_api():
+    user = current_user()
 
+    if not user:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    data = request.get_json() or {}
+    tasks_data = data.get("tasks") or []
+
+    if not tasks_data:
+        return jsonify({"error": "Немає задач для створення"}), 400
+
+    db = SessionLocal()
+
+    try:
+        created_tasks = []
+
+        for item in tasks_data:
+            title = item.get("title")
+
+            if not title:
+                continue
+
+            subject_id = item.get("subject_id")
+            subject_name = item.get("subject")
+
+            if not subject_id and subject_name:
+                subject = find_subject_by_name(db, user.id, subject_name)
+
+                if subject:
+                    subject_id = subject.id
+                else:
+                    subject = Subject(
+                        user_id=user.id,
+                        name=subject_name,
+                    )
+                    db.add(subject)
+                    db.flush()
+                    subject_id = subject.id
+
+            task = Task(
+                user_id=user.id,
+                subject_id=subject_id,
+                title=title,
+                description=item.get("description"),
+                status="planned",
+                priority="medium",
+                due_date=parse_optional_datetime(
+                    item.get("due_date") or item.get("deadline")
+                ),
+                task_type=item.get("task_type", "other"),
+                keywords=json.dumps(item.get("keywords") or [], ensure_ascii=False),
+                estimated_duration_hours=item.get("estimated_duration_hours", 1),
+                difficulty_score=item.get("difficulty_score", 3),
+                nlp_source=item.get("nlp_source", "import"),
+            )
+
+            db.add(task)
+            db.flush()
+
+            create_task_log(
+                db=db,
+                user_id=user.id,
+                task_id=task.id,
+                action="task_created_from_import",
+                new_status=task.status,
+                details=f"Task imported: {task.title}",
+            )
+
+            created_tasks.append(task)
+
+        db.commit()
+
+        return jsonify({
+            "tasks": [serialize_task(task) for task in created_tasks],
+            "count": len(created_tasks),
+        }), 201
+
+    except Exception as error:
+        db.rollback()
+        return jsonify({
+            "error": "Не вдалося створити задачі",
+            "details": str(error),
+        }), 500
+
+    finally:
+        db.close()
+
+@main.route("/api/analytics/dashboard", methods=["GET"])
+def analytics_dashboard_api():
+    user = current_user()
+
+    if not user:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    date_from = parse_optional_datetime(request.args.get("date_from"))
+    date_to = parse_optional_datetime(request.args.get("date_to"))
+
+    db = SessionLocal()
+
+    try:
+        tasks = db.query(Task).filter(Task.user_id == user.id).all()
+        events = db.query(Event).filter(Event.user_id == user.id).all()
+
+        result = analytics_service.build_dashboard_analytics(
+            tasks=tasks,
+            events=events,
+            date_from=date_from,
+            date_to=date_to,
+        )
+
+        return jsonify(result), 200
+
+    finally:
+        db.close()
+
+@main.route("/api/ml/productivity/predict", methods=["POST"])
+def productivity_predict_api():
+    user = current_user()
+
+    if not user:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    data = request.json or {}
+    date_value = parse_optional_datetime(data.get("date"))
+
+    if not date_value:
+        return jsonify({"error": "Date is required"}), 400
+
+    db = SessionLocal()
+
+    try:
+        tasks = db.query(Task).filter(Task.user_id == user.id).all()
+        events = db.query(Event).filter(Event.user_id == user.id).all()
+
+        prediction = productivity_model_service.predict_day(
+            date=date_value,
+            tasks=tasks,
+            events=events,
+        )
+
+        return jsonify(prediction), 200
+
+    finally:
+        db.close()
+
+@main.route("/api/tasks/<int:task_id>/replan", methods=["POST"])
+def replan_task_api(task_id):
+    user = current_user()
+
+    if not user:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    data = request.json or {}
+
+    db = SessionLocal()
+
+    try:
+        task = (
+            db.query(Task)
+            .filter_by(id=task_id, user_id=user.id)
+            .first()
+        )
+
+        if not task:
+            return jsonify({"error": "Task not found"}), 404
+
+        now = datetime.utcnow()
+
+        date_from = data.get("date_from") or now.date().isoformat()
+        date_to = data.get("date_to")
+
+        if not date_to:
+            fallback_date = now + timedelta(days=7)
+            date_to = fallback_date.date().isoformat()
+
+        duration_minutes = int((task.estimated_duration_hours or 1) * 60)
+
+        existing_events = (
+            db.query(Event)
+            .filter_by(user_id=user.id)
+            .order_by(Event.start_time.asc())
+            .all()
+        )
+
+        planned = plan_task_with_ortools(
+            existing_events=existing_events,
+            title=task.title,
+            duration_minutes=duration_minutes,
+            date_from=date_from,
+            date_to=date_to,
+            day_start=data.get("day_start", "08:00"),
+            day_end=data.get("day_end", "22:00"),
+            preferred_time=data.get("preferred_time", "10:00"),
+            repeat_enabled=False,
+            times_per_week=1,
+            allowed_days=data.get("allowed_days") or [],
+        )
+
+        if not planned:
+            return jsonify({
+                "error": "No free slot",
+                "message": "Не вдалося знайти новий слот для задачі",
+            }), 409
+
+        planned_item = planned["events"][0]
+
+        event = Event(
+            user_id=user.id,
+            title=f"Переплановано: {task.title}",
+            start_time=planned_item["start"],
+            end_time=planned_item["end"],
+            source="local",
+            recurrence_type="none",
+            subject_id=task.subject_id,
+        )
+
+        db.add(event)
+        db.commit()
+        db.refresh(event)
+
+        old_status = task.status
+
+        task.status = "planned"
+        task.event_id = event.id
+        task.updated_at = datetime.utcnow()
+        task.missed_at = None
+
+        create_task_log(
+            db=db,
+            user_id=user.id,
+            task_id=task.id,
+            action="task_replanned",
+            old_status=old_status,
+            new_status="planned",
+            details=f"Task replanned to {event.start_time.isoformat()}",
+        )
+
+        db.commit()
+        db.refresh(task)
+
+        return jsonify({
+            "task": serialize_task(task),
+            "event": serialize_event(event),
+            "message": "Задачу переплановано",
+        }), 201
+
+    finally:
+        db.close()
 # ---------------------------
 # REACT
 # ---------------------------
