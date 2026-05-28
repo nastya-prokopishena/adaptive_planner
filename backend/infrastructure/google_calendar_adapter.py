@@ -6,12 +6,17 @@ from googleapiclient.discovery import build
 
 from backend.domain.interfaces.calendar_provider import CalendarProvider
 
+DEFAULT_TIMEZONE = "Europe/Kyiv"
+PRIMARY_CALENDAR_ID = "primary"
+
 SCOPES = [
     "https://www.googleapis.com/auth/calendar",
     "https://www.googleapis.com/auth/userinfo.email",
     "https://www.googleapis.com/auth/userinfo.profile",
     "openid",
 ]
+
+os.environ.setdefault("OAUTHLIB_INSECURE_TRANSPORT", "1")
 
 
 class GoogleCalendarAdapter(CalendarProvider):
@@ -49,7 +54,7 @@ class GoogleCalendarAdapter(CalendarProvider):
         service = self.build_service(credentials_dict)
 
         params = {
-            "calendarId": "primary",
+            "calendarId": PRIMARY_CALENDAR_ID,
             "singleEvents": single_events,
         }
 
@@ -74,11 +79,11 @@ class GoogleCalendarAdapter(CalendarProvider):
             "summary": title,
             "start": {
                 "dateTime": start,
-                "timeZone": "Europe/Kyiv",
+                "timeZone": DEFAULT_TIMEZONE,
             },
             "end": {
                 "dateTime": end,
-                "timeZone": "Europe/Kyiv",
+                "timeZone": DEFAULT_TIMEZONE,
             },
         }
 
@@ -88,7 +93,7 @@ class GoogleCalendarAdapter(CalendarProvider):
         return (
             service.events()
             .insert(
-                calendarId="primary",
+                calendarId=PRIMARY_CALENDAR_ID,
                 body=event_body,
             )
             .execute()
@@ -108,7 +113,7 @@ class GoogleCalendarAdapter(CalendarProvider):
         event = (
             service.events()
             .get(
-                calendarId="primary",
+                calendarId=PRIMARY_CALENDAR_ID,
                 eventId=event_id,
             )
             .execute()
@@ -117,11 +122,11 @@ class GoogleCalendarAdapter(CalendarProvider):
         event["summary"] = title
         event["start"] = {
             "dateTime": start,
-            "timeZone": "Europe/Kyiv",
+            "timeZone": DEFAULT_TIMEZONE,
         }
         event["end"] = {
             "dateTime": end,
-            "timeZone": "Europe/Kyiv",
+            "timeZone": DEFAULT_TIMEZONE,
         }
 
         if recurrence_rule:
@@ -132,7 +137,7 @@ class GoogleCalendarAdapter(CalendarProvider):
         return (
             service.events()
             .update(
-                calendarId="primary",
+                calendarId=PRIMARY_CALENDAR_ID,
                 eventId=event_id,
                 body=event,
             )
@@ -145,7 +150,7 @@ class GoogleCalendarAdapter(CalendarProvider):
         return (
             service.events()
             .delete(
-                calendarId="primary",
+                calendarId=PRIMARY_CALENDAR_ID,
                 eventId=event_id,
             )
             .execute()

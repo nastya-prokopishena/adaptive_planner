@@ -5,6 +5,10 @@ from sqlalchemy.orm import declarative_base
 
 Base = declarative_base()
 
+USERS_ID = "users.id"
+CASCADE_DELETE = "CASCADE"
+SET_NULL = "SET NULL"
+
 
 class User(Base):
     __tablename__ = "users"
@@ -26,7 +30,7 @@ class EventType(Base):
 
     user_id = Column(
         Integer,
-        ForeignKey("users.id", ondelete="CASCADE"),
+        ForeignKey(USERS_ID, ondelete=CASCADE_DELETE),
         nullable=False,
     )
 
@@ -44,7 +48,7 @@ class Subject(Base):
 
     user_id = Column(
         Integer,
-        ForeignKey("users.id", ondelete="CASCADE"),
+        ForeignKey(USERS_ID, ondelete=CASCADE_DELETE),
         nullable=False,
     )
 
@@ -63,7 +67,7 @@ class Event(Base):
 
     user_id = Column(
         Integer,
-        ForeignKey("users.id", ondelete="CASCADE"),
+        ForeignKey(USERS_ID, ondelete=CASCADE_DELETE),
         nullable=False,
     )
 
@@ -77,13 +81,13 @@ class Event(Base):
 
     event_type_id = Column(
         Integer,
-        ForeignKey("event_types.id", ondelete="SET NULL"),
+        ForeignKey("event_types.id", ondelete=SET_NULL),
         nullable=True,
     )
 
     subject_id = Column(
         Integer,
-        ForeignKey("subjects.id", ondelete="SET NULL"),
+        ForeignKey("subjects.id", ondelete=SET_NULL),
         nullable=True,
     )
 
@@ -108,19 +112,19 @@ class Task(Base):
 
     user_id = Column(
         Integer,
-        ForeignKey("users.id", ondelete="CASCADE"),
+        ForeignKey(USERS_ID, ondelete=CASCADE_DELETE),
         nullable=False,
     )
 
     event_id = Column(
         Integer,
-        ForeignKey("events.id", ondelete="SET NULL"),
+        ForeignKey("events.id", ondelete=SET_NULL),
         nullable=True,
     )
 
     subject_id = Column(
         Integer,
-        ForeignKey("subjects.id", ondelete="SET NULL"),
+        ForeignKey("subjects.id", ondelete=SET_NULL),
         nullable=True,
     )
 
@@ -158,13 +162,13 @@ class TaskActivityLog(Base):
 
     user_id = Column(
         Integer,
-        ForeignKey("users.id", ondelete="CASCADE"),
+        ForeignKey(USERS_ID, ondelete=CASCADE_DELETE),
         nullable=False,
     )
 
     task_id = Column(
         Integer,
-        ForeignKey("tasks.id", ondelete="SET NULL"),
+        ForeignKey("tasks.id", ondelete=SET_NULL),
         nullable=True,
     )
 
@@ -185,13 +189,13 @@ class TaskScheduleBlock(Base):
 
     user_id = Column(
         Integer,
-        ForeignKey("users.id", ondelete="CASCADE"),
+        ForeignKey(USERS_ID, ondelete=CASCADE_DELETE),
         nullable=False,
     )
 
     task_id = Column(
         Integer,
-        ForeignKey("tasks.id", ondelete="CASCADE"),
+        ForeignKey("tasks.id", ondelete=CASCADE_DELETE),
         nullable=False,
     )
 

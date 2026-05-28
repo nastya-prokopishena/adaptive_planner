@@ -12,6 +12,14 @@ WEEKDAY_MAP = {
     "SU": SU,
 }
 
+
+GOOGLE_FREQ_DAILY = "FREQ=DAILY"
+GOOGLE_FREQ_WEEKLY = "FREQ=WEEKLY"
+GOOGLE_FREQ_MONTHLY = "FREQ=MONTHLY"
+GOOGLE_FREQ_YEARLY = "FREQ=YEARLY"
+GOOGLE_INTERVAL_1 = "INTERVAL=1"
+DEFAULT_WEEKDAY = "MO"
+
 GOOGLE_WEEKDAY_MAP = {
     "MO": "MO",
     "TU": "TU",
@@ -58,45 +66,45 @@ def build_google_rrule(
         parts = ["FREQ=DAILY", f"INTERVAL={interval}"]
 
     elif recurrence_type == "weekdays":
-        parts = ["FREQ=WEEKLY", "INTERVAL=1", "BYDAY=MO,TU,WE,TH,FR"]
+        parts = [GOOGLE_FREQ_WEEKLY, GOOGLE_INTERVAL_1, "BYDAY=MO,TU,WE,TH,FR"]
 
     elif recurrence_type == "weekly":
-        weekday = get_weekday_code(start_time) if start_time else "MO"
-        parts = ["FREQ=WEEKLY", "INTERVAL=1", f"BYDAY={weekday}"]
+        weekday = get_weekday_code(start_time) if start_time else DEFAULT_WEEKDAY
+        parts = [GOOGLE_FREQ_WEEKLY, GOOGLE_INTERVAL_1, f"BYDAY={weekday}"]
 
     elif recurrence_type == "biweekly":
-        weekday = get_weekday_code(start_time) if start_time else "MO"
-        parts = ["FREQ=WEEKLY", "INTERVAL=2", f"BYDAY={weekday}"]
+        weekday = get_weekday_code(start_time) if start_time else DEFAULT_WEEKDAY
+        parts = [GOOGLE_FREQ_WEEKLY, "INTERVAL=2", f"BYDAY={weekday}"]
 
     elif recurrence_type == "monthly":
-        parts = ["FREQ=MONTHLY", "INTERVAL=1"]
+        parts = [GOOGLE_FREQ_MONTHLY, GOOGLE_INTERVAL_1]
 
     elif recurrence_type == "yearly":
-        parts = ["FREQ=YEARLY", "INTERVAL=1"]
+        parts = [GOOGLE_FREQ_YEARLY, GOOGLE_INTERVAL_1]
 
     elif recurrence_type == "custom":
         unit = recurrence_unit or "week"
 
         if unit == "day":
-            parts = ["FREQ=DAILY", f"INTERVAL={interval}"]
+            parts = [GOOGLE_FREQ_DAILY, f"INTERVAL={interval}"]
 
         elif unit == "week":
             if not days and start_time:
                 days = [get_weekday_code(start_time)]
 
-            parts = ["FREQ=WEEKLY", f"INTERVAL={interval}"]
+            parts = [GOOGLE_FREQ_WEEKLY, f"INTERVAL={interval}"]
 
             if days:
                 parts.append(f"BYDAY={','.join(days)}")
 
         elif unit == "month":
-            parts = ["FREQ=MONTHLY", f"INTERVAL={interval}"]
+            parts = [GOOGLE_FREQ_MONTHLY, f"INTERVAL={interval}"]
 
         elif unit == "year":
-            parts = ["FREQ=YEARLY", f"INTERVAL={interval}"]
+            parts = [GOOGLE_FREQ_YEARLY, f"INTERVAL={interval}"]
 
         else:
-            parts = ["FREQ=WEEKLY", f"INTERVAL={interval}"]
+            parts = [GOOGLE_FREQ_WEEKLY, f"INTERVAL={interval}"]
 
     else:
         return None
