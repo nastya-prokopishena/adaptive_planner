@@ -1,5 +1,5 @@
 import json
-from datetime import datetime, time, timedelta, UTC
+from datetime import UTC, datetime, time, timedelta
 from types import SimpleNamespace
 
 import requests
