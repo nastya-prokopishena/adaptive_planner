@@ -1,10 +1,11 @@
 import os
 
-os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
-
 from google_auth_oauthlib.flow import Flow
+from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
-import google.oauth2.credentials
+
+from backend.domain.interfaces.calendar_provider import CalendarProvider
+
 
 SCOPES = [
     "https://www.googleapis.com/auth/calendar",
@@ -14,16 +15,17 @@ SCOPES = [
 ]
 
 
-class GoogleCalendarAdapter:
+class GoogleCalendarAdapter(CalendarProvider):
     def __init__(self):
-        base_dir = os.path.dirname(os.path.abspath(__file__))
-
-        self.client_secrets_file = os.path.join(
-            base_dir,
-            "credentials.json"
+        self.client_secrets_file = os.getenv(
+            "GOOGLE_CLIENT_SECRET_FILE",
+            "backend/infrastructure/credentials.json",
         )
 
-        self.redirect_uri = "http://localhost:5000/callback"
+        self.redirect_uri = os.getenv(
+            "GOOGLE_REDIRECT_URI",
+            "http://localhost:5000/callback",
+        )
 
     def create_flow(self):
         return Flow.from_client_secrets_file(
@@ -33,54 +35,103 @@ class GoogleCalendarAdapter:
         )
 
     def build_service(self, credentials_dict):
-        credentials = google.oauth2.credentials.Credentials(**credentials_dict)
+        credentials = Credentials(
+            token=credentials_dict.get("token"),
+            refresh_token=credentials_dict.get("refresh_token"),
+            token_uri=credentials_dict.get("token_uri"),
+            client_id=credentials_dict.get("client_id"),
+            client_secret=credentials_dict.get("client_secret"),
+            scopes=credentials_dict.get("scopes"),
+        )
+
         return build("calendar", "v3", credentials=credentials)
 
-    def create_event(self, credentials_dict, summary, start_time, end_time):
+    def get_events(self, credentials_dict, single_events=False):
         service = self.build_service(credentials_dict)
 
-        event = {
-            "summary": summary,
+        params = {
+            "calendarId": "primary",
+            "singleEvents": single_events,
+        }
+
+        if single_events:
+            params["orderBy"] = "startTime"
+
+        result = service.events().list(**params).execute()
+
+        return result.get("items", [])
+
+    def create_event(
+        self,
+        credentials_dict,
+        title,
+        start,
+        end,
+        recurrence_rule=None,
+    ):
+        service = self.build_service(credentials_dict)
+
+        event_body = {
+            "summary": title,
             "start": {
-                "dateTime": start_time,
+                "dateTime": start,
                 "timeZone": "Europe/Kyiv",
             },
             "end": {
-                "dateTime": end_time,
+                "dateTime": end,
                 "timeZone": "Europe/Kyiv",
             },
         }
 
+        if recurrence_rule:
+            event_body["recurrence"] = [recurrence_rule]
+
         return service.events().insert(
             calendarId="primary",
-            body=event
+            body=event_body,
         ).execute()
 
-    def get_events(self, credentials_dict):
-        service = self.build_service(credentials_dict)
-
-        events_result = service.events().list(
-            calendarId="primary",
-            maxResults=20,
-            singleEvents=True,
-            orderBy="startTime"
-        ).execute()
-
-        return events_result.get("items", [])
-
-    def update_event(self, credentials_dict, event_id, start, end):
+    def update_event(
+        self,
+        credentials_dict,
+        event_id,
+        title,
+        start,
+        end,
+        recurrence_rule=None,
+    ):
         service = self.build_service(credentials_dict)
 
         event = service.events().get(
             calendarId="primary",
-            eventId=event_id
+            eventId=event_id,
         ).execute()
 
-        event["start"]["dateTime"] = start
-        event["end"]["dateTime"] = end
+        event["summary"] = title
+        event["start"] = {
+            "dateTime": start,
+            "timeZone": "Europe/Kyiv",
+        }
+        event["end"] = {
+            "dateTime": end,
+            "timeZone": "Europe/Kyiv",
+        }
+
+        if recurrence_rule:
+            event["recurrence"] = [recurrence_rule]
+        else:
+            event.pop("recurrence", None)
 
         return service.events().update(
             calendarId="primary",
             eventId=event_id,
-            body=event
+            body=event,
+        ).execute()
+
+    def delete_event(self, credentials_dict, event_id):
+        service = self.build_service(credentials_dict)
+
+        return service.events().delete(
+            calendarId="primary",
+            eventId=event_id,
         ).execute()

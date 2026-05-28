@@ -1,2 +1,10 @@
 backend/infrastructure/credentials.json
 .env
+*.env
+__pycache__/
+.pytest_cache/
+.coverage
+htmlcov/
+node_modules/
+frontend/dist/
+.idea/

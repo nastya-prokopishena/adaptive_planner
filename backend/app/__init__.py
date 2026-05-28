@@ -1,6 +1,10 @@
+# backend/app/__init__.py
+
 from flask import Flask
 from flask_cors import CORS
-import os
+
+from backend.app.routes import register_routes
+from backend.app.errors import register_error_handlers
 
 
 def create_app():
@@ -10,7 +14,7 @@ def create_app():
         static_url_path=""
     )
 
-    app.secret_key = os.getenv("SECRET_KEY", "super_secret_key_123")
+    app.secret_key = "super_secret_key_123"
 
     app.config["SESSION_COOKIE_NAME"] = "session"
     app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
@@ -28,10 +32,7 @@ def create_app():
         ]
     )
 
-    from backend.app.routes import main
-    app.register_blueprint(main)
-
-    print("APP CREATED")
-    print("STATIC PATH:", app.static_folder)
+    register_routes(app)
+    register_error_handlers(app)
 
     return app

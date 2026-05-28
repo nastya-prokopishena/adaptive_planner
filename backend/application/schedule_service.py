@@ -1,57 +1,31 @@
-from googleapiclient.discovery import build
-from google.oauth2.credentials import Credentials
+from backend.infrastructure.google_calendar_adapter import GoogleCalendarAdapter
 
 
 class ScheduleService:
-    def build_service(self, creds_dict):
-        creds = Credentials(
-            token=creds_dict.get("token"),
-            refresh_token=creds_dict.get("refresh_token"),
-            token_uri=creds_dict.get("token_uri"),
-            client_id=creds_dict.get("client_id"),
-            client_secret=creds_dict.get("client_secret"),
-            scopes=creds_dict.get("scopes"),
-        )
-
-        return build("calendar", "v3", credentials=creds)
+    def __init__(self, calendar_provider=None):
+        self.calendar_provider = calendar_provider or GoogleCalendarAdapter()
 
     def get_google_events(self, creds_dict, single_events=False):
-        service = self.build_service(creds_dict)
+        return self.calendar_provider.get_events(
+            credentials_dict=creds_dict,
+            single_events=single_events,
+        )
 
-        request_params = {
-            "calendarId": "primary",
-            "singleEvents": single_events,
-        }
-
-        if single_events:
-            request_params["orderBy"] = "startTime"
-
-        result = service.events().list(**request_params).execute()
-
-        return result.get("items", [])
-
-    def create_google_event(self, creds_dict, title, start, end, recurrence_rule=None):
-        service = self.build_service(creds_dict)
-
-        event_body = {
-            "summary": title,
-            "start": {
-                "dateTime": start,
-                "timeZone": "Europe/Kyiv",
-            },
-            "end": {
-                "dateTime": end,
-                "timeZone": "Europe/Kyiv",
-            },
-        }
-
-        if recurrence_rule:
-            event_body["recurrence"] = [recurrence_rule]
-
-        return service.events().insert(
-            calendarId="primary",
-            body=event_body,
-        ).execute()
+    def create_google_event(
+        self,
+        creds_dict,
+        title,
+        start,
+        end,
+        recurrence_rule=None,
+    ):
+        return self.calendar_provider.create_event(
+            credentials_dict=creds_dict,
+            title=title,
+            start=start,
+            end=end,
+            recurrence_rule=recurrence_rule,
+        )
 
     def update_google_event(
         self,
@@ -62,38 +36,17 @@ class ScheduleService:
         end,
         recurrence_rule=None,
     ):
-        service = self.build_service(creds_dict)
-
-        event = service.events().get(
-            calendarId="primary",
-            eventId=event_id,
-        ).execute()
-
-        event["summary"] = title
-        event["start"] = {
-            "dateTime": start,
-            "timeZone": "Europe/Kyiv",
-        }
-        event["end"] = {
-            "dateTime": end,
-            "timeZone": "Europe/Kyiv",
-        }
-
-        if recurrence_rule:
-            event["recurrence"] = [recurrence_rule]
-        else:
-            event.pop("recurrence", None)
-
-        return service.events().update(
-            calendarId="primary",
-            eventId=event_id,
-            body=event,
-        ).execute()
+        return self.calendar_provider.update_event(
+            credentials_dict=creds_dict,
+            event_id=event_id,
+            title=title,
+            start=start,
+            end=end,
+            recurrence_rule=recurrence_rule,
+        )
 
     def delete_google_event(self, creds_dict, event_id):
-        service = self.build_service(creds_dict)
-
-        return service.events().delete(
-            calendarId="primary",
-            eventId=event_id,
-        ).execute()
+        return self.calendar_provider.delete_event(
+            credentials_dict=creds_dict,
+            event_id=event_id,
+        )
