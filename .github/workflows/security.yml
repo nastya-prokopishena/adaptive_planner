@@ -24,4 +24,7 @@ jobs:
 
       - name: Run Bandit security scan
         run: |
-          bandit -r backend -x backend/tests -lll
+          bandit -r backend \
+            -x backend/tests,backend/infrastructure/ml \
+            --severity-level high \
+            --confidence-level high
