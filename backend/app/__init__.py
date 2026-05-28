@@ -1,5 +1,4 @@
-# backend/app/__init__.py
-
+from flasgger import Swagger
 from flask import Flask
 from flask_cors import CORS
 
@@ -23,6 +22,37 @@ def create_app():
         app,
         supports_credentials=True,
         origins=["http://localhost:5000", "http://127.0.0.1:5000"],
+    )
+
+    swagger_config = {
+        "headers": [],
+        "specs": [
+            {
+                "endpoint": "apispec",
+                "route": "/openapi.json",
+                "rule_filter": lambda rule: True,
+                "model_filter": lambda tag: True,
+            }
+        ],
+        "swagger_ui": True,
+        "specs_route": "/swagger/",
+    }
+
+    swagger_template = {
+        "swagger": "2.0",
+        "info": {
+            "title": "Adaptive Planner API",
+            "description": "API documentation for Adaptive Planner backend",
+            "version": "1.0.0",
+        },
+        "basePath": "/",
+        "schemes": ["http"],
+    }
+
+    Swagger(
+        app,
+        config=swagger_config,
+        template=swagger_template,
     )
 
     register_routes(app)
