@@ -4167,3 +4167,428 @@ input[type="time"]::-webkit-calendar-picker-indicator {
     grid-template-columns: 1fr;
   }
 }
+/* =========================================================
+   THEME POLISH + AUTO REPLAN BADGES
+   Додано: пастельний світлий режим, стабільні кольори темної теми,
+   позначення автоматичного перепланування задач.
+========================================================= */
+
+:root,
+[data-theme="light"] {
+  color-scheme: light;
+  --bg: #f7f4ef;
+  --page-bg: #f7f4ef;
+  --surface: #fffaf3;
+  --surface-soft: #f2ecff;
+  --surface-hover: #ebe4ff;
+  --text: #202134;
+  --text-color: #202134;
+  --text-soft: #4b5568;
+  --muted: #747081;
+  --border: rgba(117, 119, 150, 0.22);
+  --primary: #7c6ee6;
+  --primary-2: #76b7d8;
+  --primary-soft: rgba(124, 110, 230, 0.14);
+  --danger: #df6f72;
+  --shadow: 0 20px 48px rgba(92, 83, 112, 0.14);
+  --calendar-bg: #fffaf3;
+  --calendar-line: rgba(117, 119, 150, 0.18);
+  --calendar-muted: #746f84;
+  --modal-bg: #fffaf3;
+  --glass-surface: rgba(255, 250, 243, 0.9);
+  --glass-soft: rgba(246, 239, 255, 0.86);
+  --dark-card: #fffaf3;
+  --dark-card-2: #f3edff;
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0f172a;
+  --page-bg: #0f172a;
+  --surface: #111827;
+  --surface-soft: #1e293b;
+  --surface-hover: #263449;
+  --text: #f8fafc;
+  --text-color: #f8fafc;
+  --text-soft: #cbd5e1;
+  --muted: #94a3b8;
+  --border: rgba(148, 163, 184, 0.18);
+  --primary: #6366f1;
+  --primary-2: #22d3ee;
+  --primary-soft: rgba(99, 102, 241, 0.16);
+  --danger: #f87171;
+  --shadow: 0 24px 70px rgba(0, 0, 0, 0.35);
+  --calendar-bg: #111827;
+  --calendar-line: rgba(148, 163, 184, 0.16);
+  --calendar-muted: #94a3b8;
+  --modal-bg: #111827;
+  --glass-surface: rgba(15, 23, 42, 0.88);
+  --glass-soft: rgba(30, 41, 59, 0.78);
+  --dark-card: rgba(15, 23, 42, 0.84);
+  --dark-card-2: rgba(30, 41, 59, 0.74);
+}
+
+[data-theme="light"] body,
+body[data-theme="light"] {
+  background:
+    radial-gradient(circle at top left, rgba(196, 181, 253, 0.24), transparent 34%),
+    radial-gradient(circle at bottom right, rgba(186, 230, 253, 0.2), transparent 30%),
+    linear-gradient(135deg, #faf7f1, #f2f0ff 48%, #eef7fb);
+  color: var(--text);
+}
+
+[data-theme="dark"] body,
+body[data-theme="dark"] {
+  background:
+    radial-gradient(circle at top left, rgba(99, 102, 241, 0.14), transparent 34%),
+    radial-gradient(circle at bottom right, rgba(6, 182, 212, 0.08), transparent 30%),
+    var(--bg);
+  color: var(--text);
+}
+
+/* Universal surfaces */
+[data-theme="light"] .auth-container,
+[data-theme="light"] .profile-container,
+[data-theme="light"] .welcome-page,
+[data-theme="light"] .tasks-panel,
+[data-theme="light"] .task-card,
+[data-theme="light"] .task-board,
+[data-theme="light"] .activity-log-card,
+[data-theme="light"] .calendar-panel,
+[data-theme="light"] .event-list,
+[data-theme="light"] .planner-tools,
+[data-theme="light"] .modal,
+[data-theme="light"] .modern-modal,
+[data-theme="light"] .confirm-dialog,
+[data-theme="light"] .custom-repeat-dialog,
+[data-theme="light"] .toast,
+[data-theme="light"] .schedule-import-hero-main,
+[data-theme="light"] .format-card,
+[data-theme="light"] .schedule-import-card,
+[data-theme="light"] .preview-section,
+[data-theme="light"] .task-import-card,
+[data-theme="light"] .task-import-info,
+[data-theme="light"] .task-preview-card,
+[data-theme="light"] .analytics-hero-content,
+[data-theme="light"] .analytics-week-card,
+[data-theme="light"] .analytics-day-tile,
+[data-theme="light"] .analytics-summary-modern-card,
+[data-theme="light"] .analytics-panel,
+[data-theme="light"] .analytics-loading-panel,
+[data-theme="light"] .ap-stat-card,
+[data-theme="light"] .ap-quick-actions,
+[data-theme="light"] .ap-events-panel .event-list,
+[data-theme="light"] .ap-calendar-panel {
+  background: var(--glass-surface) !important;
+  color: var(--text) !important;
+  border-color: var(--border) !important;
+  box-shadow: var(--shadow) !important;
+}
+
+[data-theme="light"] .task-board,
+[data-theme="light"] .task-form-section,
+[data-theme="light"] .auto-repeat-block,
+[data-theme="light"] .delete-result-card,
+[data-theme="light"] .empty-delete-result,
+[data-theme="light"] .event-card,
+[data-theme="light"] .subject-column,
+[data-theme="light"] .compact-edit-item,
+[data-theme="light"] .compact-edit-item.editing,
+[data-theme="light"] .compact-task-card,
+[data-theme="light"] .compact-list-task,
+[data-theme="light"] .task-edit-form,
+[data-theme="light"] .inline-edit-form,
+[data-theme="light"] .nlp-info-list span,
+[data-theme="light"] .ap-events-panel .event-card {
+  background: var(--glass-soft) !important;
+  color: var(--text) !important;
+  border-color: var(--border) !important;
+}
+
+[data-theme="light"] .compact-task-card:hover,
+[data-theme="light"] .compact-list-task:hover,
+[data-theme="light"] .compact-edit-item:hover {
+  background: #eee8ff !important;
+  border-color: rgba(124, 110, 230, 0.38) !important;
+}
+
+[data-theme="light"] .task-modal {
+  background: #fffaf3 !important;
+  color: var(--text) !important;
+  border-color: var(--border) !important;
+}
+
+[data-theme="light"] .task-modal-backdrop,
+[data-theme="light"] .modal-overlay,
+[data-theme="light"] .confirm-overlay {
+  background: rgba(86, 78, 112, 0.28) !important;
+}
+
+/* Text colors in pages that had hard-coded dark theme */
+[data-theme="light"] .task-import-page,
+[data-theme="light"] .analytics-modern-page,
+[data-theme="light"] .schedule-import-page {
+  color: var(--text) !important;
+}
+
+[data-theme="light"] .task-import-hero p,
+[data-theme="light"] .task-import-card label,
+[data-theme="light"] .task-preview-card label,
+[data-theme="light"] .task-create-heading p,
+[data-theme="light"] .task-modal-description,
+[data-theme="light"] .modal-description,
+[data-theme="light"] .analytics-hero-content p,
+[data-theme="light"] .analytics-week-card p,
+[data-theme="light"] .analytics-panel-title p,
+[data-theme="light"] .analytics-summary-modern-card span,
+[data-theme="light"] .analytics-summary-modern-card p,
+[data-theme="light"] .analytics-day-head,
+[data-theme="light"] .preview-header p,
+[data-theme="light"] .format-card p,
+[data-theme="light"] .schedule-import-hero p,
+[data-theme="light"] .preview-note,
+[data-theme="light"] .task-source,
+[data-theme="light"] .task-import-divider {
+  color: var(--muted) !important;
+}
+
+[data-theme="light"] .task-import-hero h1,
+[data-theme="light"] .task-import-card h2,
+[data-theme="light"] .task-import-info h2,
+[data-theme="light"] .task-preview-card h2,
+[data-theme="light"] .analytics-hero-content h1,
+[data-theme="light"] .analytics-week-header h2,
+[data-theme="light"] .analytics-panel-title h3,
+[data-theme="light"] .analytics-summary-modern-card strong,
+[data-theme="light"] .analytics-day-hours strong,
+[data-theme="light"] .ap-stat-card strong,
+[data-theme="light"] .compact-view-row,
+[data-theme="light"] .compact-task-title h4,
+[data-theme="light"] .compact-list-task .task-item-top h4,
+[data-theme="light"] .delete-result-card strong {
+  color: var(--text) !important;
+}
+
+/* Inputs/selects/textareas */
+[data-theme="light"] input,
+[data-theme="light"] select,
+[data-theme="light"] textarea,
+[data-theme="light"] .task-card input,
+[data-theme="light"] .task-card textarea,
+[data-theme="light"] .task-card select,
+[data-theme="light"] .task-create-card input,
+[data-theme="light"] .task-create-card textarea,
+[data-theme="light"] .task-create-card select,
+[data-theme="light"] .inline-edit-form input,
+[data-theme="light"] .inline-edit-form textarea,
+[data-theme="light"] .inline-edit-form select,
+[data-theme="light"] .task-edit-form input,
+[data-theme="light"] .task-edit-form textarea,
+[data-theme="light"] .task-edit-form select,
+[data-theme="light"] .task-import-card input,
+[data-theme="light"] .task-import-card select,
+[data-theme="light"] .task-import-card textarea,
+[data-theme="light"] .task-preview-card input,
+[data-theme="light"] .task-preview-card select,
+[data-theme="light"] .task-preview-card textarea,
+[data-theme="light"] .schedule-import-form input,
+[data-theme="light"] .schedule-import-form textarea,
+[data-theme="light"] .preview-table input,
+[data-theme="light"] .preview-table select,
+[data-theme="light"] .repeat-block select,
+[data-theme="light"] .custom-repeat-dialog select,
+[data-theme="light"] .custom-repeat-dialog input {
+  background: #fffcf7 !important;
+  color: var(--text) !important;
+  border-color: var(--border) !important;
+}
+
+[data-theme="light"] input::placeholder,
+[data-theme="light"] textarea::placeholder {
+  color: #9a95a8 !important;
+}
+
+[data-theme="light"] input[type="date"],
+[data-theme="light"] input[type="time"] {
+  color-scheme: light;
+}
+
+[data-theme="light"] input[type="date"]::-webkit-calendar-picker-indicator,
+[data-theme="light"] input[type="time"]::-webkit-calendar-picker-indicator {
+  filter: none !important;
+}
+
+/* Buttons and controls */
+[data-theme="light"] button,
+[data-theme="light"] .topbar a,
+[data-theme="light"] .secondary-mini-btn,
+[data-theme="light"] .secondary-action-button,
+[data-theme="light"] .secondary-button,
+[data-theme="light"] .task-auto-deadline-button,
+[data-theme="light"] .ap-quick-actions button,
+[data-theme="light"] .ap-quick-actions a,
+[data-theme="light"] .ap-calendar-controls button,
+[data-theme="light"] .task-view-toggle,
+[data-theme="light"] .task-filters,
+[data-theme="light"] .task-view-toggle button,
+[data-theme="light"] .task-filters button,
+[data-theme="light"] .status-select {
+  background: #f5f0ff !important;
+  color: var(--text) !important;
+  border-color: var(--border) !important;
+}
+
+[data-theme="light"] button:hover,
+[data-theme="light"] .topbar a:hover,
+[data-theme="light"] .task-view-toggle button:hover,
+[data-theme="light"] .task-filters button:hover {
+  background: #ece6ff !important;
+  border-color: rgba(124, 110, 230, 0.45) !important;
+}
+
+[data-theme="light"] .primary-button,
+[data-theme="light"] .task-create-submit,
+[data-theme="light"] .actions-row button,
+[data-theme="light"] .preview-header button,
+[data-theme="light"] .task-view-toggle button.active,
+[data-theme="light"] .task-filters button.active,
+[data-theme="light"] .repeat-day.active {
+  background: linear-gradient(135deg, #9286ec, #78bdd6) !important;
+  color: #ffffff !important;
+  border-color: transparent !important;
+}
+
+[data-theme="light"] .danger-button,
+[data-theme="light"] .compact-task-actions .danger-button,
+[data-theme="light"] .compact-list-task .danger-button {
+  background: rgba(223, 111, 114, 0.14) !important;
+  color: #9d3439 !important;
+  border-color: rgba(223, 111, 114, 0.2) !important;
+}
+
+/* Calendar and tables */
+[data-theme="light"] .calendar-page,
+[data-theme="light"] .fc,
+[data-theme="light"] .preview-table {
+  background: var(--calendar-bg) !important;
+  color: var(--text) !important;
+}
+
+[data-theme="light"] .fc .fc-col-header-cell,
+[data-theme="light"] .calendar-scroll-shell .fc-col-header-cell,
+[data-theme="light"] .preview-table th {
+  background: #f2ecff !important;
+  color: var(--text) !important;
+}
+
+[data-theme="light"] .preview-table td,
+[data-theme="light"] .preview-table th {
+  border-color: var(--border) !important;
+}
+
+[data-theme="light"] .fc-theme-standard td,
+[data-theme="light"] .fc-theme-standard th,
+[data-theme="light"] .fc-theme-standard .fc-scrollgrid {
+  border-color: var(--calendar-line) !important;
+}
+
+/* Task chips */
+[data-theme="light"] .compact-task-footer span,
+[data-theme="light"] .task-chip,
+[data-theme="light"] .task-modal-meta span {
+  background: rgba(124, 110, 230, 0.13) !important;
+  color: #5047a8 !important;
+}
+
+[data-theme="light"] .compact-status.done {
+  background: rgba(76, 175, 126, 0.17) !important;
+  color: #256f4d !important;
+}
+
+[data-theme="light"] .compact-status.planned {
+  background: rgba(91, 141, 226, 0.16) !important;
+  color: #315eaf !important;
+}
+
+[data-theme="light"] .compact-status.missed {
+  background: rgba(223, 111, 114, 0.16) !important;
+  color: #9d3439 !important;
+}
+
+/* Auto replan badges */
+.task-replan-badge {
+  width: fit-content;
+  max-width: 100%;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(14, 165, 233, 0.18) !important;
+  color: #bae6fd !important;
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1.1;
+  white-space: normal;
+}
+
+.task-replan-badge.limit {
+  background: rgba(245, 158, 11, 0.2) !important;
+  color: #fde68a !important;
+  border-color: rgba(245, 158, 11, 0.32);
+}
+
+.task-replan-badge.compact {
+  padding: 5px 8px !important;
+  font-size: 11px !important;
+}
+
+[data-theme="light"] .task-replan-badge {
+  background: rgba(101, 163, 210, 0.18) !important;
+  color: #28678d !important;
+  border-color: rgba(101, 163, 210, 0.24) !important;
+}
+
+[data-theme="light"] .task-replan-badge.limit {
+  background: rgba(221, 158, 74, 0.18) !important;
+  color: #936018 !important;
+  border-color: rgba(221, 158, 74, 0.28) !important;
+}
+
+/* Schedule import page pastel fix */
+[data-theme="light"] .schedule-import-page {
+  background:
+    radial-gradient(circle at top left, rgba(196, 181, 253, 0.24), transparent 34%),
+    radial-gradient(circle at top right, rgba(186, 230, 253, 0.2), transparent 32%),
+    linear-gradient(135deg, #faf7f1, #f2f0ff 55%, #eef7fb) !important;
+}
+
+[data-theme="light"] .format-list span,
+[data-theme="light"] .confidence-badge,
+[data-theme="light"] .event-source,
+[data-theme="light"] .event-sync-label,
+[data-theme="light"] .delete-result-card em {
+  background: rgba(124, 110, 230, 0.12) !important;
+  color: #5047a8 !important;
+}
+
+[data-theme="light"] .success-message {
+  background: #e7f8ee !important;
+  color: #276749 !important;
+  border-color: #b8e6c8 !important;
+}
+
+[data-theme="light"] .error-message,
+[data-theme="light"] .warning-box {
+  background: #fff1e8 !important;
+  color: #95503a !important;
+  border-color: #f4c9b8 !important;
+}
+
+@media (max-width: 760px) {
+  .task-replan-badge {
+    width: 100%;
+    justify-content: center;
+  }
+}

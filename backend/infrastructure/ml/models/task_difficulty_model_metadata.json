@@ -18,8 +18,8 @@
     "hard": 178,
     "medium": 157
   },
-  "version": "20260519_215519",
-  "saved_at": "2026-05-19T21:55:19.775495",
+  "version": "20260528_223715",
+  "saved_at": "2026-05-28T22:37:16.004911+00:00",
   "latest_model_path": "backend/infrastructure/ml/models\\task_difficulty_model.pkl",
-  "versioned_model_path": "backend/infrastructure/ml/models\\task_difficulty_model_20260519_215519.pkl"
+  "versioned_model_path": "backend/infrastructure/ml/models\\task_difficulty_model_20260528_223715.pkl"
 }

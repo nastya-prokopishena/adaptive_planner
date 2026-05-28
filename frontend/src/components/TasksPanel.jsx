@@ -66,6 +66,10 @@ const t = {
   dueDate: "Дата дедлайну",
   dueTime: "Час дедлайну",
   noDueDate: "Без дати",
+  autoReplanned: "Пропущені задачі були автоматично переплановані",
+  replannedBadge: "Переплановано",
+  replanLimitReached: "Ліміт переносів вичерпано",
+  replanAttemptsLeft: "залишилось",
 
   groupedView: "За предметами",
   listView: "Списком",
@@ -164,9 +168,9 @@ export default function TasksPanel({ events = [] }) {
     loadAll();
   }, []);
 
-  const showMessage = (text) => {
+  const showMessage = (text, timeout = 3500) => {
     setMessage(text);
-    setTimeout(() => setMessage(""), 2500);
+    setTimeout(() => setMessage(""), timeout);
   };
 
   const loadSubjects = async () => {
@@ -180,8 +184,29 @@ export default function TasksPanel({ events = [] }) {
   };
 
   const loadTasks = async () => {
-    const response = await axios.get("/api/tasks");
-    setTasks(Array.isArray(response.data) ? response.data : []);
+    const response = await axios.get("/api/tasks", {
+      params: { include_meta: 1 },
+    });
+
+    if (Array.isArray(response.data)) {
+      setTasks(response.data);
+      return;
+    }
+
+    const loadedTasks = Array.isArray(response.data?.tasks)
+      ? response.data.tasks
+      : [];
+
+    setTasks(loadedTasks);
+
+    const replannedCount = Number(response.data?.auto_replanned_count || 0);
+
+    if (replannedCount > 0) {
+      showMessage(
+        `${t.autoReplanned}: ${replannedCount}`,
+        4500,
+      );
+    }
   };
 
 
@@ -550,6 +575,48 @@ export default function TasksPanel({ events = [] }) {
     };
   };
 
+  const getAutoReplanInfo = (task) => {
+    const count = Number(task.auto_replan_count || 0);
+    const limit = Number(task.auto_replan_limit || 3);
+    const attemptsLeft = Number(
+      task.auto_replan_attempts_left ?? Math.max(limit - count, 0)
+    );
+    const limitReached = Boolean(task.auto_replan_limit_reached);
+
+    return {
+      count,
+      limit,
+      attemptsLeft,
+      limitReached,
+      shouldShow: count > 0 || limitReached,
+    };
+  };
+
+  const renderAutoReplanBadge = (task, compact = false) => {
+    const info = getAutoReplanInfo(task);
+
+    if (!info.shouldShow) return null;
+
+    const badgeText = info.limitReached
+      ? `${t.replanLimitReached}: ${info.count}/${info.limit}`
+      : `${t.replannedBadge}: ${info.count}/${info.limit}`;
+
+    const title = info.limitReached
+      ? "Автоматичне перепланування більше не виконуватиметься для цієї задачі."
+      : `Автоматичне перепланування було виконано. ${t.replanAttemptsLeft}: ${info.attemptsLeft}.`;
+
+    return (
+      <span
+        className={`task-replan-badge ${info.limitReached ? "limit" : ""} ${
+          compact ? "compact" : ""
+        }`}
+        title={title}
+      >
+        🔁 {badgeText}
+      </span>
+    );
+  };
+
   const renderStatusSelect = (task) => (
     <select
       className={`status-select status-${task.status || "planned"}`}
@@ -781,6 +848,8 @@ export default function TasksPanel({ events = [] }) {
         </span>
       )}
 
+      {renderAutoReplanBadge(task)}
+
       {subjectName && (
         <span className="task-chip task-chip-subject">{subjectName}</span>
       )}
@@ -871,6 +940,8 @@ export default function TasksPanel({ events = [] }) {
                 Дедлайн: {formatDate(task.due_date)}
               </span>
             )}
+
+            {renderAutoReplanBadge(task, true)}
           </div>
 
           <div
@@ -943,6 +1014,8 @@ export default function TasksPanel({ events = [] }) {
             {selectedTask.due_date && (
               <span>Дедлайн: {formatDate(selectedTask.due_date)}</span>
             )}
+
+            {renderAutoReplanBadge(selectedTask)}
 
             {subjectName && <span>Предмет: {subjectName}</span>}
           </div>

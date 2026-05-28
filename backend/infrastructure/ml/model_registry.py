@@ -4,6 +4,8 @@ from datetime import UTC, datetime
 
 import joblib
 
+from backend.infrastructure.ml.text_feature_extractor import TextFeatureExtractor
+
 
 class ModelRegistry:
     def __init__(self, model_dir="backend/infrastructure/ml/models"):
@@ -53,6 +55,7 @@ class ModelRegistry:
         if not os.path.exists(self.latest_model_path):
             return None
 
+        self._register_pickle_compatibility_aliases()
         return joblib.load(self.latest_model_path)
 
     def load_metadata(self):
@@ -61,6 +64,13 @@ class ModelRegistry:
 
         with open(self.metadata_path, "r", encoding="utf-8") as file:
             return json.load(file)
+
+    @staticmethod
+    def _register_pickle_compatibility_aliases():
+        """Allow loading older pickle files saved with __main__.TextFeatureExtractor."""
+        import __main__
+
+        setattr(__main__, "TextFeatureExtractor", TextFeatureExtractor)
 
 
 _cached_model = None

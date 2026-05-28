@@ -1,10 +1,7 @@
 import os
-import re
 
-import joblib
 import numpy as np
 import pandas as pd
-from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.compose import ColumnTransformer
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
@@ -15,6 +12,7 @@ from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn.svm import LinearSVC
 
 from backend.infrastructure.ml.model_registry import ModelRegistry
+from backend.infrastructure.ml.text_feature_extractor import TextFeatureExtractor
 
 DATASET_CANDIDATES = [
     "backend/infrastructure/ml/datasets/processed/task_difficulty_dataset_relabelled.csv",
@@ -24,83 +22,7 @@ DATASET_CANDIDATES = [
 ]
 
 MODEL_DIR = "backend/infrastructure/ml/models"
-MODEL_PATH = os.path.join(MODEL_DIR, "task_difficulty_model.pkl")
 REPORT_PATH = os.path.join(MODEL_DIR, "task_difficulty_report.txt")
-
-
-class TextFeatureExtractor(BaseEstimator, TransformerMixin):
-    ACTION_WORDS = [
-        "прочитати",
-        "ознайомитися",
-        "описати",
-        "пояснити",
-        "виконати",
-        "розв'язати",
-        "розв’язати",
-        "побудувати",
-        "проаналізувати",
-        "порівняти",
-        "дослідити",
-        "обґрунтувати",
-        "розробити",
-        "реалізувати",
-        "створити",
-        "спроєктувати",
-        "оптимізувати",
-        "інтегрувати",
-    ]
-
-    HARD_WORDS = [
-        "реалізувати",
-        "розробити",
-        "дослідити",
-        "порівняти",
-        "проаналізувати",
-        "обґрунтувати",
-        "оптимізувати",
-        "інтегрувати",
-        "спроєктувати",
-        "модель",
-        "система",
-        "проєкт",
-        "проект",
-        "api",
-        "backend",
-        "frontend",
-        "база даних",
-    ]
-
-    def fit(self, x, y=None):
-        return self
-
-    def transform(self, x):
-        features = []
-
-        for text in x:
-            text = str(text)
-            lower = text.lower()
-
-            length = len(text)
-            word_count = len(re.findall(r"\w+", lower))
-            action_count = sum(1 for word in self.ACTION_WORDS if word in lower)
-            hard_count = sum(1 for word in self.HARD_WORDS if word in lower)
-            step_count = len(re.findall(r"\b\d+[\).]\s+", text))
-            bullet_count = len(re.findall(r"[-•●]\s+", text))
-            question_count = text.count("?")
-
-            features.append(
-                [
-                    length,
-                    word_count,
-                    action_count,
-                    hard_count,
-                    step_count,
-                    bullet_count,
-                    question_count,
-                ]
-            )
-
-        return np.array(features)
 
 
 def find_dataset_path():
@@ -240,6 +162,62 @@ def evaluate_model(name, model, x_train, x_test, y_train, y_test):
     }
 
 
+def choose_best_model(results):
+    return max(results, key=lambda item: item["accuracy"])
+
+
+def train_candidates(candidates, x_train, x_test, y_train, y_test):
+    results = []
+
+    for name, model in candidates:
+        result = evaluate_model(
+            name=name,
+            model=model,
+            x_train=x_train,
+            x_test=x_test,
+            y_train=y_train,
+            y_test=y_test,
+        )
+
+        print(f"{name} accuracy: {result['accuracy']}")
+        results.append(result)
+
+    return results
+
+
+def write_report(best_fine, best_group, fine_results, group_results):
+    os.makedirs(MODEL_DIR, exist_ok=True)
+
+    with open(REPORT_PATH, "w", encoding="utf-8") as file:
+        file.write("Hybrid hierarchical difficulty model\n\n")
+        file.write(f"Best fine model: {best_fine['name']}\n")
+        file.write(f"Fine accuracy: {best_fine['accuracy']}\n\n")
+        file.write(f"Best group model: {best_group['name']}\n")
+        file.write(f"Group accuracy: {best_group['accuracy']}\n\n")
+
+        file.write("=" * 80 + "\n")
+        file.write("Fine models:\n\n")
+
+        for result in fine_results:
+            file.write(f"Model: {result['name']}\n")
+            file.write(f"Accuracy: {result['accuracy']}\n")
+            file.write(result["report"])
+            file.write("\nConfusion matrix:\n")
+            file.write(np.array2string(result["matrix"]))
+            file.write("\n\n")
+
+        file.write("=" * 80 + "\n")
+        file.write("Group models:\n\n")
+
+        for result in group_results:
+            file.write(f"Model: {result['name']}\n")
+            file.write(f"Accuracy: {result['accuracy']}\n")
+            file.write(result["report"])
+            file.write("\nConfusion matrix:\n")
+            file.write(np.array2string(result["matrix"]))
+            file.write("\n\n")
+
+
 def train_model():
     df = load_dataset()
 
@@ -261,44 +239,28 @@ def train_model():
         ("Fine LinearSVC", build_svc_pipeline()),
     ]
 
-    fine_results = []
-
-    for name, model in fine_candidates:
-        result = evaluate_model(
-            name=name,
-            model=model,
-            x_train=x_train,
-            x_test=x_test,
-            y_train=y_fine_train,
-            y_test=y_fine_test,
-        )
-
-        print(f"{name} accuracy: {result['accuracy']}")
-        fine_results.append(result)
-
-    best_fine = max(fine_results, key=lambda item: item["accuracy"])
-
     group_candidates = [
         ("Group LogisticRegression", build_logistic_pipeline()),
         ("Group LinearSVC", build_svc_pipeline()),
     ]
 
-    group_results = []
+    fine_results = train_candidates(
+        fine_candidates,
+        x_train,
+        x_test,
+        y_fine_train,
+        y_fine_test,
+    )
+    group_results = train_candidates(
+        group_candidates,
+        x_train,
+        x_test,
+        y_group_train,
+        y_group_test,
+    )
 
-    for name, model in group_candidates:
-        result = evaluate_model(
-            name=name,
-            model=model,
-            x_train=x_train,
-            x_test=x_test,
-            y_train=y_group_train,
-            y_test=y_group_test,
-        )
-
-        print(f"{name} accuracy: {result['accuracy']}")
-        group_results.append(result)
-
-    best_group = max(group_results, key=lambda item: item["accuracy"])
+    best_fine = choose_best_model(fine_results)
+    best_group = choose_best_model(group_results)
 
     bundle = {
         "model_type": "hybrid_hierarchical",
@@ -332,34 +294,7 @@ def train_model():
         },
     )
 
-    with open(REPORT_PATH, "w", encoding="utf-8") as file:
-        file.write("Hybrid hierarchical difficulty model\n\n")
-        file.write(f"Best fine model: {best_fine['name']}\n")
-        file.write(f"Fine accuracy: {best_fine['accuracy']}\n\n")
-        file.write(f"Best group model: {best_group['name']}\n")
-        file.write(f"Group accuracy: {best_group['accuracy']}\n\n")
-
-        file.write("=" * 80 + "\n")
-        file.write("Fine models:\n\n")
-
-        for result in fine_results:
-            file.write(f"Model: {result['name']}\n")
-            file.write(f"Accuracy: {result['accuracy']}\n")
-            file.write(result["report"])
-            file.write("\nConfusion matrix:\n")
-            file.write(np.array2string(result["matrix"]))
-            file.write("\n\n")
-
-        file.write("=" * 80 + "\n")
-        file.write("Group models:\n\n")
-
-        for result in group_results:
-            file.write(f"Model: {result['name']}\n")
-            file.write(f"Accuracy: {result['accuracy']}\n")
-            file.write(result["report"])
-            file.write("\nConfusion matrix:\n")
-            file.write(np.array2string(result["matrix"]))
-            file.write("\n\n")
+    write_report(best_fine, best_group, fine_results, group_results)
 
     print(f"Best fine model: {best_fine['name']}")
     print(f"Fine accuracy: {best_fine['accuracy']}")

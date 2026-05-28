@@ -1,6 +1,7 @@
 import json
 from datetime import UTC, datetime, time, timedelta
 from types import SimpleNamespace
+from zoneinfo import ZoneInfo
 
 import requests
 from flask import Blueprint, current_app, jsonify, redirect, request, session
@@ -45,6 +46,13 @@ synthetic_deadline_dataset_service = SyntheticDeadlineDatasetService()
 
 COMPLETED_TASK_STATUSES = {"done", "completed"}
 MISSED_TASK_STATUS = "missed"
+AUTO_REPLAN_ACTION = "task_auto_replanned"
+AUTO_REPLAN_LIMIT_ACTION = "task_auto_replan_limit_reached"
+MAX_AUTO_REPLAN_ATTEMPTS = 3
+PRIORITY_ESCALATION_REPLAN_COUNT = 3
+HIGH_PRIORITY = "high"
+BEST_FREE_TIME_MODE = "best_free_time"
+APP_TIMEZONE = ZoneInfo("Europe/Kyiv")
 
 
 def to_aware_utc(value):
@@ -52,9 +60,18 @@ def to_aware_utc(value):
         return None
 
     if value.tzinfo is None:
-        return value.replace(tzinfo=UTC)
+        return value.replace(tzinfo=APP_TIMEZONE).astimezone(UTC)
 
     return value.astimezone(UTC)
+
+
+def to_storage_datetime(value):
+    aware_value = to_aware_utc(value)
+
+    if not aware_value:
+        return None
+
+    return aware_value.astimezone(APP_TIMEZONE).replace(tzinfo=None)
 
 
 def refresh_task_deadline_status(task, now=None):
@@ -71,12 +88,71 @@ def refresh_task_deadline_status(task, now=None):
 
     if deadline and deadline < current_time and current_status != MISSED_TASK_STATUS:
         task.status = MISSED_TASK_STATUS
-        task.missed_at = current_time
+        task.missed_at = to_storage_datetime(current_time)
         task.completed_at = None
-        task.updated_at = current_time
+        task.updated_at = to_storage_datetime(current_time)
         return True
 
     return False
+
+
+def get_task_auto_replan_count(db, task_id):
+    if not task_id:
+        return 0
+
+    return (
+        db.query(TaskActivityLog)
+        .filter(TaskActivityLog.task_id == task_id)
+        .filter(TaskActivityLog.action == AUTO_REPLAN_ACTION)
+        .count()
+    )
+
+
+def has_auto_replan_limit_log(db, task_id):
+    if not task_id:
+        return False
+
+    return (
+        db.query(TaskActivityLog)
+        .filter(TaskActivityLog.task_id == task_id)
+        .filter(TaskActivityLog.action == AUTO_REPLAN_LIMIT_ACTION)
+        .first()
+        is not None
+    )
+
+
+def set_auto_replan_metadata(db, task):
+    replan_count = get_task_auto_replan_count(db, task.id)
+    replan_limit_reached = replan_count >= MAX_AUTO_REPLAN_ATTEMPTS
+
+    task.auto_replan_count = replan_count
+    task.auto_replan_limit = MAX_AUTO_REPLAN_ATTEMPTS
+    task.auto_replan_attempts_left = max(MAX_AUTO_REPLAN_ATTEMPTS - replan_count, 0)
+    task.auto_replan_limit_reached = replan_limit_reached
+
+    return task
+
+
+def set_tasks_auto_replan_metadata(db, tasks):
+    for task in tasks:
+        set_auto_replan_metadata(db, task)
+
+    return tasks
+
+
+def should_auto_replan_task(task, now=None):
+    if not task or not getattr(task, "due_date", None):
+        return False
+
+    current_status = (getattr(task, "status", None) or "").lower()
+
+    if current_status in COMPLETED_TASK_STATUSES:
+        return False
+
+    deadline = to_aware_utc(task.due_date)
+    current_time = now or datetime.now(UTC)
+
+    return bool(deadline and deadline < current_time)
 
 
 def refresh_tasks_deadline_statuses(db, tasks):
@@ -91,6 +167,122 @@ def refresh_tasks_deadline_statuses(db, tasks):
         db.commit()
 
     return changed
+
+
+def auto_replan_missed_task(db, user_id, task):
+    old_deadline = task.due_date
+    previous_status = task.status
+    current_replan_count = get_task_auto_replan_count(db, task.id)
+
+    if current_replan_count >= MAX_AUTO_REPLAN_ATTEMPTS:
+        current_time = datetime.now(UTC)
+        task.status = MISSED_TASK_STATUS
+        task.missed_at = to_storage_datetime(current_time)
+        task.completed_at = None
+        task.priority = HIGH_PRIORITY
+        task.updated_at = to_storage_datetime(current_time)
+        set_auto_replan_metadata(db, task)
+
+        if not has_auto_replan_limit_log(db, task.id):
+            create_task_log(
+                db=db,
+                user_id=user_id,
+                task_id=task.id,
+                action=AUTO_REPLAN_LIMIT_ACTION,
+                old_status=previous_status,
+                new_status=MISSED_TASK_STATUS,
+                details=(
+                    f"Automatic replanning limit reached. "
+                    f"Attempts: {current_replan_count}. "
+                    f"Old deadline: {old_deadline}."
+                ),
+            )
+
+        return None
+
+    prediction, block = apply_auto_deadline_to_task(
+        db=db,
+        user_id=user_id,
+        task=task,
+        mode=BEST_FREE_TIME_MODE,
+    )
+
+    new_replan_count = current_replan_count + 1
+
+    task.status = "planned"
+    task.missed_at = None
+    task.completed_at = None
+
+    if new_replan_count >= PRIORITY_ESCALATION_REPLAN_COUNT:
+        task.priority = HIGH_PRIORITY
+
+    task.updated_at = to_storage_datetime(datetime.now(UTC))
+
+    create_task_log(
+        db=db,
+        user_id=user_id,
+        task_id=task.id,
+        action=AUTO_REPLAN_ACTION,
+        old_status=previous_status,
+        new_status="planned",
+        details=(
+            f"Task automatically replanned. "
+            f"Attempt: {new_replan_count}. "
+            f"Old deadline: {old_deadline}. "
+            f"New deadline: {prediction['deadline']}."
+        ),
+    )
+
+    return {
+        "task_id": task.id,
+        "title": task.title,
+        "old_deadline": old_deadline.isoformat() if old_deadline else None,
+        "new_deadline": to_aware_utc(prediction["deadline"]).isoformat(),
+        "replan_count": new_replan_count,
+        "replan_limit": MAX_AUTO_REPLAN_ATTEMPTS,
+        "attempts_left": max(MAX_AUTO_REPLAN_ATTEMPTS - new_replan_count, 0),
+        "limit_reached": new_replan_count >= MAX_AUTO_REPLAN_ATTEMPTS,
+        "priority": task.priority,
+        "reason": prediction.get("reason"),
+        "block_id": getattr(block, "id", None),
+    }
+
+
+def refresh_and_replan_missed_tasks(db, user_id, tasks):
+    now = datetime.now(UTC)
+    changed = False
+    replanned_tasks = []
+
+    for task in tasks:
+        if not should_auto_replan_task(task, now=now):
+            continue
+
+        refresh_task_deadline_status(task, now=now)
+        changed = True
+
+        try:
+            replan_result = auto_replan_missed_task(
+                db=db,
+                user_id=user_id,
+                task=task,
+            )
+
+            if replan_result:
+                replanned_tasks.append(replan_result)
+
+        except Exception as error:
+            print("Auto replan missed task error:", error)
+
+    if changed:
+        db.commit()
+
+    set_tasks_auto_replan_metadata(db, tasks)
+
+    return {
+        "changed": changed,
+        "replanned": replanned_tasks,
+        "replanned_count": len(replanned_tasks),
+    }
 
 
 def current_user():
@@ -209,7 +401,7 @@ def serialize_event(event, occurrence_start=None, occurrence_end=None):
             "unit": event.recurrence_unit,
             "days": event.recurrence_days.split(",") if event.recurrence_days else [],
             "endType": event.recurrence_end_type or "never",
-            "endDate": (event.recurrence_end_date.isoformat() if event.recurrence_end_date else ""),
+            "endDate": event.recurrence_end_date.isoformat() if event.recurrence_end_date else "",
             "count": event.recurrence_count or "",
         },
     }
@@ -227,26 +419,6 @@ def parse_optional_datetime(value):
         return None
 
 
-def ensure_utc(value):
-    if not value:
-        return None
-
-    if value.tzinfo is None:
-        return value.replace(tzinfo=UTC)
-
-    return value.astimezone(UTC)
-
-
-def restore_datetime_style(value, reference):
-    if not value or not reference:
-        return value
-
-    if reference.tzinfo is None and value.tzinfo is not None:
-        return value.replace(tzinfo=None)
-
-    return value
-
-
 def serialize_event_type(event_type):
     return {
         "id": event_type.id,
@@ -254,7 +426,7 @@ def serialize_event_type(event_type):
         "name": event_type.name,
         "color": event_type.color,
         "is_default": event_type.is_default,
-        "created_at": (event_type.created_at.isoformat() if event_type.created_at else None),
+        "created_at": event_type.created_at.isoformat() if event_type.created_at else None,
     }
 
 
@@ -292,7 +464,7 @@ def serialize_task(task):
         "completed_at": (
             task.completed_at.isoformat() if getattr(task, "completed_at", None) else None
         ),
-        "missed_at": (task.missed_at.isoformat() if getattr(task, "missed_at", None) else None),
+        "missed_at": task.missed_at.isoformat() if getattr(task, "missed_at", None) else None,
         "task_type": getattr(task, "task_type", "other"),
         "keywords": keywords,
         "estimated_duration_hours": getattr(
@@ -302,8 +474,16 @@ def serialize_task(task):
         ),
         "difficulty_score": getattr(task, "difficulty_score", None),
         "nlp_source": getattr(task, "nlp_source", None),
-        "created_at": (task.created_at.isoformat() if getattr(task, "created_at", None) else None),
-        "updated_at": (task.updated_at.isoformat() if getattr(task, "updated_at", None) else None),
+        "created_at": task.created_at.isoformat() if getattr(task, "created_at", None) else None,
+        "updated_at": task.updated_at.isoformat() if getattr(task, "updated_at", None) else None,
+        "auto_replan_count": getattr(task, "auto_replan_count", 0),
+        "auto_replan_limit": getattr(task, "auto_replan_limit", MAX_AUTO_REPLAN_ATTEMPTS),
+        "auto_replan_attempts_left": getattr(
+            task,
+            "auto_replan_attempts_left",
+            MAX_AUTO_REPLAN_ATTEMPTS,
+        ),
+        "auto_replan_limit_reached": getattr(task, "auto_replan_limit_reached", False),
     }
 
 
@@ -624,7 +804,7 @@ def event_matches_subject(event, subject_id=None, subject_name=None):
 
 
 def get_subject_events(db, user_id, subject_id=None, subject_name=None):
-    now = datetime.now(UTC)
+    now = datetime.utcnow()
 
     if subject_id and not subject_name:
         subject_name = get_subject_name_by_id(
@@ -677,7 +857,7 @@ def get_subject_events(db, user_id, subject_id=None, subject_name=None):
 
 
 def get_user_calendar_events(db, user_id):
-    now = datetime.now(UTC)
+    now = datetime.utcnow()
 
     events = db.query(Event).filter(Event.user_id == user_id).order_by(Event.start_time.asc()).all()
 
@@ -719,7 +899,7 @@ def get_existing_subject_deadline_count(
     subject_name=None,
     exclude_task_id=None,
 ):
-    now = datetime.now(UTC)
+    now = datetime.utcnow()
 
     resolved_subject_id = resolve_subject_id(
         db=db,
@@ -746,7 +926,7 @@ def get_existing_subject_deadline_count(
 
 
 def get_existing_deadline_dates(db, user_id):
-    now = datetime.now(UTC)
+    now = datetime.utcnow()
 
     tasks = (
         db.query(Task)
@@ -816,8 +996,9 @@ def apply_auto_deadline_to_task(
         used_best_time_dates=used_best_time_dates or [],
     )
 
-    task.due_date = prediction["deadline"]
-    task.updated_at = datetime.now(UTC)
+    task.due_date = to_storage_datetime(prediction["deadline"])
+    task.updated_at = datetime.utcnow()
+    prediction["deadline"] = task.due_date
 
     block = task_schedule_block_service.recreate_block_for_task(
         db=db,
@@ -851,7 +1032,7 @@ def fallback_deadline_prediction(
 ):
     subject_events = subject_events or []
     used_best_time_dates = used_best_time_dates or []
-    now = datetime.now(UTC)
+    now = datetime.utcnow()
 
     normalized_mode = normalize_deadline_mode(mode)
 
@@ -861,16 +1042,13 @@ def fallback_deadline_prediction(
             len(subject_events) - 1,
         )
         target_event = subject_events[event_index]
-        original_start_time = target_event.start_time
-        target_start_time = ensure_utc(original_start_time)
-
-        deadline = target_start_time - timedelta(hours=2)
+        deadline = target_event.start_time - timedelta(hours=2)
 
         if deadline <= now:
-            deadline = target_start_time - timedelta(minutes=30)
+            deadline = target_event.start_time - timedelta(minutes=30)
 
         return {
-            "deadline": restore_datetime_style(deadline, original_start_time),
+            "deadline": deadline,
             "confidence": 0.72,
             "reason": "Fallback: дедлайн поставлено перед найближчою парою предмету.",
         }
@@ -884,7 +1062,7 @@ def fallback_deadline_prediction(
     while deadline_date in blocked_dates:
         deadline_date = deadline_date + timedelta(days=1)
 
-    deadline = datetime.combine(deadline_date, time(hour=20, minute=0), tzinfo=UTC)
+    deadline = datetime.combine(deadline_date, time(hour=20, minute=0))
 
     return {
         "deadline": deadline,
