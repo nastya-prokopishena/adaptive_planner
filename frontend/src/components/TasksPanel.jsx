@@ -19,11 +19,11 @@ const COLORS = [
 const t = {
   title: "Задачі та предмети",
   subtitle:
-    "Тут можна створювати предмети, типи подій і задачі, а також відстежувати виконання.",
+    "Створюй предмети, типи подій і задачі. Для задач можна вручну вказати дедлайн або залишити його для автопланування.",
   subjects: "Предмети",
   eventTypes: "Типи подій",
   tasks: "Задачі",
-  activity: "Історія активності",
+  activity: "Керування задачами",
 
   subjectName: "Назва предмету",
   teacher: "Викладач",
@@ -75,7 +75,6 @@ export default function TasksPanel({ events = [] }) {
   const [subjects, setSubjects] = useState([]);
   const [eventTypes, setEventTypes] = useState([]);
   const [tasks, setTasks] = useState([]);
-  const [logs, setLogs] = useState([]);
 
   const [statusFilter, setStatusFilter] = useState("all");
   const [taskViewMode, setTaskViewMode] = useState("grouped");
@@ -108,6 +107,9 @@ export default function TasksPanel({ events = [] }) {
     subject_id: "",
     event_id: "",
     priority: "medium",
+    task_type: "homework",
+    estimated_duration_hours: 1,
+    difficulty_score: 3,
     due_date_date: "",
     due_date_time: "",
   });
@@ -182,10 +184,6 @@ export default function TasksPanel({ events = [] }) {
     setTasks(Array.isArray(response.data) ? response.data : []);
   };
 
-  const loadLogs = async () => {
-    const response = await axios.get("/api/activity-logs");
-    setLogs(Array.isArray(response.data) ? response.data : []);
-  };
 
   const loadAll = async () => {
     try {
@@ -193,7 +191,6 @@ export default function TasksPanel({ events = [] }) {
         loadSubjects(),
         loadEventTypes(),
         loadTasks(),
-        loadLogs(),
       ]);
     } catch (error) {
       console.error(error);
@@ -327,6 +324,51 @@ export default function TasksPanel({ events = [] }) {
     }
   };
 
+  const autoPickManualTaskDeadline = async () => {
+    if (!taskForm.title.trim()) {
+      showMessage("Спочатку введи назву задачі.");
+      return;
+    }
+
+    try {
+      const response = await axios.post("/api/tasks/auto-deadline", {
+        title: taskForm.title,
+        description: taskForm.description,
+        subject_id: taskForm.subject_id || null,
+        event_id: taskForm.event_id || null,
+        priority: taskForm.priority || "medium",
+        task_type: taskForm.task_type || "homework",
+        estimated_duration_hours: Number(
+          taskForm.estimated_duration_hours || 1
+        ),
+        difficulty_score: Number(taskForm.difficulty_score || 3),
+        mode: "subject_based",
+      });
+
+      const dueDate = response.data?.due_date;
+
+      if (!dueDate) {
+        showMessage("Не вдалося підібрати дедлайн.");
+        return;
+      }
+
+      const parsedDate = new Date(dueDate);
+
+      setTaskForm({
+        ...taskForm,
+        due_date_date: parsedDate.toISOString().slice(0, 10),
+        due_date_time: parsedDate.toTimeString().slice(0, 5),
+      });
+
+      showMessage("Дедлайн підібрано автоматично.");
+    } catch (error) {
+      console.error(error);
+      showMessage(
+        error.response?.data?.error || "Не вдалося автоматично підібрати дедлайн."
+      );
+    }
+  };
+
   const createTask = async () => {
     if (!taskForm.title.trim()) return;
 
@@ -335,6 +377,11 @@ export default function TasksPanel({ events = [] }) {
         ...taskForm,
         subject_id: taskForm.subject_id || null,
         event_id: taskForm.event_id || null,
+        task_type: taskForm.task_type || "homework",
+        estimated_duration_hours: Number(
+          taskForm.estimated_duration_hours || 1
+        ),
+        difficulty_score: Number(taskForm.difficulty_score || 3),
         due_date: buildDueDate(taskForm.due_date_date, taskForm.due_date_time),
       });
 
@@ -344,11 +391,14 @@ export default function TasksPanel({ events = [] }) {
         subject_id: "",
         event_id: "",
         priority: "medium",
+        task_type: "homework",
+        estimated_duration_hours: 1,
+        difficulty_score: 3,
         due_date_date: "",
         due_date_time: "",
       });
 
-      await Promise.all([loadTasks(), loadLogs()]);
+      await loadTasks();
       showMessage(t.saved);
     } catch (error) {
       console.error(error);
@@ -407,7 +457,7 @@ export default function TasksPanel({ events = [] }) {
 
       setEditingTaskId(null);
       setEditTaskForm({});
-      await Promise.all([loadTasks(), loadLogs()]);
+      await loadTasks();
       showMessage(t.saved);
     } catch (error) {
       console.error(error);
@@ -418,7 +468,7 @@ export default function TasksPanel({ events = [] }) {
   const updateTaskStatus = async (taskId, status) => {
     try {
       await axios.put(`/api/tasks/${taskId}/status`, { status });
-      await Promise.all([loadTasks(), loadLogs()]);
+      await loadTasks();
       showMessage(t.saved);
     } catch (error) {
       console.error(error);
@@ -429,7 +479,7 @@ export default function TasksPanel({ events = [] }) {
   const deleteTask = async (taskId) => {
     try {
       await axios.delete(`/api/tasks/${taskId}`);
-      await Promise.all([loadTasks(), loadLogs()]);
+      await loadTasks();
       showMessage(t.saved);
     } catch (error) {
       console.error(error);
@@ -512,6 +562,19 @@ export default function TasksPanel({ events = [] }) {
       <option value="missed">Пропущено</option>
     </select>
   );
+
+
+  const renderFormHint = (text) => (
+    <p className="form-field-hint">{text}</p>
+  );
+
+  const renderFieldLabel = (title, hint) => (
+    <div className="task-field-label">
+      <span>{title}</span>
+      {hint && renderFormHint(hint)}
+    </div>
+  );
+
 
   const renderTaskEditForm = (task) => (
     <div className="task-edit-form">
@@ -712,6 +775,12 @@ export default function TasksPanel({ events = [] }) {
         </span>
       )}
 
+      {task.due_date && (
+        <span className="task-chip task-chip-deadline">
+          Дедлайн: {formatDate(task.due_date)}
+        </span>
+      )}
+
       {subjectName && (
         <span className="task-chip task-chip-subject">{subjectName}</span>
       )}
@@ -796,6 +865,12 @@ export default function TasksPanel({ events = [] }) {
             {task.difficulty_score && (
               <span>{getDifficultyLabel(task.difficulty_score)}</span>
             )}
+
+            {task.due_date && (
+              <span className="task-chip-deadline">
+                Дедлайн: {formatDate(task.due_date)}
+              </span>
+            )}
           </div>
 
           <div
@@ -865,6 +940,10 @@ export default function TasksPanel({ events = [] }) {
             <span>Статус: {getStatusLabel(selectedTask.status)}</span>
             <span>Пріоритет: {getPriorityLabel(selectedTask.priority)}</span>
 
+            {selectedTask.due_date && (
+              <span>Дедлайн: {formatDate(selectedTask.due_date)}</span>
+            )}
+
             {subjectName && <span>Предмет: {subjectName}</span>}
           </div>
 
@@ -909,8 +988,9 @@ export default function TasksPanel({ events = [] }) {
         {message && <span className="task-message">{message}</span>}
       </div>
 
-      <div className="tasks-grid">
-        <div className="task-card">
+      <div className="tasks-grid tasks-management-layout">
+        <div className="tasks-side-column">
+          <div className="task-card subject-create-card">
           <h3>{t.subjects}</h3>
 
           <input
@@ -1072,10 +1152,10 @@ export default function TasksPanel({ events = [] }) {
               </div>
             ))}
           </div>
-        </div>
+          </div>
 
-        <div className="task-card">
-          <h3>{t.eventTypes}</h3>
+          <div className="task-card event-type-create-card">
+            <h3>{t.eventTypes}</h3>
 
           <input
             type="text"
@@ -1193,119 +1273,242 @@ export default function TasksPanel({ events = [] }) {
               </div>
             ))}
           </div>
+          </div>
         </div>
 
-        <div className="task-card task-create-card">
-          <h3>{t.createTask}</h3>
+        <div className="tasks-main-column">
+          <div className="task-card task-create-card">
+          <div className="task-create-heading">
+            <h3>{t.createTask}</h3>
+            <p>
+              Заповни задачу вручну. Дедлайн можна вказати самостійно або підібрати автоматично.
+            </p>
+          </div>
 
-          <input
-            type="text"
-            placeholder={t.taskTitle}
-            value={taskForm.title}
-            onChange={(event) =>
-              setTaskForm({
-                ...taskForm,
-                title: event.target.value,
-              })
-            }
-          />
+          <div className="task-form-section">
+            {renderFieldLabel(
+              "Назва задачі",
+              "Наприклад: Лабораторна №3."
+            )}
 
-          <textarea
-            placeholder={t.taskDescription}
-            value={taskForm.description}
-            onChange={(event) =>
-              setTaskForm({
-                ...taskForm,
-                description: event.target.value,
-              })
-            }
-          />
+            <input
+              type="text"
+              placeholder={t.taskTitle}
+              value={taskForm.title}
+              onChange={(event) =>
+                setTaskForm({
+                  ...taskForm,
+                  title: event.target.value,
+                })
+              }
+            />
 
-          <select
-            value={taskForm.subject_id}
-            onChange={(event) =>
-              setTaskForm({
-                ...taskForm,
-                subject_id: event.target.value,
-              })
-            }
-          >
-            <option value="">{t.noSubject}</option>
+            {renderFieldLabel(
+              "Опис",
+              "Умова або короткі деталі."
+            )}
 
-            {subjects.map((subject) => (
-              <option key={subject.id} value={subject.id}>
-                {subject.name}
-              </option>
-            ))}
-          </select>
+            <textarea
+              placeholder={t.taskDescription}
+              value={taskForm.description}
+              onChange={(event) =>
+                setTaskForm({
+                  ...taskForm,
+                  description: event.target.value,
+                })
+              }
+            />
+          </div>
 
-          <select
-            value={taskForm.event_id}
-            onChange={(event) =>
-              setTaskForm({
-                ...taskForm,
-                event_id: event.target.value,
-              })
-            }
-          >
-            <option value="">{t.noEvent}</option>
+          <div className="task-form-section">
+            {renderFieldLabel(
+              "Предмет",
+              "Для групування і планування по парах."
+            )}
 
-            {events.map((event) => (
-              <option key={event.id} value={event.master_id || event.id}>
-                {event.title}
-              </option>
-            ))}
-          </select>
+            <select
+              value={taskForm.subject_id}
+              onChange={(event) =>
+                setTaskForm({
+                  ...taskForm,
+                  subject_id: event.target.value,
+                })
+              }
+            >
+              <option value="">{t.noSubject}</option>
 
-          <select
-            value={taskForm.priority}
-            onChange={(event) =>
-              setTaskForm({
-                ...taskForm,
-                priority: event.target.value,
-              })
-            }
-          >
-            <option value="low">{t.low}</option>
-            <option value="medium">{t.medium}</option>
-            <option value="high">{t.high}</option>
-          </select>
+              {subjects.map((subject) => (
+                <option key={subject.id} value={subject.id}>
+                  {subject.name}
+                </option>
+              ))}
+            </select>
 
-          <label className="task-date-label">{t.dueDate}</label>
+            {renderFieldLabel(
+              "Подія / пара",
+              "Необов’язково."
+            )}
 
-          <input
-            className="task-date-input"
-            type="date"
-            value={taskForm.due_date_date}
-            onClick={openNativePicker}
-            onFocus={openNativePicker}
-            onChange={(event) =>
-              setTaskForm({
-                ...taskForm,
-                due_date_date: event.target.value,
-              })
-            }
-          />
+            <select
+              value={taskForm.event_id}
+              onChange={(event) =>
+                setTaskForm({
+                  ...taskForm,
+                  event_id: event.target.value,
+                })
+              }
+            >
+              <option value="">{t.noEvent}</option>
 
-          <label className="task-date-label">{t.dueTime}</label>
+              {events.map((event) => (
+                <option key={event.id} value={event.master_id || event.id}>
+                  {event.title}
+                </option>
+              ))}
+            </select>
+          </div>
 
-          <input
-            className="task-time-input"
-            type="time"
-            value={taskForm.due_date_time}
-            onClick={openNativePicker}
-            onFocus={openNativePicker}
-            onChange={(event) =>
-              setTaskForm({
-                ...taskForm,
-                due_date_time: event.target.value,
-              })
-            }
-          />
+          <div className="task-form-section task-form-grid-2">
+            <div>
+              {renderFieldLabel(
+                "Пріоритет",
+                "Терміновість виконання."
+              )}
 
-          <button type="button" onClick={createTask}>
-            + {t.createTask}
-          </button>
+              <select
+                value={taskForm.priority}
+                onChange={(event) =>
+                  setTaskForm({
+                    ...taskForm,
+                    priority: event.target.value,
+                  })
+                }
+              >
+                <option value="low">{t.low}</option>
+                <option value="medium">{t.medium}</option>
+                <option value="high">{t.high}</option>
+              </select>
+            </div>
+
+            <div>
+              {renderFieldLabel(
+                "Тип задачі",
+                "Тип роботи для ML."
+              )}
+
+              <select
+                value={taskForm.task_type}
+                onChange={(event) =>
+                  setTaskForm({
+                    ...taskForm,
+                    task_type: event.target.value,
+                  })
+                }
+              >
+                <option value="homework">Практична / домашня</option>
+                <option value="laboratory">Лабораторна</option>
+                <option value="project">Проєкт</option>
+                <option value="reading">Самостійна / читання</option>
+                <option value="exam_preparation">Підготовка до іспиту</option>
+                <option value="other">Інше</option>
+              </select>
+            </div>
+
+            <div>
+              {renderFieldLabel(
+                "Тривалість, год",
+                "Оцінка часу."
+              )}
+
+              <input
+                type="number"
+                min="0.5"
+                step="0.5"
+                value={taskForm.estimated_duration_hours}
+                onChange={(event) =>
+                  setTaskForm({
+                    ...taskForm,
+                    estimated_duration_hours: event.target.value,
+                  })
+                }
+              />
+            </div>
+
+            <div>
+              {renderFieldLabel(
+                "Складність",
+                "1 легко, 5 складно."
+              )}
+
+              <select
+                value={taskForm.difficulty_score}
+                onChange={(event) =>
+                  setTaskForm({
+                    ...taskForm,
+                    difficulty_score: event.target.value,
+                  })
+                }
+              >
+                <option value={1}>1 — легка</option>
+                <option value={2}>2 — нижче середньої</option>
+                <option value={3}>3 — середня</option>
+                <option value={4}>4 — складна</option>
+                <option value={5}>5 — дуже складна</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="task-form-section task-deadline-section">
+            {renderFieldLabel(
+              "Дедлайн",
+              "Можна залишити порожнім."
+            )}
+
+            <div className="task-form-grid-2">
+              <input
+                className="task-date-input"
+                type="date"
+                value={taskForm.due_date_date}
+                onClick={openNativePicker}
+                onFocus={openNativePicker}
+                onChange={(event) =>
+                  setTaskForm({
+                    ...taskForm,
+                    due_date_date: event.target.value,
+                  })
+                }
+              />
+
+              <input
+                className="task-time-input"
+                type="time"
+                value={taskForm.due_date_time}
+                onClick={openNativePicker}
+                onFocus={openNativePicker}
+                onChange={(event) =>
+                  setTaskForm({
+                    ...taskForm,
+                    due_date_time: event.target.value,
+                  })
+                }
+              />
+            </div>
+          </div>
+
+          <div className="task-create-actions-row">
+            <button
+              type="button"
+              className="task-auto-deadline-button"
+              onClick={autoPickManualTaskDeadline}
+            >
+              ✨ Підібрати дедлайн
+            </button>
+
+            <button type="button" className="task-create-submit" onClick={createTask}>
+              + {t.createTask}
+            </button>
+          </div>
+          </div>
         </div>
       </div>
 
@@ -1369,30 +1572,6 @@ export default function TasksPanel({ events = [] }) {
         ) : (
           <div className="task-list">
             {filteredTasks.map((task) => renderListTask(task))}
-          </div>
-        )}
-      </div>
-
-      <div className="activity-log-card">
-        <h3>{t.activity}</h3>
-
-        {logs.length === 0 ? (
-          <p className="empty-tasks">{t.noLogs}</p>
-        ) : (
-          <div className="activity-list">
-            {logs.map((log) => (
-              <div key={log.id} className="activity-item">
-                <strong>{log.action}</strong>
-
-                <span>
-                  {log.old_status || "—"} → {log.new_status || "—"}
-                </span>
-
-                {log.details && <p>{log.details}</p>}
-
-                <small>{formatDate(log.created_at)}</small>
-              </div>
-            ))}
           </div>
         )}
       </div>

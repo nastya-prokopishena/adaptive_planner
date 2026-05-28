@@ -37,11 +37,6 @@ export default function Dashboard({
 
   const now = new Date();
 
-  const upcomingEvents = events.filter((event) => {
-    if (!event.start) return false;
-    return new Date(event.start) >= now;
-  });
-
   const todayEvents = events.filter((event) => {
     if (!event.start) return false;
 
@@ -54,92 +49,77 @@ export default function Dashboard({
     );
   });
 
+  const upcomingEvents = events.filter((event) => {
+    if (!event.start) return false;
+    return new Date(event.start) >= now;
+  });
+
   const googleEvents = events.filter((event) => event.source === "google");
   const localEvents = events.filter((event) => event.source !== "google");
 
   return (
-    <main className="dashboard-page">
-      <section className="dashboard-header">
-        <div>
-          <p className="eyebrow">{t.personalPlanner}</p>
-          <h1>Dashboard</h1>
-          <p>{t.dashboardSubtitle}</p>
-        </div>
+    <main className="ap-dashboard-page">
+      <section className="ap-dashboard-stats">
+        <article className="ap-stat-card">
+          <span>{t.todayStat}</span>
+          <strong>{todayEvents.length}</strong>
+        </article>
 
-        <button
-          type="button"
-          className="primary-button"
-          onClick={openCreateModal}
-        >
-          + {t.createEvent}
+        <article className="ap-stat-card">
+          <span>{t.upcomingStat}</span>
+          <strong>{upcomingEvents.length}</strong>
+        </article>
+
+        <article className="ap-stat-card">
+          <span>{t.googleStat}</span>
+          <strong>{googleEvents.length}</strong>
+        </article>
+
+        <article className="ap-stat-card">
+          <span>{t.localStat}</span>
+          <strong>{localEvents.length}</strong>
+        </article>
+      </section>
+
+      <section className="ap-quick-actions">
+        <button type="button" onClick={openCreateModal}>
+          + {t.addEvent}
+        </button>
+
+        <Link to="/analytics">
+          📊 Аналітика
+        </Link>
+
+        <Link to="/schedule-import">
+          {t.uploadSchedule}
+        </Link>
+
+        <Link to="/tasks/import">
+          🧠 Імпортувати задачу
+        </Link>
+
+        <button type="button" onClick={openAutoPlanModal}>
+          ✨ {t.autoPlanning}
+        </button>
+
+        <button type="button" onClick={openDeleteManagerModal}>
+          🗑 {t.manageDeletion}
         </button>
       </section>
 
-      <section className="compact-stats">
-        <div>
-          <span>{t.todayStat}</span>
-          <strong>{todayEvents.length}</strong>
-        </div>
-
-        <div>
-          <span>{t.upcomingStat}</span>
-          <strong>{upcomingEvents.length}</strong>
-        </div>
-
-        <div>
-          <span>{t.googleStat}</span>
-          <strong>{googleEvents.length}</strong>
-        </div>
-
-        <div>
-          <span>{t.localStat}</span>
-          <strong>{localEvents.length}</strong>
-        </div>
-      </section>
-
-      <section className="workspace-grid">
-        <aside className="workspace-sidebar">
+      <section className="ap-dashboard-main">
+        <aside className="ap-events-panel">
           <EventList events={events} limit={5} lang={lang} t={t} />
-
-          <div className="planner-tools">
-            <h3>{t.quickActions}</h3>
-
-            <button type="button" onClick={openCreateModal}>
-              + {t.addEvent}
-            </button>
-
-            <Link to="/analytics" className="planner-tool-link">
-              📊 Аналітика
-            </Link>
-
-            <Link to="/schedule-import" className="planner-tool-link">
-              {t.uploadSchedule}
-            </Link>
-
-            <Link to="/tasks/import" className="planner-tool-link">
-              🧠 Імпортувати задачу
-            </Link>
-
-            <button type="button" onClick={openAutoPlanModal}>
-              ✨ {t.autoPlanning}
-            </button>
-
-            <button type="button" onClick={openDeleteManagerModal}>
-              🗑 {t.manageDeletion}
-            </button>
-
-            <p>{t.toolsDescription}</p>
-          </div>
         </aside>
 
-        <section className="calendar-panel">
-          <div className="calendar-panel-header">
+        <section className="ap-calendar-panel">
+          <div className="ap-calendar-header">
             <div>
               <p className="eyebrow">{t.calendarSection}</p>
               <h2>{calendarTitle || t.schedule}</h2>
             </div>
 
-            <div className="calendar-controls">
+            <div className="ap-calendar-controls">
               <button type="button" onClick={goPrev}>
                 ‹
               </button>
@@ -152,15 +132,13 @@ export default function Dashboard({
                 ›
               </button>
 
-              <div className="view-switcher">
-                <button type="button" onClick={() => changeView("adaptiveWeek")}>
-                  {t.week}
-                </button>
+              <button type="button" onClick={() => changeView("adaptiveWeek")}>
+                {t.week}
+              </button>
 
-                <button type="button" onClick={() => changeView("dayGridMonth")}>
-                  {t.month}
-                </button>
-              </div>
+              <button type="button" onClick={() => changeView("dayGridMonth")}>
+                {t.month}
+              </button>
             </div>
           </div>
 

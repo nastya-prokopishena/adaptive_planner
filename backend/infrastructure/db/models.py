@@ -146,31 +146,15 @@ class Task(Base):
     completed_at = Column(DateTime, nullable=True)
     missed_at = Column(DateTime, nullable=True)
 
-    # NLP / ML fields
     task_type = Column(String(50), default="other")
-
     keywords = Column(Text, nullable=True)
 
-    estimated_duration_hours = Column(
-        Float,
-        default=1.0,
-    )
+    estimated_duration_hours = Column(Float, default=1.0)
+    difficulty_score = Column(Integer, default=3)
 
-    difficulty_score = Column(
-        Integer,
-        default=3,
-    )
+    nlp_source = Column(String(50), default="manual")
 
-    nlp_source = Column(
-        String(50),
-        default="manual",
-    )
-
-    created_at = Column(
-        DateTime,
-        default=datetime.utcnow,
-    )
-
+    created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(
         DateTime,
         default=datetime.utcnow,
@@ -202,7 +186,32 @@ class TaskActivityLog(Base):
 
     details = Column(Text, nullable=True)
 
-    created_at = Column(
-        DateTime,
-        default=datetime.utcnow,
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class TaskScheduleBlock(Base):
+    __tablename__ = "task_schedule_blocks"
+
+    id = Column(Integer, primary_key=True)
+
+    user_id = Column(
+        Integer,
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
     )
+
+    task_id = Column(
+        Integer,
+        ForeignKey("tasks.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+
+    start_time = Column(DateTime, nullable=False)
+    end_time = Column(DateTime, nullable=False)
+
+    generated_by_ai = Column(Boolean, default=True)
+    source = Column(String(50), default="ml_scheduler")
+    confidence_score = Column(Float, default=0.0)
+    reason = Column(Text, nullable=True)
+
+    created_at = Column(DateTime, default=datetime.utcnow)

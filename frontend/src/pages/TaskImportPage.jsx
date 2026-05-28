@@ -10,6 +10,8 @@ export default function TaskImportPage() {
   const [previews, setPreviews] = useState([]);
   const [modelInfo, setModelInfo] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [autoDeadlineLoading, setAutoDeadlineLoading] = useState(false);
+  const [autoDeadlineMode, setAutoDeadlineMode] = useState("subject_based");
   const [toast, setToast] = useState(null);
 
   useEffect(() => {
@@ -82,6 +84,7 @@ export default function TaskImportPage() {
 
       source_filename: preview?.source_filename || "",
       nlp_source: preview?.nlp_source || "ml_nlp",
+      auto_deadline_reason: preview?.auto_deadline_reason || "",
     };
   };
 
@@ -233,6 +236,48 @@ export default function TaskImportPage() {
     } catch (error) {
       showToast("Не вдалося створити предмет", "error");
       return null;
+    }
+  };
+
+  const autoPlanPreviewDeadlines = async () => {
+    if (!previews.length) {
+      showToast("Спочатку проаналізуй задачі", "error");
+      return;
+    }
+
+    setAutoDeadlineLoading(true);
+
+    try {
+      const response = await axios.post(
+        "/api/tasks/auto-plan-deadlines-preview",
+        {
+          mode: autoDeadlineMode,
+          tasks: previews.map((preview) => buildTaskPayload(preview)),
+        }
+      );
+
+      const plannedTasks = response.data?.tasks || [];
+
+      setPreviews((prev) =>
+        prev.map((item, index) => ({
+          ...item,
+          due_date: plannedTasks[index]?.due_date || item.due_date,
+          auto_deadline_reason:
+            plannedTasks[index]?.reason ||
+            "Дедлайн підібрано автоматично з урахуванням розкладу, предмету, складності та тривалості задачі.",
+        }))
+      );
+
+      showToast("Дедлайни підібрано автоматично", "success");
+    } catch (error) {
+      showToast(
+        error.response?.data?.details ||
+          error.response?.data?.error ||
+          "Не вдалося підібрати дедлайни",
+        "error"
+      );
+    } finally {
+      setAutoDeadlineLoading(false);
     }
   };
 
@@ -446,14 +491,35 @@ export default function TaskImportPage() {
               <h2>Знайдено задач: {previews.length}</h2>
             </div>
 
-            <button
-              type="button"
-              className="primary-button"
-              onClick={createAllTasks}
-              disabled={loading}
-            >
-              Створити всі задачі
-            </button>
+            <div className="task-preview-actions">
+              <select
+                value={autoDeadlineMode}
+                onChange={(event) => setAutoDeadlineMode(event.target.value)}
+              >
+                <option value="subject_based">Враховувати пари предмету</option>
+                <option value="best_time">Найкращий вільний час</option>
+              </select>
+
+              <button
+                type="button"
+                className="secondary-action-button"
+                onClick={autoPlanPreviewDeadlines}
+                disabled={loading || autoDeadlineLoading}
+              >
+                {autoDeadlineLoading
+                  ? "Підбір дедлайнів..."
+                  : "Автопідібрати дедлайни"}
+              </button>
+
+              <button
+                type="button"
+                className="primary-button"
+                onClick={createAllTasks}
+                disabled={loading}
+              >
+                Створити всі задачі
+              </button>
+            </div>
           </div>
 
           <div className="task-preview-list">
@@ -590,6 +656,12 @@ export default function TaskImportPage() {
                     updatePreview(index, "due_date", event.target.value)
                   }
                 />
+
+                {preview.auto_deadline_reason && (
+                  <p className="auto-deadline-reason">
+                    {preview.auto_deadline_reason}
+                  </p>
+                )}
 
                 <button
                   type="button"

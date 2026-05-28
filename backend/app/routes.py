@@ -3,11 +3,12 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, time, timedelta
 import json
 import requests
+from types import SimpleNamespace
 
 from backend.domain.services.auto_planner import plan_task_with_ortools
 from backend.domain.models.time_slot import TimeSlot
 from backend.infrastructure.db.database import SessionLocal
-from backend.infrastructure.db.models import User, Event, EventType, Subject, Task, TaskActivityLog
+from backend.infrastructure.db.models import User, Event, EventType, Subject, Task, TaskActivityLog, TaskScheduleBlock
 from backend.infrastructure.google_calendar_adapter import GoogleCalendarAdapter
 from backend.application.schedule_service import ScheduleService
 from backend.application.schedule_import_service import ScheduleImportService
@@ -21,6 +22,11 @@ from backend.application.task_nlp_service import TaskNLPService
 from backend.application.task_file_extractor_service import TaskFileExtractorService
 from backend.application.analytics_service import AnalyticsService
 from backend.application.productivity_model_service import ProductivityModelService
+from backend.application.ml_task_planner_service import MLTaskPlannerService
+from backend.application.ml_deadline_service import MLDeadlineService
+from backend.application.task_schedule_block_service import TaskScheduleBlockService
+from backend.application.synthetic_deadline_dataset_service import SyntheticDeadlineDatasetService
+
 main = Blueprint("main", __name__)
 
 calendar_adapter = GoogleCalendarAdapter()
@@ -30,6 +36,10 @@ task_nlp_service = TaskNLPService()
 task_file_extractor_service = TaskFileExtractorService()
 analytics_service = AnalyticsService()
 productivity_model_service = ProductivityModelService()
+ml_task_planner_service = MLTaskPlannerService()
+ml_deadline_service = MLDeadlineService()
+task_schedule_block_service = TaskScheduleBlockService()
+synthetic_deadline_dataset_service = SyntheticDeadlineDatasetService()
 
 def current_user():
     user_id = session.get("user_id")
@@ -431,6 +441,348 @@ def sync_google_events_to_db(user, db):
 
     db.commit()
 
+def serialize_task_schedule_block(block, task=None):
+    return {
+        "id": block.id,
+        "task_id": block.task_id,
+        "title": f"📚 Робота над: {task.title if task else 'задачею'}",
+        "start": block.start_time.isoformat() if block.start_time else None,
+        "end": block.end_time.isoformat() if block.end_time else None,
+        "source": block.source,
+        "calendar_type": "ai_task_block",
+        "generated_by_ai": block.generated_by_ai,
+        "confidence_score": block.confidence_score,
+        "reason": getattr(block, "reason", None),
+        "color": {
+            "bg": "#7c3aed",
+            "bg2": "#22c55e",
+        },
+    }
+
+
+def resolve_subject_id(db, user_id, subject_id=None, subject_name=None):
+    if subject_id:
+        try:
+            return int(subject_id)
+        except (TypeError, ValueError):
+            pass
+
+    subject = find_subject_by_name(
+        db=db,
+        user_id=user_id,
+        subject_name=subject_name,
+    )
+
+    if subject:
+        return subject.id
+
+    return None
+
+
+def get_subject_name_by_id(db, user_id, subject_id):
+    if not subject_id:
+        return None
+
+    subject = (
+        db.query(Subject)
+        .filter(Subject.user_id == user_id)
+        .filter(Subject.id == int(subject_id))
+        .first()
+    )
+
+    return subject.name if subject else None
+
+
+def normalize_text(value):
+    return (value or "").strip().lower()
+
+
+def event_matches_subject(event, subject_id=None, subject_name=None):
+    if subject_id and event.subject_id == int(subject_id):
+        return True
+
+    if subject_name:
+        event_title = normalize_text(event.title)
+        subject_text = normalize_text(subject_name)
+
+        if subject_text and subject_text in event_title:
+            return True
+
+    return False
+
+
+def resolve_subject_id(db, user_id, subject_id=None, subject_name=None):
+    if subject_id:
+        try:
+            return int(subject_id)
+        except (TypeError, ValueError):
+            pass
+
+    subject = find_subject_by_name(
+        db=db,
+        user_id=user_id,
+        subject_name=subject_name,
+    )
+
+    if subject:
+        return subject.id
+
+    return None
+
+
+def get_subject_name_by_id(db, user_id, subject_id):
+    if not subject_id:
+        return None
+
+    subject = (
+        db.query(Subject)
+        .filter(Subject.user_id == user_id)
+        .filter(Subject.id == int(subject_id))
+        .first()
+    )
+
+    return subject.name if subject else None
+
+
+def normalize_text(value):
+    return (value or "").strip().lower()
+
+
+def event_matches_subject(event, subject_id=None, subject_name=None):
+    if subject_id and event.subject_id == int(subject_id):
+        return True
+
+    if subject_name:
+        event_title = normalize_text(event.title)
+        subject_text = normalize_text(subject_name)
+
+        if subject_text and subject_text in event_title:
+            return True
+
+    return False
+
+
+def get_subject_events(db, user_id, subject_id=None, subject_name=None):
+    now = datetime.utcnow()
+
+    if subject_id and not subject_name:
+        subject_name = get_subject_name_by_id(
+            db=db,
+            user_id=user_id,
+            subject_id=subject_id,
+        )
+
+    events = (
+        db.query(Event)
+        .filter(Event.user_id == user_id)
+        .order_by(Event.start_time.asc())
+        .all()
+    )
+
+    matched_events = [
+        event
+        for event in events
+        if event_matches_subject(
+            event=event,
+            subject_id=subject_id,
+            subject_name=subject_name,
+        )
+    ]
+
+    expanded_events = []
+
+    for event in matched_events:
+        is_recurring = event.recurrence_type and event.recurrence_type != "none"
+
+        if is_recurring:
+            occurrences = get_event_occurrences(event)
+
+            for occurrence_start, occurrence_end in occurrences:
+                if occurrence_start and occurrence_start > now:
+                    expanded_events.append(
+                        SimpleNamespace(
+                            id=event.id,
+                            master_id=event.id,
+                            title=event.title,
+                            start_time=occurrence_start,
+                            end_time=occurrence_end,
+                            subject_id=event.subject_id,
+                            source=event.source,
+                        )
+                    )
+        else:
+            if event.start_time and event.start_time > now:
+                expanded_events.append(event)
+
+    return sorted(
+        expanded_events,
+        key=lambda item: item.start_time,
+    )
+
+
+def get_user_calendar_events(db, user_id):
+    now = datetime.utcnow()
+
+    events = (
+        db.query(Event)
+        .filter(Event.user_id == user_id)
+        .order_by(Event.start_time.asc())
+        .all()
+    )
+
+    expanded_events = []
+
+    for event in events:
+        is_recurring = event.recurrence_type and event.recurrence_type != "none"
+
+        if is_recurring:
+            occurrences = get_event_occurrences(event)
+
+            for occurrence_start, occurrence_end in occurrences:
+                if occurrence_start and occurrence_end and occurrence_start > now:
+                    expanded_events.append(
+                        SimpleNamespace(
+                            id=event.id,
+                            master_id=event.id,
+                            title=event.title,
+                            start_time=occurrence_start,
+                            end_time=occurrence_end,
+                            subject_id=event.subject_id,
+                            source=event.source,
+                        )
+                    )
+        else:
+            if event.start_time and event.end_time and event.start_time > now:
+                expanded_events.append(event)
+
+    return sorted(
+        expanded_events,
+        key=lambda item: item.start_time,
+    )
+
+
+def get_existing_subject_deadline_count(
+    db,
+    user_id,
+    subject_id=None,
+    subject_name=None,
+    exclude_task_id=None,
+):
+    now = datetime.utcnow()
+
+    resolved_subject_id = resolve_subject_id(
+        db=db,
+        user_id=user_id,
+        subject_id=subject_id,
+        subject_name=subject_name,
+    )
+
+    if not resolved_subject_id:
+        return 0
+
+    query = (
+        db.query(Task)
+        .filter(Task.user_id == user_id)
+        .filter(Task.subject_id == resolved_subject_id)
+        .filter(Task.due_date.isnot(None))
+        .filter(Task.due_date > now)
+    )
+
+    if exclude_task_id:
+        query = query.filter(Task.id != exclude_task_id)
+
+    return query.count()
+
+
+def get_existing_deadline_dates(db, user_id):
+    now = datetime.utcnow()
+
+    tasks = (
+        db.query(Task)
+        .filter(Task.user_id == user_id)
+        .filter(Task.due_date.isnot(None))
+        .filter(Task.due_date > now)
+        .all()
+    )
+
+    return [
+        task.due_date.date()
+        for task in tasks
+        if task.due_date
+    ]
+
+
+def build_subject_distribution_index(
+    existing_count,
+    task_position,
+    task_total,
+    subject_events_count,
+):
+    if task_total <= 1:
+        return existing_count
+
+    remaining_events = max(subject_events_count - existing_count, 1)
+
+    if remaining_events >= task_total:
+        offset = int(task_position * remaining_events / task_total)
+        return existing_count + offset
+
+    return existing_count + task_position
+
+
+def apply_auto_deadline_to_task(
+    db,
+    user_id,
+    task,
+    mode="subject_based",
+    used_event_index=None,
+    subject_name=None,
+    used_best_time_dates=None,
+):
+    subject_events = get_subject_events(
+        db=db,
+        user_id=user_id,
+        subject_id=task.subject_id,
+        subject_name=subject_name,
+    )
+
+    calendar_events = get_user_calendar_events(
+        db=db,
+        user_id=user_id,
+    )
+
+    if used_event_index is None:
+        used_event_index = get_existing_subject_deadline_count(
+            db=db,
+            user_id=user_id,
+            subject_id=task.subject_id,
+            subject_name=subject_name,
+            exclude_task_id=task.id,
+        )
+
+    prediction = safe_predict_deadline(
+        task=task,
+        subject_events=subject_events,
+        calendar_events=calendar_events,
+        mode=mode,
+        used_event_index=used_event_index,
+        used_best_time_dates=used_best_time_dates or [],
+    )
+
+    task.due_date = prediction["deadline"]
+    task.updated_at = datetime.utcnow()
+
+    block = task_schedule_block_service.recreate_block_for_task(
+        db=db,
+        user_id=user_id,
+        task=task,
+        deadline=prediction["deadline"],
+        confidence_score=prediction["confidence"],
+        reason=prediction["reason"],
+    )
+
+    return prediction, block
+
 @main.route("/api/event-types", methods=["GET"])
 def get_event_types():
     user = current_user()
@@ -689,6 +1041,19 @@ def create_task():
         )
 
         db.add(task)
+        db.flush()
+
+        if not task.due_date and bool(data.get("auto_plan_deadline", False)):
+            try:
+                apply_auto_deadline_to_task(
+                    db=db,
+                    user_id=user.id,
+                    task=task,
+                    mode=data.get("auto_deadline_mode", "subject_based"),
+                )
+            except Exception as planning_error:
+                print("Auto deadline planning error:", planning_error)
+
         db.commit()
         db.refresh(task)
 
@@ -1228,22 +1593,36 @@ def create_event_api():
         db.commit()
         db.refresh(event)
 
+        google_sync_error = None
+
         if user.google_credentials:
-            google_event = schedule_service.create_google_event(
-                json.loads(user.google_credentials),
-                title,
-                event.start_time.isoformat(),
-                event.end_time.isoformat(),
-                recurrence_rule=event.recurrence_rule,
-            )
+            try:
+                google_event = schedule_service.create_google_event(
+                    json.loads(user.google_credentials),
+                    title,
+                    event.start_time.isoformat(),
+                    event.end_time.isoformat(),
+                    recurrence_rule=event.recurrence_rule,
+                )
 
-            event.google_event_id = google_event.get("id")
-            event.source = "google"
+                event.google_event_id = google_event.get("id")
+                event.source = "google"
 
-            db.commit()
-            db.refresh(event)
+                db.commit()
+                db.refresh(event)
 
-        return jsonify(serialize_event(event)), 201
+            except Exception as google_error:
+                print("Google event create error:", google_error)
+                google_sync_error = str(google_error)
+                event.source = "local"
+                db.commit()
+                db.refresh(event)
+
+        response = serialize_event(event)
+        response["google_sync_failed"] = google_sync_error is not None
+        response["google_sync_error"] = google_sync_error
+
+        return jsonify(response), 201
 
     finally:
         db.close()
@@ -1588,7 +1967,7 @@ def bulk_delete_events_api():
     finally:
         db.close()
 
-@main.route("/api/planner/auto-plan", methods=["POST"])
+@main.route("/api/planner/auto-plan", methods=["POST"], strict_slashes=False)
 def auto_plan_event_api():
     user = current_user()
 
@@ -1598,7 +1977,7 @@ def auto_plan_event_api():
     data = request.json or {}
 
     title = data.get("title")
-    duration_minutes = data.get("duration_minutes")
+    duration_minutes = int(data.get("duration_minutes") or 60)
     date_from = data.get("date_from")
     date_to = data.get("date_to")
 
@@ -1641,8 +2020,9 @@ def auto_plan_event_api():
             }), 409
 
         created_events = []
+        google_sync_errors = []
 
-        for planned_item in planned["events"]:
+        for planned_item in planned.get("events", []):
             event = Event(
                 user_id=user.id,
                 title=planned_item["title"],
@@ -1653,36 +2033,54 @@ def auto_plan_event_api():
             )
 
             db.add(event)
-            db.commit()
-            db.refresh(event)
+            db.flush()
 
             if user.google_credentials:
-                google_event = schedule_service.create_google_event(
-                    json.loads(user.google_credentials),
-                    event.title,
-                    event.start_time.isoformat(),
-                    event.end_time.isoformat(),
-                )
+                try:
+                    google_event = schedule_service.create_google_event(
+                        json.loads(user.google_credentials),
+                        event.title,
+                        event.start_time.isoformat(),
+                        event.end_time.isoformat(),
+                    )
 
-                event.google_event_id = google_event.get("id")
-                event.source = "google"
+                    event.google_event_id = google_event.get("id")
+                    event.source = "google"
 
-                db.commit()
-                db.refresh(event)
+                except Exception as google_error:
+                    print("Google auto-plan create error:", google_error)
+                    google_sync_errors.append(str(google_error))
+                    event.source = "local"
 
+            db.flush()
             created_events.append(serialize_event(event))
 
+        db.commit()
+
         return jsonify({
+            "message": "Auto plan created",
             "events": created_events,
-            "planned_count": planned["planned_count"],
-            "candidates_count": planned["candidates_count"],
+            "planned_count": len(created_events),
+            "candidates_count": planned.get("candidates_count", 0),
+            "google_sync_failed": len(google_sync_errors) > 0,
+            "google_sync_errors": google_sync_errors[:3],
         }), 201
 
     except ValueError as error:
+        db.rollback()
         return jsonify({"error": str(error)}), 400
+
+    except Exception as error:
+        db.rollback()
+        print("Auto plan error:", error)
+        return jsonify({
+            "error": "Auto planning failed",
+            "details": str(error),
+        }), 500
 
     finally:
         db.close()
+
 
 # ---------------------------
 # SCHEDULE IMPORT
@@ -1793,6 +2191,391 @@ def schedule_import_preview():
                 "total_found": 0,
             }
         ), 500
+
+
+
+def normalize_deadline_mode(mode):
+    if mode in ["subject", "subject_pairs", "subject_based", "by_subject"]:
+        return "subject_based"
+
+    if mode in ["free", "best_time", "best_free_time", "free_time"]:
+        return "best_free_time"
+
+    return mode or "subject_based"
+
+
+def fallback_deadline_prediction(
+    task,
+    subject_events=None,
+    calendar_events=None,
+    mode="subject_based",
+    used_event_index=0,
+    used_best_time_dates=None,
+):
+    subject_events = subject_events or []
+    used_best_time_dates = used_best_time_dates or []
+    now = datetime.utcnow()
+
+    normalized_mode = normalize_deadline_mode(mode)
+
+    if normalized_mode == "subject_based" and subject_events:
+        event_index = min(
+            max(int(used_event_index or 0), 0),
+            len(subject_events) - 1,
+        )
+        target_event = subject_events[event_index]
+        deadline = target_event.start_time - timedelta(hours=2)
+
+        if deadline <= now:
+            deadline = target_event.start_time - timedelta(minutes=30)
+
+        return {
+            "deadline": deadline,
+            "confidence": 0.72,
+            "reason": "Fallback: дедлайн поставлено перед найближчою парою предмету.",
+        }
+
+    base_days = max(int(getattr(task, "difficulty_score", 3) or 3), 1)
+    duration_bonus = int(float(getattr(task, "estimated_duration_hours", 1) or 1) // 2)
+    deadline_date = (now + timedelta(days=base_days + duration_bonus)).date()
+
+    blocked_dates = {
+        item if hasattr(item, "isoformat") else item
+        for item in used_best_time_dates
+    }
+
+    while deadline_date in blocked_dates:
+        deadline_date = deadline_date + timedelta(days=1)
+
+    deadline = datetime.combine(deadline_date, time(hour=20, minute=0))
+
+    return {
+        "deadline": deadline,
+        "confidence": 0.55,
+        "reason": "Fallback: дедлайн підібрано за складністю і завантаженням.",
+    }
+
+
+def safe_predict_deadline(
+    task,
+    subject_events=None,
+    calendar_events=None,
+    mode="subject_based",
+    used_event_index=0,
+    used_best_time_dates=None,
+):
+    normalized_mode = normalize_deadline_mode(mode)
+
+    try:
+        return ml_deadline_service.predict_deadline(
+            task=task,
+            subject_events=subject_events or [],
+            calendar_events=calendar_events or [],
+            mode=normalized_mode,
+            used_event_index=used_event_index,
+            used_best_time_dates=used_best_time_dates or [],
+        )
+    except Exception as error:
+        print("ML deadline prediction error:", error)
+
+        return fallback_deadline_prediction(
+            task=task,
+            subject_events=subject_events or [],
+            calendar_events=calendar_events or [],
+            mode=normalized_mode,
+            used_event_index=used_event_index,
+            used_best_time_dates=used_best_time_dates or [],
+        )
+
+
+# ---------------------------
+# TASK DEADLINE ML PLANNING
+# ---------------------------
+
+@main.route("/api/tasks/auto-deadline", methods=["POST"], strict_slashes=False)
+def auto_deadline_for_manual_task():
+    user = current_user()
+
+    if not user:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    data = request.json or {}
+    title = data.get("title")
+
+    if not title:
+        return jsonify({"error": "Task title is required"}), 400
+
+    db = SessionLocal()
+
+    try:
+        subject_id = resolve_subject_id(
+            db=db,
+            user_id=user.id,
+            subject_id=data.get("subject_id"),
+            subject_name=data.get("subject"),
+        )
+
+        temp_task = Task(
+            user_id=user.id,
+            title=title,
+            description=data.get("description"),
+            priority=data.get("priority", "medium"),
+            task_type=data.get("task_type", "other"),
+            estimated_duration_hours=float(
+                data.get("estimated_duration_hours") or 1
+            ),
+            difficulty_score=int(data.get("difficulty_score") or 3),
+            subject_id=subject_id,
+            status="planned",
+        )
+
+        subject_events = get_subject_events(
+            db=db,
+            user_id=user.id,
+            subject_id=temp_task.subject_id,
+            subject_name=data.get("subject"),
+        )
+
+        calendar_events = get_user_calendar_events(
+            db=db,
+            user_id=user.id,
+        )
+
+        existing_count = get_existing_subject_deadline_count(
+            db=db,
+            user_id=user.id,
+            subject_id=temp_task.subject_id,
+            subject_name=data.get("subject"),
+        )
+
+        prediction = safe_predict_deadline(
+            task=temp_task,
+            subject_events=subject_events,
+            calendar_events=calendar_events,
+            mode=data.get("mode", "subject_based"),
+            used_event_index=existing_count,
+            used_best_time_dates=get_existing_deadline_dates(db, user.id),
+        )
+
+        return jsonify({
+            "due_date": prediction["deadline"].isoformat(),
+            "confidence_score": prediction["confidence"],
+            "reason": prediction["reason"],
+        })
+
+    finally:
+        db.close()
+
+
+@main.route("/api/tasks/auto-plan-deadlines-preview", methods=["POST"], strict_slashes=False)
+def auto_plan_deadlines_preview():
+    user = current_user()
+
+    if not user:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    data = request.json or {}
+    raw_tasks = data.get("tasks", [])
+    mode = normalize_deadline_mode(data.get("mode", "subject_based"))
+
+    db = SessionLocal()
+
+    try:
+        planned_tasks = []
+        normalized_tasks = []
+        subject_batch_counts = {}
+
+        for raw_task in raw_tasks:
+            subject_name = raw_task.get("subject")
+            subject_id = resolve_subject_id(
+                db=db,
+                user_id=user.id,
+                subject_id=raw_task.get("subject_id"),
+                subject_name=subject_name,
+            )
+
+            if subject_id and not subject_name:
+                subject_name = get_subject_name_by_id(
+                    db=db,
+                    user_id=user.id,
+                    subject_id=subject_id,
+                )
+
+            subject_key = subject_id or subject_name or "general"
+
+            normalized_tasks.append({
+                "raw_task": raw_task,
+                "subject_id": subject_id,
+                "subject_name": subject_name,
+                "subject_key": subject_key,
+            })
+
+            subject_batch_counts[subject_key] = (
+                subject_batch_counts.get(subject_key, 0) + 1
+            )
+
+        subject_positions = {}
+        used_best_time_dates = get_existing_deadline_dates(db, user.id)
+        calendar_events = get_user_calendar_events(db, user.id)
+
+        for item in normalized_tasks:
+            raw_task = item["raw_task"]
+            subject_id = item["subject_id"]
+            subject_name = item["subject_name"]
+            subject_key = item["subject_key"]
+
+            current_position = subject_positions.get(subject_key, 0)
+            subject_positions[subject_key] = current_position + 1
+
+            temp_task = Task(
+                user_id=user.id,
+                title=raw_task.get("title") or "Без назви",
+                description=raw_task.get("description"),
+                priority=raw_task.get("priority", "medium"),
+                task_type=raw_task.get("task_type", "other"),
+                estimated_duration_hours=float(
+                    raw_task.get("estimated_duration_hours") or 1
+                ),
+                difficulty_score=int(raw_task.get("difficulty_score") or 3),
+                subject_id=subject_id,
+                status="planned",
+            )
+
+            subject_events = get_subject_events(
+                db=db,
+                user_id=user.id,
+                subject_id=subject_id,
+                subject_name=subject_name,
+            )
+
+            existing_count = get_existing_subject_deadline_count(
+                db=db,
+                user_id=user.id,
+                subject_id=subject_id,
+                subject_name=subject_name,
+            )
+
+            used_event_index = build_subject_distribution_index(
+                existing_count=existing_count,
+                task_position=current_position,
+                task_total=subject_batch_counts[subject_key],
+                subject_events_count=len(subject_events),
+            )
+
+            prediction = safe_predict_deadline(
+                task=temp_task,
+                subject_events=subject_events,
+                calendar_events=calendar_events,
+                mode=mode,
+                used_event_index=used_event_index,
+                used_best_time_dates=used_best_time_dates,
+            )
+
+            used_best_time_dates.append(prediction["deadline"].date())
+
+            planned_tasks.append({
+                "title": temp_task.title,
+                "due_date": prediction["deadline"].isoformat(),
+                "confidence_score": prediction["confidence"],
+                "reason": prediction["reason"],
+                "subject_id": temp_task.subject_id,
+                "subject_events_count": len(subject_events),
+                "used_event_index": used_event_index,
+                "mode": mode,
+            })
+
+        return jsonify({"tasks": planned_tasks})
+
+    finally:
+        db.close()
+
+
+@main.route("/api/tasks/<int:task_id>/auto-plan", methods=["POST"])
+def auto_plan_existing_task(task_id):
+    user = current_user()
+
+    if not user:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    data = request.json or {}
+
+    db = SessionLocal()
+
+    try:
+        task = (
+            db.query(Task)
+            .filter(Task.id == task_id)
+            .filter(Task.user_id == user.id)
+            .first()
+        )
+
+        if not task:
+            return jsonify({"error": "Task not found"}), 404
+
+        prediction, block = apply_auto_deadline_to_task(
+            db=db,
+            user_id=user.id,
+            task=task,
+            mode=data.get("mode", "subject_based"),
+        )
+
+        db.commit()
+        db.refresh(task)
+        db.refresh(block)
+
+        return jsonify({
+            "task": serialize_task(task),
+            "schedule_block": serialize_task_schedule_block(block, task),
+            "reason": prediction["reason"],
+        })
+
+    finally:
+        db.close()
+
+
+@main.route("/api/task-schedule-blocks", methods=["GET"])
+def get_task_schedule_blocks():
+    user = current_user()
+
+    if not user:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    db = SessionLocal()
+
+    try:
+        blocks = (
+            db.query(TaskScheduleBlock)
+            .filter(TaskScheduleBlock.user_id == user.id)
+            .order_by(TaskScheduleBlock.start_time.asc())
+            .all()
+        )
+
+        result = []
+
+        for block in blocks:
+            task = db.query(Task).filter(Task.id == block.task_id).first()
+            result.append(serialize_task_schedule_block(block, task))
+
+        return jsonify(result)
+
+    finally:
+        db.close()
+
+
+@main.route("/api/ml/deadline-dataset/generate", methods=["POST"])
+def generate_synthetic_deadline_dataset():
+    user = current_user()
+
+    if not user:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    path = synthetic_deadline_dataset_service.save_csv()
+
+    return jsonify({
+        "message": "Synthetic deadline dataset generated",
+        "path": path,
+    })
+
 
 # ---------------------------
 # TASK NLP IMPORT
@@ -1994,6 +2777,7 @@ def create_tasks_from_import_api():
 
     data = request.get_json() or {}
     tasks_data = data.get("tasks") or []
+    mode = normalize_deadline_mode(data.get("mode", "subject_based"))
 
     if not tasks_data:
         return jsonify({"error": "Немає задач для створення"}), 400
@@ -2002,6 +2786,8 @@ def create_tasks_from_import_api():
 
     try:
         created_tasks = []
+        normalized_tasks = []
+        subject_batch_counts = {}
 
         for item in tasks_data:
             title = item.get("title")
@@ -2026,13 +2812,45 @@ def create_tasks_from_import_api():
                     db.flush()
                     subject_id = subject.id
 
+            if subject_id and not subject_name:
+                subject_name = get_subject_name_by_id(
+                    db=db,
+                    user_id=user.id,
+                    subject_id=subject_id,
+                )
+
+            subject_key = subject_id or subject_name or "general"
+
+            normalized_tasks.append({
+                "item": item,
+                "subject_id": subject_id,
+                "subject_name": subject_name,
+                "subject_key": subject_key,
+            })
+
+            subject_batch_counts[subject_key] = (
+                subject_batch_counts.get(subject_key, 0) + 1
+            )
+
+        subject_positions = {}
+        used_best_time_dates = get_existing_deadline_dates(db, user.id)
+
+        for normalized in normalized_tasks:
+            item = normalized["item"]
+            subject_id = normalized["subject_id"]
+            subject_name = normalized["subject_name"]
+            subject_key = normalized["subject_key"]
+
+            current_position = subject_positions.get(subject_key, 0)
+            subject_positions[subject_key] = current_position + 1
+
             task = Task(
                 user_id=user.id,
                 subject_id=subject_id,
-                title=title,
+                title=item.get("title"),
                 description=item.get("description"),
                 status="planned",
-                priority="medium",
+                priority=item.get("priority", "medium"),
                 due_date=parse_optional_datetime(
                     item.get("due_date") or item.get("deadline")
                 ),
@@ -2045,6 +2863,45 @@ def create_tasks_from_import_api():
 
             db.add(task)
             db.flush()
+
+            if not task.due_date:
+                try:
+                    subject_events = get_subject_events(
+                        db=db,
+                        user_id=user.id,
+                        subject_id=subject_id,
+                        subject_name=subject_name,
+                    )
+
+                    existing_count = get_existing_subject_deadline_count(
+                        db=db,
+                        user_id=user.id,
+                        subject_id=subject_id,
+                        subject_name=subject_name,
+                        exclude_task_id=task.id,
+                    )
+
+                    used_event_index = build_subject_distribution_index(
+                        existing_count=existing_count,
+                        task_position=current_position,
+                        task_total=subject_batch_counts[subject_key],
+                        subject_events_count=len(subject_events),
+                    )
+
+                    prediction, block = apply_auto_deadline_to_task(
+                        db=db,
+                        user_id=user.id,
+                        task=task,
+                        mode=item.get("auto_deadline_mode") or mode,
+                        used_event_index=used_event_index,
+                        subject_name=subject_name,
+                        used_best_time_dates=used_best_time_dates,
+                    )
+
+                    used_best_time_dates.append(prediction["deadline"].date())
+
+                except Exception as planning_error:
+                    print("Auto deadline planning error:", planning_error)
 
             create_task_log(
                 db=db,
@@ -2073,6 +2930,7 @@ def create_tasks_from_import_api():
 
     finally:
         db.close()
+
 
 @main.route("/api/analytics/dashboard", methods=["GET"])
 def analytics_dashboard_api():
@@ -2232,6 +3090,105 @@ def replan_task_api(task_id):
             "event": serialize_event(event),
             "message": "Задачу переплановано",
         }), 201
+
+    finally:
+        db.close()
+
+@main.route("/api/ml/plan-tasks", methods=["POST"])
+def generate_ml_task_plan():
+    user = current_user()
+
+    if not user:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    data = request.json or {}
+    days = int(data.get("days", 7))
+
+    db = SessionLocal()
+
+    try:
+        blocks = ml_task_planner_service.plan_tasks(
+            db=db,
+            user_id=user.id,
+            days=days,
+        )
+
+        result = []
+
+        for block in blocks:
+            task = db.query(Task).filter_by(id=block.task_id).first()
+            result.append(serialize_task_schedule_block(block, task))
+
+        return jsonify({
+            "message": "ML task plan generated",
+            "blocks": result,
+        })
+
+    finally:
+        db.close()
+
+@main.route("/api/unified-calendar", methods=["GET"])
+def get_unified_calendar():
+    user = current_user()
+
+    if not user:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    db = SessionLocal()
+
+    try:
+        events = (
+            db.query(Event)
+            .filter(Event.user_id == user.id)
+            .all()
+        )
+
+        tasks = (
+            db.query(Task)
+            .filter(Task.user_id == user.id)
+            .filter(Task.due_date.isnot(None))
+            .all()
+        )
+
+        blocks = (
+            db.query(TaskScheduleBlock)
+            .filter(TaskScheduleBlock.user_id == user.id)
+            .all()
+        )
+
+        calendar_items = []
+
+        for event in events:
+            item = serialize_event(event)
+            item["calendar_type"] = "fixed_event"
+            item["color"] = {
+                "bg": "#2563eb",
+                "bg2": "#38bdf8",
+            }
+            calendar_items.append(item)
+
+        for task in tasks:
+            calendar_items.append({
+                "id": f"deadline-{task.id}",
+                "task_id": task.id,
+                "title": f"🔥 Deadline: {task.title}",
+                "start": task.due_date.isoformat(),
+                "end": (task.due_date + timedelta(minutes=30)).isoformat(),
+                "calendar_type": "task_deadline",
+                "source": "task_deadline",
+                "color": {
+                    "bg": "#ea580c",
+                    "bg2": "#ef4444",
+                },
+            })
+
+        for block in blocks:
+            task = db.query(Task).filter_by(id=block.task_id).first()
+            calendar_items.append(
+                serialize_task_schedule_block(block, task)
+            )
+
+        return jsonify(calendar_items)
 
     finally:
         db.close()

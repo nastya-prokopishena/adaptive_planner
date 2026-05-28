@@ -2883,3 +2883,1287 @@ input[type="time"]::-webkit-calendar-picker-indicator {
     font-size: 22px;
   }
 }
+
+
+/* =========================================================
+   REAL QUICK ACTIONS ABOVE CALENDAR FIX
+   Швидкі дії реально розташовані над календарем, не в лівій колонці.
+========================================================= */
+
+.workspace-grid {
+  display: grid !important;
+  grid-template-columns: minmax(250px, 330px) minmax(0, 1fr) !important;
+  grid-template-areas:
+    "sidebar main" !important;
+  gap: 16px !important;
+  align-items: start !important;
+}
+
+.workspace-sidebar {
+  grid-area: sidebar !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 14px !important;
+  min-width: 0 !important;
+}
+
+.calendar-panel,
+.dashboard-calendar-panel {
+  grid-area: main !important;
+  min-width: 0 !important;
+}
+
+/* Блок швидких дій тепер має бути всередині правої частини над календарем */
+.planner-tools-above-calendar {
+  width: 100% !important;
+  margin: 0 0 14px 0 !important;
+  padding: 12px !important;
+  border-radius: 18px !important;
+  background:
+    linear-gradient(135deg, rgba(15, 23, 42, 0.92), rgba(30, 41, 59, 0.82)) !important;
+  border: 1px solid rgba(148, 163, 184, 0.16) !important;
+  box-shadow: 0 14px 36px rgba(2, 6, 23, 0.22) !important;
+
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 10px !important;
+  overflow-x: auto !important;
+  scrollbar-width: thin !important;
+}
+
+.planner-tools-above-calendar h3,
+.planner-tools-above-calendar p {
+  display: none !important;
+}
+
+.planner-tools-above-calendar button,
+.planner-tools-above-calendar a,
+.planner-tools-above-calendar .planner-tool-link {
+  width: auto !important;
+  min-width: 155px !important;
+  min-height: 40px !important;
+  padding: 9px 13px !important;
+  border-radius: 13px !important;
+  font-size: 13px !important;
+  white-space: nowrap !important;
+  flex: 0 0 auto !important;
+}
+
+/* Ліва колонка тепер тільки для найближчих подій */
+.workspace-sidebar .planner-tools:not(.planner-tools-above-calendar) {
+  display: none !important;
+}
+
+.event-list {
+  max-height: none !important;
+}
+
+.event-list-items {
+  max-height: 430px !important;
+}
+
+/* Календар не розтягуємо без потреби */
+.calendar-panel {
+  padding: 14px !important;
+}
+
+.calendar-scroll-shell {
+  min-height: 500px !important;
+  max-height: 620px !important;
+}
+
+/* На менших екранах: порядок — швидкі дії, календар, події */
+@media (max-width: 1280px) {
+  .workspace-grid {
+    grid-template-columns: 1fr !important;
+    grid-template-areas:
+      "main"
+      "sidebar" !important;
+  }
+
+  .planner-tools-above-calendar {
+    margin-bottom: 12px !important;
+  }
+
+  .workspace-sidebar {
+    display: block !important;
+  }
+}
+
+@media (max-width: 760px) {
+  .planner-tools-above-calendar {
+    padding: 10px !important;
+  }
+
+  .planner-tools-above-calendar button,
+  .planner-tools-above-calendar a,
+  .planner-tools-above-calendar .planner-tool-link {
+    min-width: 140px !important;
+    font-size: 12px !important;
+  }
+}
+
+
+/* =========================================================
+   AP DASHBOARD FINAL OVERRIDE
+   Унікальні класи, щоб старий CSS не перебивав layout.
+========================================================= */
+
+.ap-dashboard-page {
+  width: min(1640px, calc(100% - 48px)) !important;
+  margin: 18px auto 56px !important;
+}
+
+.ap-dashboard-page * {
+  box-sizing: border-box;
+}
+
+.ap-dashboard-stats {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 14px !important;
+  margin: 10px 0 16px !important;
+}
+
+.ap-stat-card {
+  padding: 16px 18px !important;
+  border-radius: 18px !important;
+  background: rgba(15, 23, 42, 0.84) !important;
+  border: 1px solid rgba(148, 163, 184, 0.18) !important;
+  box-shadow: 0 14px 36px rgba(2, 6, 23, 0.22) !important;
+}
+
+.ap-stat-card span {
+  display: block !important;
+  color: #94a3b8 !important;
+  font-size: 13px !important;
+  margin-bottom: 8px !important;
+}
+
+.ap-stat-card strong {
+  display: block !important;
+  color: #f8fafc !important;
+  font-size: 30px !important;
+  line-height: 1 !important;
+}
+
+/* Оце саме той блок, який має бути над календарем і на всю ширину */
+.ap-quick-actions {
+  width: 100% !important;
+  margin: 0 0 16px !important;
+  padding: 14px !important;
+  border-radius: 22px !important;
+  background: rgba(15, 23, 42, 0.88) !important;
+  border: 1px solid rgba(148, 163, 184, 0.18) !important;
+  box-shadow: 0 18px 46px rgba(2, 6, 23, 0.24) !important;
+
+  display: grid !important;
+  grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+}
+
+.ap-quick-actions button,
+.ap-quick-actions a {
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: 48px !important;
+  padding: 10px 12px !important;
+  border-radius: 15px !important;
+  border: 1px solid rgba(99, 102, 241, 0.38) !important;
+  background: rgba(15, 23, 42, 0.92) !important;
+  color: #e5edff !important;
+  box-shadow: none !important;
+  font-size: 14px !important;
+  font-weight: 900 !important;
+  text-decoration: none !important;
+
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  white-space: nowrap !important;
+}
+
+.ap-quick-actions button:hover,
+.ap-quick-actions a:hover {
+  background: rgba(30, 41, 59, 0.98) !important;
+  border-color: rgba(129, 140, 248, 0.8) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* Нижче кнопок: події зліва, календар справа */
+.ap-dashboard-main {
+  width: 100% !important;
+  display: grid !important;
+  grid-template-columns: 380px minmax(0, 1fr) !important;
+  gap: 16px !important;
+  align-items: start !important;
+}
+
+.ap-events-panel {
+  min-width: 0 !important;
+}
+
+.ap-events-panel .event-list {
+  padding: 16px !important;
+  border-radius: 22px !important;
+  background: rgba(15, 23, 42, 0.84) !important;
+  border: 1px solid rgba(148, 163, 184, 0.18) !important;
+  box-shadow: 0 18px 46px rgba(2, 6, 23, 0.24) !important;
+}
+
+.ap-events-panel .event-list-items {
+  max-height: 540px !important;
+  overflow-y: auto !important;
+  padding-right: 5px !important;
+}
+
+.ap-events-panel .event-card {
+  background: rgba(30, 41, 59, 0.72) !important;
+  border: 1px solid rgba(148, 163, 184, 0.14) !important;
+  border-radius: 16px !important;
+  padding: 12px !important;
+}
+
+.ap-calendar-panel {
+  min-width: 0 !important;
+  width: 100% !important;
+  padding: 16px !important;
+  border-radius: 22px !important;
+  background: rgba(15, 23, 42, 0.84) !important;
+  border: 1px solid rgba(148, 163, 184, 0.18) !important;
+  box-shadow: 0 18px 46px rgba(2, 6, 23, 0.24) !important;
+}
+
+.ap-calendar-header {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  gap: 16px !important;
+  margin-bottom: 12px !important;
+}
+
+.ap-calendar-header h2 {
+  margin: 0 !important;
+  font-size: 28px !important;
+  letter-spacing: -0.04em !important;
+}
+
+.ap-calendar-controls {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  flex-wrap: wrap !important;
+}
+
+.ap-calendar-controls button {
+  min-height: 42px !important;
+  padding: 9px 13px !important;
+  border-radius: 13px !important;
+  font-size: 13px !important;
+  font-weight: 900 !important;
+  background: rgba(15, 23, 42, 0.92) !important;
+  color: #e5edff !important;
+  border: 1px solid rgba(148, 163, 184, 0.18) !important;
+}
+
+.ap-calendar-panel .calendar-scroll-shell {
+  min-height: 540px !important;
+  max-height: 660px !important;
+  width: 100% !important;
+}
+
+.ap-calendar-panel .calendar-scroll-shell .fc {
+  min-width: 0 !important;
+  width: 100% !important;
+}
+
+.ap-calendar-panel .fc .fc-timegrid-slot {
+  height: 42px !important;
+}
+
+.ap-calendar-panel .fc .fc-col-header-cell-cushion {
+  font-size: 15px !important;
+}
+
+.ap-calendar-panel .custom-calendar-event {
+  min-height: 30px !important;
+  padding: 7px 8px !important;
+  border-radius: 11px !important;
+}
+
+.ap-calendar-panel .custom-event-time {
+  font-size: 12px !important;
+}
+
+.ap-calendar-panel .custom-event-title {
+  font-size: 13px !important;
+  line-height: 1.15 !important;
+}
+
+/* старі блоки Dashboard ховаємо, якщо раптом лишились */
+.ap-dashboard-page .dashboard-header,
+.ap-dashboard-page .workspace-grid,
+.ap-dashboard-page .dashboard-workspace-clean,
+.ap-dashboard-page .dashboard-main-grid-final,
+.ap-dashboard-page .dashboard-fixed-content {
+  display: none !important;
+}
+
+@media (max-width: 1280px) {
+  .ap-quick-actions {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+
+  .ap-dashboard-main {
+    grid-template-columns: 1fr !important;
+  }
+
+  .ap-calendar-panel {
+    order: 1 !important;
+  }
+
+  .ap-events-panel {
+    order: 2 !important;
+  }
+
+  .ap-events-panel .event-list-items {
+    max-height: 320px !important;
+  }
+}
+
+@media (max-width: 760px) {
+  .ap-dashboard-page {
+    width: calc(100% - 22px) !important;
+  }
+
+  .ap-dashboard-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .ap-quick-actions {
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+    padding: 10px !important;
+  }
+
+  .ap-quick-actions button,
+  .ap-quick-actions a {
+    min-height: 42px !important;
+    font-size: 13px !important;
+  }
+
+  .ap-calendar-panel {
+    padding: 12px !important;
+  }
+
+  .ap-calendar-header {
+    align-items: flex-start !important;
+    flex-direction: column !important;
+  }
+
+  .ap-calendar-panel .calendar-scroll-shell {
+    min-height: 430px !important;
+    max-height: 540px !important;
+  }
+}
+
+
+/* =========================================================
+   TASKS MANAGEMENT TWO-COLUMN FINAL
+   Ліворуч: предмети + типи подій. Праворуч: створення задачі.
+   Додати в самий кінець index.css.
+========================================================= */
+
+.tasks-panel {
+  padding: 22px !important;
+  border-radius: 26px !important;
+}
+
+.tasks-panel-header {
+  margin-bottom: 18px !important;
+}
+
+.tasks-panel-header h2 {
+  font-size: clamp(34px, 3.2vw, 48px) !important;
+  margin: 0 0 6px !important;
+  line-height: 1.08 !important;
+}
+
+.tasks-panel-header p {
+  max-width: 980px !important;
+  font-size: 15px !important;
+  line-height: 1.45 !important;
+}
+
+.tasks-management-layout {
+  display: grid !important;
+  grid-template-columns: minmax(280px, 0.95fr) minmax(520px, 2.05fr) !important;
+  gap: 18px !important;
+  align-items: start !important;
+  margin-bottom: 24px !important;
+}
+
+.tasks-side-column {
+  min-width: 0 !important;
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  gap: 16px !important;
+}
+
+.tasks-main-column {
+  min-width: 0 !important;
+}
+
+.tasks-side-column .task-card,
+.tasks-main-column .task-card {
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+.tasks-side-column .task-card {
+  padding: 16px !important;
+  border-radius: 20px !important;
+}
+
+.tasks-side-column .task-card h3 {
+  font-size: 20px !important;
+  margin: 0 0 12px !important;
+}
+
+.tasks-side-column .task-card input,
+.tasks-side-column .task-card textarea,
+.tasks-side-column .task-card select {
+  min-height: 40px !important;
+  padding: 8px 10px !important;
+  border-radius: 11px !important;
+  font-size: 13px !important;
+  margin-bottom: 9px !important;
+}
+
+.tasks-side-column .task-card textarea {
+  min-height: 62px !important;
+  max-height: 88px !important;
+}
+
+.tasks-side-column .color-row {
+  gap: 7px !important;
+  margin: 7px 0 10px !important;
+}
+
+.tasks-side-column .color-dot {
+  width: 25px !important;
+  height: 25px !important;
+}
+
+.tasks-side-column .compact-edit-list {
+  max-height: 260px !important;
+  overflow-y: auto !important;
+  gap: 8px !important;
+  padding-right: 4px !important;
+}
+
+.tasks-side-column .compact-edit-item {
+  padding: 10px 12px !important;
+  border-radius: 14px !important;
+}
+
+.tasks-side-column .compact-view-row {
+  font-size: 13px !important;
+}
+
+/* Права велика форма задачі */
+.tasks-main-column .task-create-card {
+  padding: 18px !important;
+  border-radius: 22px !important;
+  max-height: none !important;
+  overflow: visible !important;
+  position: static !important;
+
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+  align-items: start !important;
+}
+
+.tasks-main-column .task-create-heading,
+.tasks-main-column .task-deadline-section,
+.tasks-main-column .task-create-actions-row {
+  grid-column: 1 / -1 !important;
+}
+
+.task-create-heading {
+  margin-bottom: 0 !important;
+}
+
+.task-create-heading h3 {
+  font-size: 24px !important;
+  margin: 0 0 5px !important;
+}
+
+.task-create-heading p {
+  margin: 0 !important;
+  max-width: 760px !important;
+  color: #94a3b8 !important;
+  font-size: 13px !important;
+  line-height: 1.4 !important;
+}
+
+.task-form-section {
+  padding: 11px !important;
+  margin-bottom: 0 !important;
+  border-radius: 16px !important;
+  min-width: 0 !important;
+}
+
+.task-form-grid-2 {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 9px !important;
+}
+
+.task-field-label {
+  margin: 0 0 6px !important;
+}
+
+.task-field-label span {
+  font-size: 12.5px !important;
+  line-height: 1.2 !important;
+}
+
+.form-field-hint {
+  margin-top: 2px !important;
+  font-size: 10.5px !important;
+  line-height: 1.25 !important;
+  opacity: 0.78 !important;
+}
+
+.task-create-card input,
+.task-create-card textarea,
+.task-create-card select {
+  min-height: 40px !important;
+  padding: 8px 10px !important;
+  border-radius: 11px !important;
+  font-size: 13px !important;
+  margin-bottom: 0 !important;
+}
+
+.task-create-card textarea {
+  min-height: 68px !important;
+  max-height: 100px !important;
+}
+
+.task-create-actions-row {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 10px !important;
+}
+
+.task-auto-deadline-button,
+.task-create-submit {
+  width: 100% !important;
+  min-height: 42px !important;
+  padding: 10px 14px !important;
+  border-radius: 13px !important;
+  font-size: 14px !important;
+  font-weight: 900 !important;
+}
+
+.task-auto-deadline-button {
+  background: rgba(15, 23, 42, 0.88) !important;
+  color: #dbeafe !important;
+  border: 1px solid rgba(99, 102, 241, 0.42) !important;
+}
+
+/* Список задач нижче — горизонтальне гортання предметів */
+.task-board {
+  padding: 18px !important;
+  border-radius: 22px !important;
+}
+
+.subject-task-board {
+  display: grid !important;
+  grid-auto-flow: column !important;
+  grid-auto-columns: minmax(300px, 360px) !important;
+  grid-template-columns: none !important;
+  gap: 14px !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  padding-bottom: 12px !important;
+  scrollbar-width: thin !important;
+}
+
+.subject-column {
+  min-width: 300px !important;
+  max-width: 360px !important;
+}
+
+@media (max-width: 1280px) {
+  .tasks-management-layout {
+    grid-template-columns: 1fr !important;
+  }
+
+  .tasks-side-column {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .tasks-main-column .task-create-card {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 760px) {
+  .tasks-panel {
+    padding: 14px !important;
+  }
+
+  .tasks-side-column,
+  .tasks-main-column .task-create-card,
+  .task-form-grid-2,
+  .task-create-actions-row {
+    grid-template-columns: 1fr !important;
+  }
+
+  .tasks-side-column .compact-edit-list {
+    max-height: 230px !important;
+  }
+}
+
+
+/* =========================================================
+   CREATED TASK CARDS POLISH
+   Виправлення карток створених задач: кнопки не зʼїжджають, текст не налазить.
+   Додати в самий кінець index.css.
+========================================================= */
+
+.subject-task-board {
+  align-items: start !important;
+}
+
+.subject-column {
+  padding: 14px !important;
+  border-radius: 22px !important;
+}
+
+.subject-column-title {
+  min-height: 58px !important;
+  display: flex !important;
+  align-items: center !important;
+  padding: 12px 14px !important;
+  margin-bottom: 14px !important;
+  border-radius: 17px !important;
+  font-size: 16px !important;
+  line-height: 1.18 !important;
+  overflow-wrap: anywhere !important;
+}
+
+.compact-task-card,
+.compact-list-task {
+  padding: 14px !important;
+  border-radius: 20px !important;
+  gap: 11px !important;
+}
+
+.compact-task-title {
+  grid-template-columns: 18px minmax(0, 1fr) !important;
+  gap: 9px !important;
+}
+
+.compact-task-title h4,
+.compact-list-task .task-item-top h4 {
+  font-size: 15.5px !important;
+  line-height: 1.22 !important;
+  word-break: break-word !important;
+  overflow-wrap: anywhere !important;
+  -webkit-line-clamp: 2 !important;
+}
+
+.compact-task-footer {
+  gap: 6px !important;
+}
+
+.compact-task-footer span,
+.task-chip {
+  padding: 5px 8px !important;
+  font-size: 11px !important;
+  line-height: 1.05 !important;
+  max-width: 100% !important;
+}
+
+.task-chip-deadline,
+.task-deadline-badge {
+  max-width: 100% !important;
+  white-space: normal !important;
+}
+
+.compact-task-actions,
+.compact-list-task .task-actions {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(100px, 1.05fr) minmax(0, 1fr) !important;
+  gap: 7px !important;
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+.compact-task-actions button,
+.compact-list-task .task-actions button,
+.compact-task-actions .status-select,
+.compact-list-task .status-select {
+  min-width: 0 !important;
+  width: 100% !important;
+  height: 38px !important;
+  padding: 8px 9px !important;
+  border-radius: 13px !important;
+  font-size: 12px !important;
+  line-height: 1 !important;
+  text-align: center !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.compact-task-actions .danger-button,
+.compact-list-task .danger-button {
+  color: #fecaca !important;
+  background: rgba(239, 68, 68, 0.16) !important;
+}
+
+/* Для вузьких колонок: дії у 2 рядки, щоб нічого не налазило */
+@media (max-width: 1500px) {
+  .compact-task-actions,
+  .compact-list-task .task-actions {
+    grid-template-columns: 1fr 1fr !important;
+  }
+
+  .compact-task-actions .danger-button,
+  .compact-list-task .danger-button {
+    grid-column: 1 / -1 !important;
+  }
+}
+
+@media (max-width: 760px) {
+  .compact-task-actions,
+  .compact-list-task .task-actions {
+    grid-template-columns: 1fr !important;
+  }
+
+  .compact-task-actions .danger-button,
+  .compact-list-task .danger-button {
+    grid-column: auto !important;
+  }
+}
+
+
+/* =========================================================
+   SUBJECT TASK BOARD: MAX 3 SUBJECTS VISIBLE
+   Одночасно вміщається максимум 3 предмети з задачами.
+   Якщо предметів більше — горизонтальне прокручування.
+========================================================= */
+
+.subject-task-board {
+  display: grid !important;
+  grid-auto-flow: column !important;
+  grid-template-columns: none !important;
+
+  grid-auto-columns: calc((100% - 28px) / 3) !important;
+  gap: 14px !important;
+
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  padding-bottom: 14px !important;
+
+  scroll-snap-type: x proximity !important;
+  scrollbar-width: thin !important;
+}
+
+.subject-column {
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  scroll-snap-align: start !important;
+}
+
+.subject-column-title {
+  min-height: 54px !important;
+  font-size: 15px !important;
+  line-height: 1.18 !important;
+}
+
+.compact-task-card,
+.compact-list-task {
+  padding: 13px !important;
+}
+
+.compact-task-actions,
+.compact-list-task .task-actions {
+  grid-template-columns: 1fr 1fr !important;
+}
+
+.compact-task-actions .danger-button,
+.compact-list-task .danger-button {
+  grid-column: 1 / -1 !important;
+}
+
+/* На середніх екранах — максимум 2 колонки */
+@media (max-width: 1280px) {
+  .subject-task-board {
+    grid-auto-columns: calc((100% - 14px) / 2) !important;
+  }
+}
+
+/* На малих екранах — 1 колонка */
+@media (max-width: 760px) {
+  .subject-task-board {
+    grid-auto-columns: 86vw !important;
+  }
+
+  .compact-task-actions,
+  .compact-list-task .task-actions {
+    grid-template-columns: 1fr !important;
+  }
+
+  .compact-task-actions .danger-button,
+  .compact-list-task .danger-button {
+    grid-column: auto !important;
+  }
+}
+
+
+/* =========================================================
+   ANALYTICS
+========================================================= */
+
+.analytics-modern-page {
+  width: min(1640px, calc(100% - 48px));
+  margin: 22px auto 80px;
+  color: #f8fafc;
+}
+
+.analytics-modern-page * {
+  box-sizing: border-box;
+}
+
+.analytics-modern-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.65fr);
+  gap: 18px;
+  margin-bottom: 22px;
+}
+
+.analytics-hero-content,
+.analytics-week-card,
+.analytics-day-tile,
+.analytics-summary-modern-card,
+.analytics-panel,
+.analytics-loading-panel {
+  background: linear-gradient(145deg, rgba(15, 23, 42, 0.96), rgba(2, 6, 23, 0.94));
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.3);
+}
+
+.analytics-hero-content {
+  position: relative;
+  overflow: hidden;
+  padding: 34px;
+  border-radius: 34px;
+  background:
+    radial-gradient(circle at top left, rgba(59, 130, 246, 0.34), transparent 32%),
+    radial-gradient(circle at bottom right, rgba(168, 85, 247, 0.22), transparent 30%),
+    linear-gradient(145deg, rgba(15, 23, 42, 0.98), rgba(8, 47, 73, 0.82));
+}
+
+.analytics-back-button {
+  display: inline-flex;
+  width: fit-content;
+  margin-bottom: 20px;
+  padding: 9px 13px;
+  border-radius: 999px;
+  background: rgba(2, 6, 23, 0.5);
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  color: #dbeafe;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.analytics-kicker,
+.analytics-week-card span,
+.analytics-panel-title span {
+  display: inline-flex;
+  color: #818cf8;
+  font-size: 12px;
+  font-weight: 1000;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+}
+
+.analytics-hero-content h1 {
+  margin: 10px 0 14px;
+  font-size: clamp(42px, 5vw, 78px);
+  line-height: 0.92;
+  letter-spacing: -0.075em;
+  color: #f8fafc;
+}
+
+.analytics-hero-content p {
+  max-width: 780px;
+  margin: 0;
+  color: #94a3b8;
+  font-size: 16px;
+  line-height: 1.65;
+}
+
+.analytics-week-card {
+  padding: 28px;
+  border-radius: 34px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 10px;
+}
+
+.analytics-week-card strong {
+  font-size: 28px;
+  line-height: 1.15;
+}
+
+.analytics-week-card p {
+  margin: 0;
+  color: #94a3b8;
+  line-height: 1.5;
+}
+
+.analytics-week-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.analytics-week-header h2 {
+  margin: 6px 0 0;
+  font-size: 32px;
+  letter-spacing: -0.045em;
+}
+
+.analytics-week-controls {
+  display: flex;
+  gap: 9px;
+  align-items: center;
+}
+
+.analytics-week-controls button {
+  min-width: 48px;
+  height: 48px;
+  border-radius: 17px;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  background: rgba(15, 23, 42, 0.84);
+  color: #f8fafc;
+  font-size: 20px;
+  font-weight: 1000;
+  cursor: pointer;
+}
+
+.analytics-week-controls .current {
+  min-width: 140px;
+  padding: 0 16px;
+  font-size: 14px;
+}
+
+.analytics-days-strip {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.analytics-day-tile {
+  position: relative;
+  overflow: hidden;
+  min-height: 145px;
+  padding: 16px;
+  border-radius: 28px;
+}
+
+.analytics-day-tile.busy {
+  border-color: rgba(56, 189, 248, 0.38);
+  box-shadow: 0 24px 70px rgba(56, 189, 248, 0.1);
+}
+
+.analytics-day-tile::after {
+  content: "";
+  position: absolute;
+  right: -42px;
+  bottom: -58px;
+  width: 130px;
+  height: 130px;
+  border-radius: 999px;
+  background: rgba(59, 130, 246, 0.18);
+  filter: blur(24px);
+}
+
+.analytics-day-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  color: #94a3b8;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.analytics-day-hours {
+  margin-top: 18px;
+}
+
+.analytics-day-hours strong {
+  font-size: 40px;
+  line-height: 1;
+}
+
+.analytics-day-hours span {
+  margin-left: 6px;
+  color: #94a3b8;
+  font-weight: 900;
+}
+
+.analytics-day-bar {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: 16px;
+  height: 11px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(148, 163, 184, 0.12);
+}
+
+.analytics-day-bar div {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #3b82f6, #8b5cf6, #ec4899);
+  box-shadow: 0 0 18px rgba(99, 102, 241, 0.6);
+}
+
+.analytics-summary-modern {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.analytics-summary-modern-card {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  padding: 20px;
+  border-radius: 28px;
+}
+
+.analytics-card-icon {
+  width: 48px;
+  height: 48px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  border-radius: 17px;
+  background: rgba(99, 102, 241, 0.16);
+  font-size: 22px;
+}
+
+.analytics-summary-modern-card span {
+  display: block;
+  color: #94a3b8;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.analytics-summary-modern-card strong {
+  display: block;
+  margin-top: 3px;
+  font-size: 38px;
+  line-height: 1;
+}
+
+.analytics-summary-modern-card p {
+  margin: 4px 0 0;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.analytics-main-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.analytics-panel {
+  min-width: 0;
+  padding: 22px;
+  border-radius: 30px;
+  overflow: hidden;
+}
+
+.analytics-panel-wide {
+  min-height: 390px;
+}
+
+.analytics-panel-title {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+  margin-bottom: 18px;
+}
+
+.analytics-panel-title h3 {
+  margin: 6px 0 0;
+  font-size: 24px;
+  line-height: 1.15;
+  letter-spacing: -0.035em;
+}
+
+.analytics-panel-title p {
+  max-width: 290px;
+  margin: 0;
+  color: #94a3b8;
+  font-size: 13px;
+  line-height: 1.5;
+  text-align: right;
+}
+
+.analytics-panel-title.compact {
+  margin-bottom: 4px;
+}
+
+.analytics-modern-page .recharts-cartesian-grid line {
+  stroke: rgba(148, 163, 184, 0.12);
+}
+
+.analytics-modern-page .recharts-cartesian-axis-line,
+.analytics-modern-page .recharts-cartesian-axis-tick-line {
+  stroke: rgba(148, 163, 184, 0.14);
+}
+
+.analytics-modern-page .recharts-cartesian-axis-tick-value {
+  fill: #94a3b8;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.analytics-modern-page .recharts-bar-rectangle path {
+  filter: drop-shadow(0 10px 16px rgba(59, 130, 246, 0.24));
+}
+
+.analytics-modern-page .recharts-line-curve {
+  filter: drop-shadow(0 0 12px rgba(56, 189, 248, 0.32));
+}
+
+.analytics-modern-page .recharts-sector {
+  stroke: rgba(2, 6, 23, 0.8);
+  stroke-width: 3px;
+}
+
+.analytics-tooltip {
+  min-width: 150px;
+  padding: 12px;
+  border-radius: 16px;
+  background: rgba(2, 6, 23, 0.96);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  box-shadow: 0 18px 46px rgba(0, 0, 0, 0.38);
+  color: #f8fafc;
+}
+
+.analytics-tooltip strong {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+
+.analytics-tooltip p {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  margin: 0;
+  color: #cbd5e1;
+  font-size: 13px;
+}
+
+.analytics-tooltip b {
+  color: #38bdf8;
+}
+
+.analytics-loading-panel {
+  width: min(620px, calc(100% - 24px));
+  margin: 90px auto;
+  padding: 36px;
+  border-radius: 32px;
+  text-align: center;
+}
+
+.analytics-loading-icon {
+  width: 66px;
+  height: 66px;
+  display: grid;
+  place-items: center;
+  margin: 0 auto 16px;
+  border-radius: 24px;
+  background: rgba(99, 102, 241, 0.18);
+  font-size: 30px;
+}
+
+@media (max-width: 1280px) {
+  .analytics-modern-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .analytics-days-strip {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .analytics-summary-modern,
+  .analytics-main-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .analytics-modern-page {
+    width: calc(100% - 22px);
+  }
+
+  .analytics-hero-content,
+  .analytics-week-card,
+  .analytics-day-tile,
+  .analytics-summary-modern-card,
+  .analytics-panel {
+    border-radius: 22px;
+  }
+
+  .analytics-hero-content {
+    padding: 22px;
+  }
+
+  .analytics-hero-content h1 {
+    font-size: 38px;
+  }
+
+  .analytics-week-header,
+  .analytics-panel-title {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .analytics-panel-title p {
+    text-align: left;
+    max-width: none;
+  }
+
+  .analytics-days-strip,
+  .analytics-summary-modern,
+  .analytics-main-grid {
+    grid-template-columns: 1fr;
+  }
+}
