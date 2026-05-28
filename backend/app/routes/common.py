@@ -43,6 +43,55 @@ ml_deadline_service = MLDeadlineService()
 task_schedule_block_service = TaskScheduleBlockService()
 synthetic_deadline_dataset_service = SyntheticDeadlineDatasetService()
 
+COMPLETED_TASK_STATUSES = {"done", "completed"}
+MISSED_TASK_STATUS = "missed"
+
+
+def to_aware_utc(value):
+    if not value:
+        return None
+
+    if value.tzinfo is None:
+        return value.replace(tzinfo=UTC)
+
+    return value.astimezone(UTC)
+
+
+def refresh_task_deadline_status(task, now=None):
+    if not task or not getattr(task, "due_date", None):
+        return False
+
+    current_status = (getattr(task, "status", None) or "").lower()
+
+    if current_status in COMPLETED_TASK_STATUSES:
+        return False
+
+    deadline = to_aware_utc(task.due_date)
+    current_time = now or datetime.now(UTC)
+
+    if deadline and deadline < current_time and current_status != MISSED_TASK_STATUS:
+        task.status = MISSED_TASK_STATUS
+        task.missed_at = current_time
+        task.completed_at = None
+        task.updated_at = current_time
+        return True
+
+    return False
+
+
+def refresh_tasks_deadline_statuses(db, tasks):
+    now = datetime.now(UTC)
+    changed = False
+
+    for task in tasks:
+        if refresh_task_deadline_status(task, now=now):
+            changed = True
+
+    if changed:
+        db.commit()
+
+    return changed
+
 
 def current_user():
     user_id = session.get("user_id")
@@ -176,6 +225,26 @@ def parse_optional_datetime(value):
         return datetime.fromisoformat(value)
     except ValueError:
         return None
+
+
+def ensure_utc(value):
+    if not value:
+        return None
+
+    if value.tzinfo is None:
+        return value.replace(tzinfo=UTC)
+
+    return value.astimezone(UTC)
+
+
+def restore_datetime_style(value, reference):
+    if not value or not reference:
+        return value
+
+    if reference.tzinfo is None and value.tzinfo is not None:
+        return value.replace(tzinfo=None)
+
+    return value
 
 
 def serialize_event_type(event_type):
@@ -792,13 +861,16 @@ def fallback_deadline_prediction(
             len(subject_events) - 1,
         )
         target_event = subject_events[event_index]
-        deadline = target_event.start_time - timedelta(hours=2)
+        original_start_time = target_event.start_time
+        target_start_time = ensure_utc(original_start_time)
+
+        deadline = target_start_time - timedelta(hours=2)
 
         if deadline <= now:
-            deadline = target_event.start_time - timedelta(minutes=30)
+            deadline = target_start_time - timedelta(minutes=30)
 
         return {
-            "deadline": deadline,
+            "deadline": restore_datetime_style(deadline, original_start_time),
             "confidence": 0.72,
             "reason": "Fallback: дедлайн поставлено перед найближчою парою предмету.",
         }
@@ -812,7 +884,7 @@ def fallback_deadline_prediction(
     while deadline_date in blocked_dates:
         deadline_date = deadline_date + timedelta(days=1)
 
-    deadline = datetime.combine(deadline_date, time(hour=20, minute=0))
+    deadline = datetime.combine(deadline_date, time(hour=20, minute=0), tzinfo=UTC)
 
     return {
         "deadline": deadline,

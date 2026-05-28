@@ -198,10 +198,12 @@ def get_tasks():
         if subject_id:
             query = query.filter(Task.subject_id == int(subject_id))
 
-        if status:
-            query = query.filter(Task.status == status)
-
         tasks = query.order_by(Task.created_at.desc()).all()
+
+        refresh_tasks_deadline_statuses(db, tasks)
+
+        if status:
+            tasks = [task for task in tasks if task.status == status]
 
         return jsonify([serialize_task(task) for task in tasks])
 
@@ -262,6 +264,10 @@ def create_task():
 
         db.commit()
         db.refresh(task)
+
+        if refresh_task_deadline_status(task):
+            db.commit()
+            db.refresh(task)
 
         create_task_log(
             db=db,
@@ -331,6 +337,10 @@ def update_task(task_id):
         db.commit()
         db.refresh(task)
 
+        if refresh_task_deadline_status(task):
+            db.commit()
+            db.refresh(task)
+
         return jsonify(serialize_task(task)), 200
 
     finally:
@@ -363,6 +373,10 @@ def update_task_deadline(task_id):
 
         db.commit()
         db.refresh(task)
+
+        if refresh_task_deadline_status(task):
+            db.commit()
+            db.refresh(task)
 
         return jsonify(serialize_task(task)), 200
 
@@ -439,6 +453,7 @@ def update_task_status(task_id):
         elif new_status == "missed":
             task.missed_at = datetime.utcnow()
             task.completed_at = None
+            # auto_replan = bool(data.get("auto_replan", False))
 
         else:
             task.completed_at = None
@@ -1138,6 +1153,8 @@ def create_tasks_from_import_api():
             created_tasks.append(task)
 
         db.commit()
+
+        refresh_tasks_deadline_statuses(db, created_tasks)
 
         return (
             jsonify(
