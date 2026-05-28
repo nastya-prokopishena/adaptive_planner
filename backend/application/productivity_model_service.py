@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, UTC
 from statistics import mean
 
 
@@ -10,7 +10,7 @@ class ProductivityModelService:
             return date.date().isoformat()
 
         for task in tasks:
-            date = task.due_date or task.created_at or datetime.utcnow()
+            date = task.due_date or task.created_at or datetime.now(UTC)
             day = get_day(date)
 
             if day not in days:

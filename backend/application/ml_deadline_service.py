@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 
 from backend.infrastructure.ml.deadline_model_adapter import DeadlineModelAdapter
 
@@ -30,7 +30,7 @@ class MLDeadlineService:
         return self.TASK_TYPE_MAP.get(task_type or "other", 2)
 
     def get_hours_until_next_subject_event(self, subject_events):
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
 
         future_events = [
             event for event in subject_events or [] if event.start_time and event.start_time > now
@@ -97,7 +97,7 @@ class MLDeadlineService:
             [
                 event
                 for event in subject_events or []
-                if event.start_time and event.start_time > datetime.utcnow()
+                if event.start_time and event.start_time > datetime.now(UTC)
             ],
             key=lambda event: event.start_time,
         )
@@ -136,7 +136,7 @@ class MLDeadlineService:
         calendar_events=None,
         used_best_time_dates=None,
     ):
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
         used_best_time_dates = used_best_time_dates or []
 
         base_days = max(2, int(max(4, predicted_hours) / 24))
@@ -230,7 +230,7 @@ class MLDeadlineService:
                 used_event_index=used_event_index,
             )
 
-            if subject_deadline and subject_deadline > datetime.utcnow():
+            if subject_deadline and subject_deadline > datetime.now(UTC):
                 return {
                     "deadline": subject_deadline,
                     "confidence": 0.95,

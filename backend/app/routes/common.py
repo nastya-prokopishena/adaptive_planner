@@ -1,5 +1,5 @@
 import json
-from datetime import datetime, time, timedelta
+from datetime import datetime, time, timedelta, UTC
 from types import SimpleNamespace
 
 import requests
@@ -555,7 +555,7 @@ def event_matches_subject(event, subject_id=None, subject_name=None):
 
 
 def get_subject_events(db, user_id, subject_id=None, subject_name=None):
-    now = datetime.utcnow()
+    now = datetime.now(UTC)
 
     if subject_id and not subject_name:
         subject_name = get_subject_name_by_id(
@@ -608,7 +608,7 @@ def get_subject_events(db, user_id, subject_id=None, subject_name=None):
 
 
 def get_user_calendar_events(db, user_id):
-    now = datetime.utcnow()
+    now = datetime.now(UTC)
 
     events = db.query(Event).filter(Event.user_id == user_id).order_by(Event.start_time.asc()).all()
 
@@ -650,7 +650,7 @@ def get_existing_subject_deadline_count(
     subject_name=None,
     exclude_task_id=None,
 ):
-    now = datetime.utcnow()
+    now = datetime.now(UTC)
 
     resolved_subject_id = resolve_subject_id(
         db=db,
@@ -677,7 +677,7 @@ def get_existing_subject_deadline_count(
 
 
 def get_existing_deadline_dates(db, user_id):
-    now = datetime.utcnow()
+    now = datetime.now(UTC)
 
     tasks = (
         db.query(Task)
@@ -748,7 +748,7 @@ def apply_auto_deadline_to_task(
     )
 
     task.due_date = prediction["deadline"]
-    task.updated_at = datetime.utcnow()
+    task.updated_at = datetime.now(UTC)
 
     block = task_schedule_block_service.recreate_block_for_task(
         db=db,
@@ -782,7 +782,7 @@ def fallback_deadline_prediction(
 ):
     subject_events = subject_events or []
     used_best_time_dates = used_best_time_dates or []
-    now = datetime.utcnow()
+    now = datetime.now(UTC)
 
     normalized_mode = normalize_deadline_mode(mode)
 

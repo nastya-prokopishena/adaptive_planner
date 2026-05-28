@@ -1,6 +1,6 @@
 import json
 import os
-from datetime import datetime
+from datetime import datetime, UTC
 
 import joblib
 
@@ -21,7 +21,7 @@ class ModelRegistry:
         )
 
     def save_model(self, model_bundle, metadata):
-        version = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+        version = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
 
         versioned_model_path = os.path.join(
             self.model_dir,
@@ -34,7 +34,7 @@ class ModelRegistry:
         metadata = {
             **metadata,
             "version": version,
-            "saved_at": datetime.utcnow().isoformat(),
+            "saved_at": datetime.now(UTC).isoformat(),
             "latest_model_path": self.latest_model_path,
             "versioned_model_path": versioned_model_path,
         }

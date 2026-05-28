@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 
 from backend.infrastructure.db.models import Event, Task, TaskScheduleBlock
 
@@ -54,7 +54,7 @@ class MLTaskPlannerService:
         return None, None
 
     def plan_tasks(self, db, user_id, days=7):
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
         end_date = now + timedelta(days=days)
 
         tasks = (

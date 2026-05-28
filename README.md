@@ -1,3 +1,8 @@
+![Python](https://img.shields.io/badge/Python-3.11-blue)
+![Flask](https://img.shields.io/badge/Flask-Backend-black)
+![CI](https://github.com/nastya-prokopishena/adaptive_planner/actions/workflows/ci.yml/badge.svg)
+![Sonar Quality Gate](https://sonarcloud.io/api/project_badges/measure?project=nastya-prokopishena_adaptive_planner&metric=alert_status)
+
 # 📘 Adaptive Planner
 
 > Вебзастосунок для адаптивного планування навчальних задач, розкладу, дедлайнів і продуктивності студента з використанням AI/ML, Google Calendar, Docker, CI/CD та автоматизованого тестування.
