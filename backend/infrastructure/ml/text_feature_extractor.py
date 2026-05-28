@@ -47,6 +47,8 @@ class TextFeatureExtractor(BaseEstimator, TransformerMixin):
     ]
 
     def fit(self, x, y=None):
+        self._fit_input_count = len(x) if hasattr(x, "__len__") else 0
+        self._fit_has_target = y is not None
         return self
 
     def transform(self, x):

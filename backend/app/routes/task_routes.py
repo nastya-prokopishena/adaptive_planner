@@ -261,8 +261,8 @@ def create_task():
             estimated_duration_hours=float(data.get("estimated_duration_hours") or 1),
             difficulty_score=int(data.get("difficulty_score") or 3),
             nlp_source=data.get("nlp_source", "manual"),
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
+            created_at=to_storage_datetime(datetime.now(UTC)),
+            updated_at=to_storage_datetime(datetime.now(UTC)),
         )
 
         db.add(task)
@@ -292,6 +292,7 @@ def create_task():
         )
 
         db.commit()
+        set_auto_replan_metadata(db, task)
 
         return jsonify(serialize_task(task)), 201
 
@@ -345,10 +346,11 @@ def update_task(task_id):
         if isinstance(keywords, list):
             task.keywords = json.dumps(keywords, ensure_ascii=False)
 
-        task.updated_at = datetime.utcnow()
+        task.updated_at = to_storage_datetime(datetime.now(UTC))
 
         db.commit()
         db.refresh(task)
+        set_auto_replan_metadata(db, task)
 
         return jsonify(serialize_task(task)), 200
 
@@ -378,10 +380,11 @@ def update_task_deadline(task_id):
             return jsonify({"error": "Task not found"}), 404
 
         task.due_date = due_date
-        task.updated_at = datetime.utcnow()
+        task.updated_at = to_storage_datetime(datetime.now(UTC))
 
         db.commit()
         db.refresh(task)
+        set_auto_replan_metadata(db, task)
 
         return jsonify(serialize_task(task)), 200
 
@@ -432,7 +435,6 @@ def update_task_status(task_id):
     data = request.json or {}
 
     new_status = data.get("status")
-
     allowed_statuses = ["planned", "in_progress", "done", "missed"]
 
     if new_status not in allowed_statuses:
@@ -444,19 +446,18 @@ def update_task_status(task_id):
         task = db.query(Task).filter_by(id=task_id, user_id=user.id).first()
 
         if not task:
-            return jsonify({"error": "Task not found"}), 404
+            return jsonify({"error": TASK_NOT_FOUND}), 404
 
         old_status = task.status
-
         task.status = new_status
-        task.updated_at = datetime.utcnow()
+        task.updated_at = to_storage_datetime(datetime.now(UTC))
 
         if new_status == "done":
-            task.completed_at = datetime.utcnow()
+            task.completed_at = to_storage_datetime(datetime.now(UTC))
             task.missed_at = None
 
         elif new_status == "missed":
-            task.missed_at = datetime.utcnow()
+            task.missed_at = to_storage_datetime(datetime.now(UTC))
             task.completed_at = None
 
             try:

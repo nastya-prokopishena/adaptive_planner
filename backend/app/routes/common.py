@@ -1,7 +1,6 @@
 import json
 from datetime import UTC, datetime, time, timedelta
 from types import SimpleNamespace
-from zoneinfo import ZoneInfo
 
 import requests
 from flask import Blueprint, current_app, jsonify, redirect, request, session
@@ -44,6 +43,7 @@ ml_deadline_service = MLDeadlineService()
 task_schedule_block_service = TaskScheduleBlockService()
 synthetic_deadline_dataset_service = SyntheticDeadlineDatasetService()
 
+
 COMPLETED_TASK_STATUSES = {"done", "completed"}
 MISSED_TASK_STATUS = "missed"
 AUTO_REPLAN_ACTION = "task_auto_replanned"
@@ -52,7 +52,6 @@ MAX_AUTO_REPLAN_ATTEMPTS = 3
 PRIORITY_ESCALATION_REPLAN_COUNT = 3
 HIGH_PRIORITY = "high"
 BEST_FREE_TIME_MODE = "best_free_time"
-APP_TIMEZONE = ZoneInfo("Europe/Kyiv")
 
 
 def to_aware_utc(value):
@@ -60,7 +59,7 @@ def to_aware_utc(value):
         return None
 
     if value.tzinfo is None:
-        return value.replace(tzinfo=APP_TIMEZONE).astimezone(UTC)
+        return value.replace(tzinfo=UTC)
 
     return value.astimezone(UTC)
 
@@ -71,7 +70,7 @@ def to_storage_datetime(value):
     if not aware_value:
         return None
 
-    return aware_value.astimezone(APP_TIMEZONE).replace(tzinfo=None)
+    return aware_value.replace(tzinfo=None)
 
 
 def refresh_task_deadline_status(task, now=None):
@@ -123,12 +122,12 @@ def has_auto_replan_limit_log(db, task_id):
 
 def set_auto_replan_metadata(db, task):
     replan_count = get_task_auto_replan_count(db, task.id)
-    replan_limit_reached = replan_count >= MAX_AUTO_REPLAN_ATTEMPTS
+    limit_reached = replan_count >= MAX_AUTO_REPLAN_ATTEMPTS
 
     task.auto_replan_count = replan_count
     task.auto_replan_limit = MAX_AUTO_REPLAN_ATTEMPTS
     task.auto_replan_attempts_left = max(MAX_AUTO_REPLAN_ATTEMPTS - replan_count, 0)
-    task.auto_replan_limit_reached = replan_limit_reached
+    task.auto_replan_limit_reached = limit_reached
 
     return task
 
@@ -153,20 +152,6 @@ def should_auto_replan_task(task, now=None):
     current_time = now or datetime.now(UTC)
 
     return bool(deadline and deadline < current_time)
-
-
-def refresh_tasks_deadline_statuses(db, tasks):
-    now = datetime.now(UTC)
-    changed = False
-
-    for task in tasks:
-        if refresh_task_deadline_status(task, now=now):
-            changed = True
-
-    if changed:
-        db.commit()
-
-    return changed
 
 
 def auto_replan_missed_task(db, user_id, task):
@@ -233,11 +218,13 @@ def auto_replan_missed_task(db, user_id, task):
         ),
     )
 
+    set_auto_replan_metadata(db, task)
+
     return {
         "task_id": task.id,
         "title": task.title,
         "old_deadline": old_deadline.isoformat() if old_deadline else None,
-        "new_deadline": to_aware_utc(prediction["deadline"]).isoformat(),
+        "new_deadline": prediction["deadline"].isoformat(),
         "replan_count": new_replan_count,
         "replan_limit": MAX_AUTO_REPLAN_ATTEMPTS,
         "attempts_left": max(MAX_AUTO_REPLAN_ATTEMPTS - new_replan_count, 0),
@@ -255,6 +242,7 @@ def refresh_and_replan_missed_tasks(db, user_id, tasks):
 
     for task in tasks:
         if not should_auto_replan_task(task, now=now):
+            set_auto_replan_metadata(db, task)
             continue
 
         refresh_task_deadline_status(task, now=now)
@@ -272,6 +260,7 @@ def refresh_and_replan_missed_tasks(db, user_id, tasks):
 
         except Exception as error:
             print("Auto replan missed task error:", error)
+            set_auto_replan_metadata(db, task)
 
     if changed:
         db.commit()
@@ -804,7 +793,7 @@ def event_matches_subject(event, subject_id=None, subject_name=None):
 
 
 def get_subject_events(db, user_id, subject_id=None, subject_name=None):
-    now = datetime.utcnow()
+    now = datetime.now(UTC)
 
     if subject_id and not subject_name:
         subject_name = get_subject_name_by_id(
@@ -857,7 +846,7 @@ def get_subject_events(db, user_id, subject_id=None, subject_name=None):
 
 
 def get_user_calendar_events(db, user_id):
-    now = datetime.utcnow()
+    now = datetime.now(UTC)
 
     events = db.query(Event).filter(Event.user_id == user_id).order_by(Event.start_time.asc()).all()
 
@@ -899,7 +888,7 @@ def get_existing_subject_deadline_count(
     subject_name=None,
     exclude_task_id=None,
 ):
-    now = datetime.utcnow()
+    now = datetime.now(UTC)
 
     resolved_subject_id = resolve_subject_id(
         db=db,
@@ -926,7 +915,7 @@ def get_existing_subject_deadline_count(
 
 
 def get_existing_deadline_dates(db, user_id):
-    now = datetime.utcnow()
+    now = datetime.now(UTC)
 
     tasks = (
         db.query(Task)
@@ -997,7 +986,7 @@ def apply_auto_deadline_to_task(
     )
 
     task.due_date = to_storage_datetime(prediction["deadline"])
-    task.updated_at = datetime.utcnow()
+    task.updated_at = to_storage_datetime(datetime.now(UTC))
     prediction["deadline"] = task.due_date
 
     block = task_schedule_block_service.recreate_block_for_task(
@@ -1032,7 +1021,7 @@ def fallback_deadline_prediction(
 ):
     subject_events = subject_events or []
     used_best_time_dates = used_best_time_dates or []
-    now = datetime.utcnow()
+    now = datetime.now(UTC)
 
     normalized_mode = normalize_deadline_mode(mode)
 

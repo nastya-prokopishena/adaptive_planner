@@ -1,6 +1,16 @@
-from flask import Blueprint
+import json
 
-from backend.app.routes.common import *
+import requests
+from flask import Blueprint, jsonify, redirect, request, session
+from werkzeug.security import check_password_hash, generate_password_hash
+
+from backend.app.routes.common import (
+    SessionLocal,
+    User,
+    calendar_adapter,
+    current_user,
+    sync_google_events_to_db,
+)
 
 auth_bp = Blueprint("auth", __name__)
 
@@ -86,7 +96,7 @@ def login_local():
         db.close()
 
 
-@auth_bp.route("/auth/google")
+@auth_bp.route("/auth/google", methods=["GET"])
 def google_login():
     flow = calendar_adapter.create_flow()
 
@@ -102,7 +112,7 @@ def google_login():
     return redirect(authorization_url)
 
 
-@auth_bp.route("/callback")
+@auth_bp.route("/callback", methods=["GET"])
 def google_callback():
     state = session.get("state")
     code_verifier = session.get("code_verifier")
