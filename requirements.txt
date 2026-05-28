@@ -40,3 +40,4 @@ ortools
 python-dateutil
 openpyxl
 pillow
+bcrypt
