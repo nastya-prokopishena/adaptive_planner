@@ -1,6 +1,6 @@
-from datetime import datetime, timedelta
-from dateutil.rrule import rrule, DAILY, WEEKLY, MONTHLY, YEARLY, MO, TU, WE, TH, FR, SA, SU
+from datetime import timedelta
 
+from dateutil.rrule import DAILY, FR, MO, MONTHLY, SA, SU, TH, TU, WE, WEEKLY, YEARLY, rrule
 
 WEEKDAY_MAP = {
     "MO": MO,
@@ -55,7 +55,7 @@ def build_google_rrule(
     days = parse_recurrence_days(recurrence_days)
 
     if recurrence_type == "daily":
-        parts = [f"FREQ=DAILY", f"INTERVAL={interval}"]
+        parts = ["FREQ=DAILY", f"INTERVAL={interval}"]
 
     elif recurrence_type == "weekdays":
         parts = ["FREQ=WEEKLY", "INTERVAL=1", "BYDAY=MO,TU,WE,TH,FR"]
@@ -160,19 +160,52 @@ def generate_occurrences(
         rule = rrule(DAILY, **kwargs)
 
     elif recurrence_type == "weekdays":
-        rule = rrule(WEEKLY, byweekday=[MO, TU, WE, TH, FR], interval=1, dtstart=start_time, count=count, until=None if count else until)
+        rule = rrule(
+            WEEKLY,
+            byweekday=[MO, TU, WE, TH, FR],
+            interval=1,
+            dtstart=start_time,
+            count=count,
+            until=None if count else until,
+        )
 
     elif recurrence_type == "weekly":
-        rule = rrule(WEEKLY, interval=1, byweekday=[WEEKDAY_MAP[get_weekday_code(start_time)]], dtstart=start_time, count=count, until=None if count else until)
+        rule = rrule(
+            WEEKLY,
+            interval=1,
+            byweekday=[WEEKDAY_MAP[get_weekday_code(start_time)]],
+            dtstart=start_time,
+            count=count,
+            until=None if count else until,
+        )
 
     elif recurrence_type == "biweekly":
-        rule = rrule(WEEKLY, interval=2, byweekday=[WEEKDAY_MAP[get_weekday_code(start_time)]], dtstart=start_time, count=count, until=None if count else until)
+        rule = rrule(
+            WEEKLY,
+            interval=2,
+            byweekday=[WEEKDAY_MAP[get_weekday_code(start_time)]],
+            dtstart=start_time,
+            count=count,
+            until=None if count else until,
+        )
 
     elif recurrence_type == "monthly":
-        rule = rrule(MONTHLY, interval=1, dtstart=start_time, count=count, until=None if count else until)
+        rule = rrule(
+            MONTHLY,
+            interval=1,
+            dtstart=start_time,
+            count=count,
+            until=None if count else until,
+        )
 
     elif recurrence_type == "yearly":
-        rule = rrule(YEARLY, interval=1, dtstart=start_time, count=count, until=None if count else until)
+        rule = rrule(
+            YEARLY,
+            interval=1,
+            dtstart=start_time,
+            count=count,
+            until=None if count else until,
+        )
 
     elif recurrence_type == "custom":
         unit = recurrence_unit or "week"

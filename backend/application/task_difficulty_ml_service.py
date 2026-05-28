@@ -145,11 +145,7 @@ class TaskDifficultyMLService:
         return int(max(1, min(calibrated, 5)))
 
     def _build_input_dataframe(self, text, task_type, subject):
-        combined_text = (
-            f"Предмет: {subject}. "
-            f"Тип задачі: {task_type}. "
-            f"Завдання: {text}"
-        )
+        combined_text = f"Предмет: {subject}. " f"Тип задачі: {task_type}. " f"Завдання: {text}"
 
         return pd.DataFrame(
             [

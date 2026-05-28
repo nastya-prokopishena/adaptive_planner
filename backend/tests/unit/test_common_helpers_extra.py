@@ -19,9 +19,7 @@ def test_parse_datetime_returns_none_for_invalid_value():
 
 
 def test_parse_google_event_time_reads_datetime_and_date():
-    parsed_datetime = common.parse_google_event_time(
-        {"dateTime": "2026-05-28T12:00:00Z"}
-    )
+    parsed_datetime = common.parse_google_event_time({"dateTime": "2026-05-28T12:00:00Z"})
     parsed_date = common.parse_google_event_time({"date": "2026-05-28"})
 
     assert parsed_datetime is not None

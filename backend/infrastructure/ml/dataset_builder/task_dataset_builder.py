@@ -9,7 +9,9 @@ from backend.infrastructure.ml.dataset_builder.llm_task_generator import LLMTask
 from backend.infrastructure.ml.dataset_builder.moodle_collector import MoodleCollector
 from backend.infrastructure.ml.dataset_builder.pdf_downloader import PDFDownloader
 from backend.infrastructure.ml.dataset_builder.pdf_text_extractor import PDFTextExtractor
-from backend.infrastructure.ml.dataset_builder.synthetic_task_generator import SyntheticTaskGenerator
+from backend.infrastructure.ml.dataset_builder.synthetic_task_generator import (
+    SyntheticTaskGenerator,
+)
 from backend.infrastructure.ml.dataset_builder.ukrainian_text_filter import UkrainianTextFilter
 from backend.infrastructure.ml.dataset_builder.weak_labeler import WeakTaskLabeler
 
@@ -128,12 +130,14 @@ class TaskDatasetBuilder:
 
         for filename in os.listdir(self.raw_dir):
             if filename.lower().endswith(".pdf"):
-                files.append({
-                    "file_path": os.path.join(self.raw_dir, filename),
-                    "url": "local_raw_file",
-                    "title": filename,
-                    "source_type": "local_pdf",
-                })
+                files.append(
+                    {
+                        "file_path": os.path.join(self.raw_dir, filename),
+                        "url": "local_raw_file",
+                        "title": filename,
+                        "source_type": "local_pdf",
+                    }
+                )
 
         print(f"Found raw PDFs: {len(files)}")
 
@@ -254,15 +258,9 @@ class TaskDatasetBuilder:
             "готові відповіді",
         ]
 
-        positive_score = sum(
-            1 for pattern in positive_patterns
-            if pattern in lower_text
-        )
+        positive_score = sum(1 for pattern in positive_patterns if pattern in lower_text)
 
-        negative_score = sum(
-            1 for pattern in negative_patterns
-            if pattern in lower_text
-        )
+        negative_score = sum(1 for pattern in negative_patterns if pattern in lower_text)
 
         return positive_score >= 2 and negative_score <= 1
 
@@ -382,20 +380,11 @@ class TaskDatasetBuilder:
         return list(unique.values())
 
     def _print_distribution(self, dataset):
-        difficulty_counter = Counter(
-            int(item["difficulty"])
-            for item in dataset
-        )
+        difficulty_counter = Counter(int(item["difficulty"]) for item in dataset)
 
-        type_counter = Counter(
-            item.get("task_type", "other")
-            for item in dataset
-        )
+        type_counter = Counter(item.get("task_type", "other") for item in dataset)
 
-        subject_counter = Counter(
-            item.get("subject", "Інше")
-            for item in dataset
-        )
+        subject_counter = Counter(item.get("subject", "Інше") for item in dataset)
 
         print("Difficulty:", dict(difficulty_counter))
         print("Task type:", dict(type_counter))

@@ -1,8 +1,8 @@
 import os
 import time
+
 import requests
 from dotenv import load_dotenv
-
 
 load_dotenv()
 
@@ -85,12 +85,14 @@ class MoodleCollector:
                     continue
 
                 if self._looks_like_public_task_page(title, link):
-                    results.append({
-                        "title": title,
-                        "url": link,
-                        "query": query,
-                        "source_type": "moodle",
-                    })
+                    results.append(
+                        {
+                            "title": title,
+                            "url": link,
+                            "query": query,
+                            "source_type": "moodle",
+                        }
+                    )
 
                 if len(results) >= max_results:
                     break
@@ -123,6 +125,4 @@ class MoodleCollector:
             "profile",
         ]
 
-        return any(word in text for word in positive) and not any(
-            word in text for word in negative
-        )
+        return any(word in text for word in positive) and not any(word in text for word in negative)

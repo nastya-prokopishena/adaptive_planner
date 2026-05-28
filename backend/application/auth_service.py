@@ -1,17 +1,19 @@
 import bcrypt
+
 from backend.infrastructure.db.repositories.user_repo import UserRepository
 
 user_repo = UserRepository()
+
 
 class AuthService:
     @staticmethod
     def hash_password(password: str) -> str:
         salt = bcrypt.gensalt()
-        return bcrypt.hashpw(password.encode('utf-8'), salt).decode('utf-8')
+        return bcrypt.hashpw(password.encode("utf-8"), salt).decode("utf-8")
 
     @staticmethod
     def check_password(password: str, hashed: str) -> bool:
-        return bcrypt.checkpw(password.encode('utf-8'), hashed.encode('utf-8'))
+        return bcrypt.checkpw(password.encode("utf-8"), hashed.encode("utf-8"))
 
     @staticmethod
     def register(email: str, password: str):

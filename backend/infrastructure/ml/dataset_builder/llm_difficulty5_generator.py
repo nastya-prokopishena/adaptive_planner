@@ -1,9 +1,9 @@
 import json
 import os
+
 import pandas as pd
 from dotenv import load_dotenv
 from openai import OpenAI
-
 
 load_dotenv()
 
@@ -104,16 +104,18 @@ class LLMDifficulty5Generator:
                 if len(text) < 80:
                     continue
 
-                rows.append({
-                    "text": text,
-                    "subject": item.get("subject", "Інше"),
-                    "task_type": item.get("task_type", "project"),
-                    "difficulty": 5,
-                    "language": "uk",
-                    "source_url": "llm_generated_difficulty_5",
-                    "source_title": "LLM generated very difficult Ukrainian task",
-                    "source_file": "llm_generated_difficulty_5",
-                })
+                rows.append(
+                    {
+                        "text": text,
+                        "subject": item.get("subject", "Інше"),
+                        "task_type": item.get("task_type", "project"),
+                        "difficulty": 5,
+                        "language": "uk",
+                        "source_url": "llm_generated_difficulty_5",
+                        "source_title": "LLM generated very difficult Ukrainian task",
+                        "source_file": "llm_generated_difficulty_5",
+                    }
+                )
 
             return rows
 

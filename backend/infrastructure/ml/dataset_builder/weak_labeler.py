@@ -71,19 +71,35 @@ class WeakTaskLabeler:
     def detect_task_type(self, text):
         lower_text = text.lower()
 
-        if any(word in lower_text for word in ["лабораторна робота", "лабораторні роботи", "хід роботи"]):
+        if any(
+            word in lower_text
+            for word in ["лабораторна робота", "лабораторні роботи", "хід роботи"]
+        ):
             return "laboratory"
 
-        if any(word in lower_text for word in ["проєкт", "проект", "розробити", "реалізувати систему"]):
+        if any(
+            word in lower_text for word in ["проєкт", "проект", "розробити", "реалізувати систему"]
+        ):
             return "project"
 
         if any(word in lower_text for word in ["прочитати", "ознайомитися", "опрацювати"]):
             return "reading"
 
-        if any(word in lower_text for word in ["контрольні питання", "питання до іспиту", "модуль"]):
+        if any(
+            word in lower_text for word in ["контрольні питання", "питання до іспиту", "модуль"]
+        ):
             return "exam_preparation"
 
-        if any(word in lower_text for word in ["вправа", "задача", "розв'язати", "розв’язати", "самостійна робота"]):
+        if any(
+            word in lower_text
+            for word in [
+                "вправа",
+                "задача",
+                "розв'язати",
+                "розв’язати",
+                "самостійна робота",
+            ]
+        ):
             return "homework"
 
         return "other"

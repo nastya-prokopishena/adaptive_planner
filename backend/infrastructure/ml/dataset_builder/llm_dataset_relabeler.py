@@ -6,7 +6,6 @@ import pandas as pd
 from dotenv import load_dotenv
 from openai import OpenAI
 
-
 load_dotenv()
 
 
@@ -36,7 +35,7 @@ class LLMDatasetRelabeler:
         result_rows = []
 
         for start in range(0, len(df), batch_size):
-            batch = df.iloc[start:start + batch_size]
+            batch = df.iloc[start : start + batch_size]
 
             print(f"Relabeling rows {start + 1}-{start + len(batch)} / {len(df)}")
 
@@ -60,13 +59,15 @@ class LLMDatasetRelabeler:
         items = []
 
         for index, row in batch.iterrows():
-            items.append({
-                "id": int(index),
-                "text": str(row.get("text", "")),
-                "subject": str(row.get("subject", "Інше")),
-                "task_type": str(row.get("task_type", "other")),
-                "old_difficulty": int(row.get("difficulty", 3)),
-            })
+            items.append(
+                {
+                    "id": int(index),
+                    "text": str(row.get("text", "")),
+                    "subject": str(row.get("subject", "Інше")),
+                    "task_type": str(row.get("task_type", "other")),
+                    "old_difficulty": int(row.get("difficulty", 3)),
+                }
+            )
 
         prompt = f"""
 Перевір і виправ розмітку українських навчальних задач.
@@ -143,16 +144,18 @@ difficulty:
                 ]:
                     task_type = "other"
 
-                cleaned_rows.append({
-                    "text": item.get("text", ""),
-                    "subject": item.get("subject", "Інше"),
-                    "task_type": task_type,
-                    "difficulty": difficulty,
-                    "language": "uk",
-                    "source_url": "llm_relabelled",
-                    "source_title": "LLM relabelled task",
-                    "source_file": "llm_relabelled",
-                })
+                cleaned_rows.append(
+                    {
+                        "text": item.get("text", ""),
+                        "subject": item.get("subject", "Інше"),
+                        "task_type": task_type,
+                        "difficulty": difficulty,
+                        "language": "uk",
+                        "source_url": "llm_relabelled",
+                        "source_title": "LLM relabelled task",
+                        "source_file": "llm_relabelled",
+                    }
+                )
 
             return cleaned_rows
 

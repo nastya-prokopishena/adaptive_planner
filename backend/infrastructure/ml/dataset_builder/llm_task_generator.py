@@ -1,9 +1,9 @@
 import json
 import os
 import time
+
 from dotenv import load_dotenv
 from openai import OpenAI
-
 
 load_dotenv()
 
@@ -116,16 +116,18 @@ class LLMTaskGenerator:
                 if not text:
                     continue
 
-                rows.append({
-                    "text": text,
-                    "subject": item.get("subject", "Інше"),
-                    "task_type": item.get("task_type", "other"),
-                    "difficulty": int(item.get("difficulty", difficulty)),
-                    "language": "uk",
-                    "source_url": "llm_generated",
-                    "source_title": "LLM generated Ukrainian educational task",
-                    "source_file": "llm_generated",
-                })
+                rows.append(
+                    {
+                        "text": text,
+                        "subject": item.get("subject", "Інше"),
+                        "task_type": item.get("task_type", "other"),
+                        "difficulty": int(item.get("difficulty", difficulty)),
+                        "language": "uk",
+                        "source_url": "llm_generated",
+                        "source_title": "LLM generated Ukrainian educational task",
+                        "source_file": "llm_generated",
+                    }
+                )
 
             return rows
 

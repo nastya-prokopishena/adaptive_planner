@@ -60,9 +60,7 @@ class Task:
             "status": self.status,
             "priority": self.priority,
             "due_date": (
-                self.due_date.isoformat()
-                if hasattr(self.due_date, "isoformat")
-                else self.due_date
+                self.due_date.isoformat() if hasattr(self.due_date, "isoformat") else self.due_date
             ),
             "completed_at": (
                 self.completed_at.isoformat()

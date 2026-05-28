@@ -5,7 +5,6 @@ from collections import defaultdict
 from backend.infrastructure.db.database import SessionLocal
 from backend.infrastructure.db.models import Event, EventType, Subject, Task, TaskActivityLog
 
-
 OUTPUT_PATH = "backend/infrastructure/ml/datasets/schedule_load_dataset.csv"
 
 MAX_SINGLE_EVENT_DURATION_HOURS = 6
@@ -26,13 +25,11 @@ EXCLUDED_EVENT_WORDS = [
 
 FIELDNAMES = [
     "date",
-
     "total_event_hours",
     "number_of_events",
     "first_event_hour",
     "last_event_hour",
     "day_span_hours",
-
     "lecture_hours",
     "practice_hours",
     "lab_hours",
@@ -41,7 +38,6 @@ FIELDNAMES = [
     "work_hours",
     "personal_hours",
     "study_event_hours",
-
     "lecture_count",
     "practice_count",
     "lab_count",
@@ -50,9 +46,7 @@ FIELDNAMES = [
     "work_count",
     "personal_count",
     "study_event_count",
-
     "number_of_subjects",
-
     "number_of_tasks",
     "planned_tasks",
     "in_progress_tasks",
@@ -64,11 +58,9 @@ FIELDNAMES = [
     "avg_task_duration",
     "completion_rate",
     "missed_rate",
-
     "status_changes_count",
     "done_logs_count",
     "missed_logs_count",
-
     "schedule_load_score",
 ]
 
@@ -88,13 +80,11 @@ EVENT_TYPES = [
 def empty_row(date):
     return {
         "date": date,
-
         "total_event_hours": 0,
         "number_of_events": 0,
         "first_event_hour": 0,
         "last_event_hour": 0,
         "day_span_hours": 0,
-
         "lecture_hours": 0,
         "practice_hours": 0,
         "lab_hours": 0,
@@ -103,7 +93,6 @@ def empty_row(date):
         "work_hours": 0,
         "personal_hours": 0,
         "study_event_hours": 0,
-
         "lecture_count": 0,
         "practice_count": 0,
         "lab_count": 0,
@@ -112,9 +101,7 @@ def empty_row(date):
         "work_count": 0,
         "personal_count": 0,
         "study_event_count": 0,
-
         "number_of_subjects": 0,
-
         "number_of_tasks": 0,
         "planned_tasks": 0,
         "in_progress_tasks": 0,
@@ -126,13 +113,10 @@ def empty_row(date):
         "avg_task_duration": 0,
         "completion_rate": 70,
         "missed_rate": 0,
-
         "status_changes_count": 0,
         "done_logs_count": 0,
         "missed_logs_count": 0,
-
         "schedule_load_score": 0,
-
         "_events": [],
         "_subject_ids": set(),
     }
@@ -149,73 +133,94 @@ def detect_event_type(event, event_type=None, subject=None):
 
     full_text = f"{title} {event_type_name} {subject_name}"
 
-    if any(word in full_text for word in [
-        "лекція",
-        "лекц",
-        "lecture",
-        "(л)",
-        " л ",
-    ]):
+    if any(
+        word in full_text
+        for word in [
+            "лекція",
+            "лекц",
+            "lecture",
+            "(л)",
+            " л ",
+        ]
+    ):
         return "lecture"
 
-    if any(word in full_text for word in [
-        "практична",
-        "практ",
-        "семінар",
-        "seminar",
-        "practice",
-        "(пр)",
-        "пр.",
-    ]):
+    if any(
+        word in full_text
+        for word in [
+            "практична",
+            "практ",
+            "семінар",
+            "seminar",
+            "practice",
+            "(пр)",
+            "пр.",
+        ]
+    ):
         return "practice"
 
-    if any(word in full_text for word in [
-        "лабораторна",
-        "лаба",
-        "лаб",
-        "lab",
-        "laboratory",
-        "(лаб)",
-    ]):
+    if any(
+        word in full_text
+        for word in [
+            "лабораторна",
+            "лаба",
+            "лаб",
+            "lab",
+            "laboratory",
+            "(лаб)",
+        ]
+    ):
         return "lab"
 
-    if any(word in full_text for word in [
-        "іспит",
-        "екзамен",
-        "залік",
-        "модуль",
-        "контрольна",
-        "exam",
-        "test",
-    ]):
+    if any(
+        word in full_text
+        for word in [
+            "іспит",
+            "екзамен",
+            "залік",
+            "модуль",
+            "контрольна",
+            "exam",
+            "test",
+        ]
+    ):
         return "exam"
 
-    if any(word in full_text for word in [
-        "консультація",
-        "консультац",
-        "конс",
-        "consultation",
-    ]):
+    if any(
+        word in full_text
+        for word in [
+            "консультація",
+            "консультац",
+            "конс",
+            "consultation",
+        ]
+    ):
         return "consultation"
 
-    if any(word in full_text for word in [
-        "робота",
-        "work",
-        "job",
-        "стажування",
-    ]):
+    if any(
+        word in full_text
+        for word in [
+            "робота",
+            "work",
+            "job",
+            "стажування",
+        ]
+    ):
         return "work"
 
-    if any(word in full_text for word in [
-        "зал",
-        "тренування",
-        "спорт",
-        "gym",
-        "personal",
-        "особисте",
-        "автошкола",
-        "медитація",
-    ]):
+    if any(
+        word in full_text
+        for word in [
+            "зал",
+            "тренування",
+            "спорт",
+            "gym",
+            "personal",
+            "особисте",
+            "автошкола",
+            "медитація",
+        ]
+    ):
         return "personal"
 
     return "study"
@@ -285,7 +290,6 @@ def calculate_schedule_load_score(row):
         + row["work_hours"] * 8
         + row["personal_hours"] * 3
         + row["study_event_hours"] * 6
-
         + row["lecture_count"] * 1.5
         + row["practice_count"] * 2
         + row["lab_count"] * 3
@@ -294,7 +298,6 @@ def calculate_schedule_load_score(row):
         + row["work_count"] * 3
         + row["personal_count"] * 0.5
         + row["study_event_count"] * 1.5
-
         + row["number_of_subjects"] * 2
         + row["number_of_tasks"] * 6
         + row["in_progress_tasks"] * 4
@@ -328,10 +331,7 @@ def aggregate_events_for_day(row):
     if not events:
         return
 
-    all_intervals = [
-        (item["start"], item["end"])
-        for item in events
-    ]
+    all_intervals = [(item["start"], item["end"]) for item in events]
 
     row["total_event_hours"] = calculate_union_hours(all_intervals)
     row["number_of_events"] = len(events)
@@ -355,28 +355,13 @@ def aggregate_events_for_day(row):
     )
 
     for event_type in EVENT_TYPES:
-        type_events = [
-            item
-            for item in events
-            if item["type"] == event_type
-        ]
+        type_events = [item for item in events if item["type"] == event_type]
 
-        type_intervals = [
-            (item["start"], item["end"])
-            for item in type_events
-        ]
+        type_intervals = [(item["start"], item["end"]) for item in type_events]
 
-        hours_key = (
-            "study_event_hours"
-            if event_type == "study"
-            else f"{event_type}_hours"
-        )
+        hours_key = "study_event_hours" if event_type == "study" else f"{event_type}_hours"
 
-        count_key = (
-            "study_event_count"
-            if event_type == "study"
-            else f"{event_type}_count"
-        )
+        count_key = "study_event_count" if event_type == "study" else f"{event_type}_count"
 
         row[hours_key] = calculate_union_hours(type_intervals)
         row[count_key] = len(type_events)
@@ -388,15 +373,9 @@ def export_dataset():
     try:
         rows = defaultdict(lambda: None)
 
-        event_types = {
-            event_type.id: event_type
-            for event_type in db.query(EventType).all()
-        }
+        event_types = {event_type.id: event_type for event_type in db.query(EventType).all()}
 
-        subjects = {
-            subject.id: subject
-            for subject in db.query(Subject).all()
-        }
+        subjects = {subject.id: subject for subject in db.query(Subject).all()}
 
         events = db.query(Event).all()
         tasks = db.query(Task).all()
@@ -446,11 +425,13 @@ def export_dataset():
                 subject=subject,
             )
 
-            row["_events"].append({
-                "start": event.start_time,
-                "end": event.end_time,
-                "type": detected_type,
-            })
+            row["_events"].append(
+                {
+                    "start": event.start_time,
+                    "end": event.end_time,
+                    "type": detected_type,
+                }
+            )
 
             if event.subject_id:
                 row["_subject_ids"].add(event.subject_id)
@@ -540,16 +521,13 @@ def export_dataset():
                 )
 
             for key in list(row.keys()):
-                if (
-                    key.endswith("_hours")
-                    or key in [
-                        "total_task_duration",
-                        "avg_task_duration",
-                        "first_event_hour",
-                        "last_event_hour",
-                        "day_span_hours",
-                    ]
-                ):
+                if key.endswith("_hours") or key in [
+                    "total_task_duration",
+                    "avg_task_duration",
+                    "first_event_hour",
+                    "last_event_hour",
+                    "day_span_hours",
+                ]:
                     row[key] = round(row[key], 2)
 
             row["schedule_load_score"] = calculate_schedule_load_score(row)

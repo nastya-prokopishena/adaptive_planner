@@ -5,7 +5,6 @@ import time
 import requests
 import urllib3
 
-
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
@@ -28,10 +27,12 @@ class PDFDownloader:
             file_path = self.download(url, index=index)
 
             if file_path:
-                downloaded.append({
-                    **item,
-                    "file_path": file_path,
-                })
+                downloaded.append(
+                    {
+                        **item,
+                        "file_path": file_path,
+                    }
+                )
 
             time.sleep(0.2)
 

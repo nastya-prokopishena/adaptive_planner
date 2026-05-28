@@ -1,7 +1,7 @@
 import os
+
 import joblib
 import numpy as np
-
 
 MODEL_PATH = "backend/infrastructure/ml/models/deadline_model.joblib"
 
@@ -25,16 +25,20 @@ class DeadlineModelAdapter:
         if self.model is None:
             self.load_model()
 
-        x = np.array([[
-            features["estimated_duration_hours"],
-            features["difficulty_score"],
-            features["priority_score"],
-            features["task_type_score"],
-            features["subject_has_events"],
-            features["hours_until_next_subject_event"],
-            features["day_load_score"],
-            features["free_hours_today"],
-            features["days_until_deadline"],
-        ]])
+        x = np.array(
+            [
+                [
+                    features["estimated_duration_hours"],
+                    features["difficulty_score"],
+                    features["priority_score"],
+                    features["task_type_score"],
+                    features["subject_has_events"],
+                    features["hours_until_next_subject_event"],
+                    features["day_load_score"],
+                    features["free_hours_today"],
+                    features["days_until_deadline"],
+                ]
+            ]
+        )
 
         return float(self.model.predict(x)[0])

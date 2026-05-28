@@ -1,10 +1,10 @@
 [tool.black]
-line-length = 88
+line-length = 100
 target-version = ["py311"]
 
 [tool.isort]
 profile = "black"
-line_length = 88
+line_length = 100
 
 [tool.pytest.ini_options]
 testpaths = ["backend/tests"]
@@ -32,7 +32,8 @@ omit = [
     "backend/tests/*",
     "backend/**/__init__.py",
     "backend/infrastructure/ml/dataset_builder/*",
-    "backend/infrastructure/ml/train_*.py"
+    "backend/infrastructure/ml/train_*.py",
+    "backend/infrastructure/ml/export_schedule_load_dataset.py"
 ]
 
 [tool.coverage.report]

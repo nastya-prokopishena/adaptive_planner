@@ -1,18 +1,19 @@
 import os
 import re
-import joblib
-import pandas as pd
-import numpy as np
 
+import joblib
+import numpy as np
+import pandas as pd
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.compose import ColumnTransformer
 from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
-from sklearn.linear_model import LogisticRegression
 from sklearn.svm import LinearSVC
+
 from backend.infrastructure.ml.model_registry import ModelRegistry
 
 DATASET_CANDIDATES = [
@@ -87,15 +88,17 @@ class TextFeatureExtractor(BaseEstimator, TransformerMixin):
             bullet_count = len(re.findall(r"[-•●]\s+", text))
             question_count = text.count("?")
 
-            features.append([
-                length,
-                word_count,
-                action_count,
-                hard_count,
-                step_count,
-                bullet_count,
-                question_count,
-            ])
+            features.append(
+                [
+                    length,
+                    word_count,
+                    action_count,
+                    hard_count,
+                    step_count,
+                    bullet_count,
+                    question_count,
+                ]
+            )
 
         return np.array(features)
 
@@ -172,10 +175,12 @@ def build_preprocessor():
             ),
             (
                 "numeric",
-                Pipeline([
-                    ("features", TextFeatureExtractor()),
-                    ("scaler", StandardScaler()),
-                ]),
+                Pipeline(
+                    [
+                        ("features", TextFeatureExtractor()),
+                        ("scaler", StandardScaler()),
+                    ]
+                ),
                 "text",
             ),
             (
@@ -188,30 +193,34 @@ def build_preprocessor():
 
 
 def build_logistic_pipeline():
-    return Pipeline([
-        ("features", build_preprocessor()),
-        (
-            "classifier",
-            LogisticRegression(
-                max_iter=4000,
-                class_weight="balanced",
-                solver="lbfgs",
+    return Pipeline(
+        [
+            ("features", build_preprocessor()),
+            (
+                "classifier",
+                LogisticRegression(
+                    max_iter=4000,
+                    class_weight="balanced",
+                    solver="lbfgs",
+                ),
             ),
-        ),
-    ])
+        ]
+    )
 
 
 def build_svc_pipeline():
-    return Pipeline([
-        ("features", build_preprocessor()),
-        (
-            "classifier",
-            LinearSVC(
-                class_weight="balanced",
-                max_iter=8000,
+    return Pipeline(
+        [
+            ("features", build_preprocessor()),
+            (
+                "classifier",
+                LinearSVC(
+                    class_weight="balanced",
+                    max_iter=8000,
+                ),
             ),
-        ),
-    ])
+        ]
+    )
 
 
 def evaluate_model(name, model, x_train, x_test, y_train, y_test):
@@ -318,8 +327,7 @@ def train_model():
                 for key, value in df["difficulty"].value_counts().sort_index().items()
             },
             "group_distribution": {
-                str(key): int(value)
-                for key, value in df["difficulty_group"].value_counts().items()
+                str(key): int(value) for key, value in df["difficulty_group"].value_counts().items()
             },
         },
     )

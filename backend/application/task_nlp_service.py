@@ -172,7 +172,9 @@ class TaskNLPService:
                 }
             )
 
-        return blocks or [{"text": text, "start_page": None, "end_page": None, "source": "fallback"}]
+        return blocks or [
+            {"text": text, "start_page": None, "end_page": None, "source": "fallback"}
+        ]
 
     def _parse_pages(self, text):
         page_pattern = re.compile(r"--- PAGE (\d+) ---")
@@ -201,7 +203,10 @@ class TaskNLPService:
 
     def _extract_sections_from_toc(self, text):
         toc_match = re.search(
-            r"(?is)\bзміст\b(.+?)(?=--- PAGE\s+\d+\s+---\s*(?:лабораторна|практична|практичне|семінар|самостійна|контрольна|тема|модуль)|$)",
+            r"(?is)\bзміст\b(.+?)"
+            r"(?=--- PAGE\s+\d+\s+---\s*"
+            r"(?:лабораторна|практична|практичне|семінар|"
+            r"самостійна|контрольна|тема|модуль)|$)",
             text,
         )
 
@@ -303,10 +308,7 @@ class TaskNLPService:
             else:
                 merged.append(toc)
 
-        known_keys = {
-            (item.get("kind"), item.get("number"))
-            for item in merged
-        }
+        known_keys = {(item.get("kind"), item.get("number")) for item in merged}
 
         for header in header_sections:
             key = (header.get("kind"), header.get("number"))
@@ -326,7 +328,9 @@ class TaskNLPService:
 
     def _find_matching_section(self, toc_section, header_sections):
         for header in header_sections:
-            if toc_section.get("kind") == header.get("kind") and toc_section.get("number") == header.get("number"):
+            if toc_section.get("kind") == header.get("kind") and toc_section.get(
+                "number"
+            ) == header.get("number"):
                 return header
 
         return None
@@ -371,11 +375,7 @@ class TaskNLPService:
         else:
             end_page = pages[-1]["number"] if pages else start_page
 
-        selected = [
-            page["text"]
-            for page in pages
-            if start_page <= page["number"] <= end_page
-        ]
+        selected = [page["text"] for page in pages if start_page <= page["number"] <= end_page]
 
         return "\n".join(selected).strip()
 
@@ -403,8 +403,8 @@ class TaskNLPService:
         return int(matches[-1].group(1))
 
     def _is_table_of_contents_header(self, text, start_index):
-        before = text[max(0, start_index - 1200):start_index].lower()
-        after = text[start_index:start_index + 500].lower()
+        before = text[max(0, start_index - 1200) : start_index].lower()
+        after = text[start_index : start_index + 500].lower()
 
         if "зміст" not in before:
             return False
@@ -519,7 +519,7 @@ class TaskNLPService:
         return "Навчальна задача"
 
     def _find_quoted_title_near(self, lines, index):
-        nearby = " ".join(lines[index:index + 5])
+        nearby = " ".join(lines[index : index + 5])
         match = re.search(r"[«\"](.+?)[»\"]", nearby)
 
         if match:
@@ -567,7 +567,7 @@ class TaskNLPService:
             if match:
                 subject = match.group(1).strip()
                 subject = re.sub(r"\s+", " ", subject)
-                subject = subject.strip(" .:-—«»\"")
+                subject = subject.strip(' .:-—«»"')
 
                 if 3 <= len(subject) <= 160:
                     return subject
@@ -577,7 +577,11 @@ class TaskNLPService:
     def _detect_task_type(self, text):
         lower = text.lower()
 
-        if "лабораторна робота" in lower or "лабораторне заняття" in lower or "лаб. робота" in lower:
+        if (
+            "лабораторна робота" in lower
+            or "лабораторне заняття" in lower
+            or "лаб. робота" in lower
+        ):
             return "laboratory"
 
         if "практична робота" in lower or "практичне заняття" in lower:

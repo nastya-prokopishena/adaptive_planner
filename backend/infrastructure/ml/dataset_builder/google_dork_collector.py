@@ -1,8 +1,8 @@
 import os
 import time
+
 import requests
 from dotenv import load_dotenv
-
 
 load_dotenv()
 
@@ -59,11 +59,13 @@ class GoogleDorkCollector:
                     continue
 
                 if self._is_valid_task_material(title, link):
-                    results.append({
-                        "query": query,
-                        "title": title,
-                        "url": link,
-                    })
+                    results.append(
+                        {
+                            "query": query,
+                            "title": title,
+                            "url": link,
+                        }
+                    )
 
                 if len(results) >= max_results:
                     break
@@ -115,15 +117,9 @@ class GoogleDorkCollector:
             "навчальна програма",
         ]
 
-        has_positive = any(
-            keyword in text
-            for keyword in positive_keywords
-        )
+        has_positive = any(keyword in text for keyword in positive_keywords)
 
-        has_negative = any(
-            keyword in text
-            for keyword in negative_keywords
-        )
+        has_negative = any(keyword in text for keyword in negative_keywords)
 
         return has_positive and not has_negative
 
@@ -141,7 +137,6 @@ class GoogleDorkCollector:
             'filetype:pdf site:.edu.ua "контрольні питання"',
             'filetype:pdf site:.edu.ua "методичні рекомендації"',
             'filetype:pdf site:.edu.ua "практикум"',
-
             # предметні
             'filetype:pdf site:.edu.ua "лабораторні роботи" "програмування"',
             'filetype:pdf site:.edu.ua "практичні завдання" "економіка"',

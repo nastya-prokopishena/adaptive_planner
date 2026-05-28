@@ -33,6 +33,7 @@ def analytics_dashboard_api():
     finally:
         db.close()
 
+
 @analytics_bp.route("/api/ml/productivity/predict", methods=["POST"])
 def productivity_predict_api():
     user = current_user()
@@ -63,6 +64,7 @@ def productivity_predict_api():
     finally:
         db.close()
 
+
 @analytics_bp.route("/api/tasks/<int:task_id>/replan", methods=["POST"])
 def replan_task_api(task_id):
     user = current_user()
@@ -75,11 +77,7 @@ def replan_task_api(task_id):
     db = SessionLocal()
 
     try:
-        task = (
-            db.query(Task)
-            .filter_by(id=task_id, user_id=user.id)
-            .first()
-        )
+        task = db.query(Task).filter_by(id=task_id, user_id=user.id).first()
 
         if not task:
             return jsonify({"error": "Task not found"}), 404
@@ -96,10 +94,7 @@ def replan_task_api(task_id):
         duration_minutes = int((task.estimated_duration_hours or 1) * 60)
 
         existing_events = (
-            db.query(Event)
-            .filter_by(user_id=user.id)
-            .order_by(Event.start_time.asc())
-            .all()
+            db.query(Event).filter_by(user_id=user.id).order_by(Event.start_time.asc()).all()
         )
 
         planned = plan_task_with_ortools(
@@ -117,10 +112,15 @@ def replan_task_api(task_id):
         )
 
         if not planned:
-            return jsonify({
-                "error": "No free slot",
-                "message": "Не вдалося знайти новий слот для задачі",
-            }), 409
+            return (
+                jsonify(
+                    {
+                        "error": "No free slot",
+                        "message": "Не вдалося знайти новий слот для задачі",
+                    }
+                ),
+                409,
+            )
 
         planned_item = planned["events"][0]
 
@@ -158,14 +158,20 @@ def replan_task_api(task_id):
         db.commit()
         db.refresh(task)
 
-        return jsonify({
-            "task": serialize_task(task),
-            "event": serialize_event(event),
-            "message": "Задачу переплановано",
-        }), 201
+        return (
+            jsonify(
+                {
+                    "task": serialize_task(task),
+                    "event": serialize_event(event),
+                    "message": "Задачу переплановано",
+                }
+            ),
+            201,
+        )
 
     finally:
         db.close()
+
 
 @analytics_bp.route("/api/ml/plan-tasks", methods=["POST"])
 def generate_ml_task_plan():
@@ -192,13 +198,16 @@ def generate_ml_task_plan():
             task = db.query(Task).filter_by(id=block.task_id).first()
             result.append(serialize_task_schedule_block(block, task))
 
-        return jsonify({
-            "message": "ML task plan generated",
-            "blocks": result,
-        })
+        return jsonify(
+            {
+                "message": "ML task plan generated",
+                "blocks": result,
+            }
+        )
 
     finally:
         db.close()
+
 
 @analytics_bp.route("/api/unified-calendar", methods=["GET"])
 def get_unified_calendar():
@@ -210,24 +219,13 @@ def get_unified_calendar():
     db = SessionLocal()
 
     try:
-        events = (
-            db.query(Event)
-            .filter(Event.user_id == user.id)
-            .all()
-        )
+        events = db.query(Event).filter(Event.user_id == user.id).all()
 
         tasks = (
-            db.query(Task)
-            .filter(Task.user_id == user.id)
-            .filter(Task.due_date.isnot(None))
-            .all()
+            db.query(Task).filter(Task.user_id == user.id).filter(Task.due_date.isnot(None)).all()
         )
 
-        blocks = (
-            db.query(TaskScheduleBlock)
-            .filter(TaskScheduleBlock.user_id == user.id)
-            .all()
-        )
+        blocks = db.query(TaskScheduleBlock).filter(TaskScheduleBlock.user_id == user.id).all()
 
         calendar_items = []
 
@@ -241,25 +239,25 @@ def get_unified_calendar():
             calendar_items.append(item)
 
         for task in tasks:
-            calendar_items.append({
-                "id": f"deadline-{task.id}",
-                "task_id": task.id,
-                "title": f"🔥 Deadline: {task.title}",
-                "start": task.due_date.isoformat(),
-                "end": (task.due_date + timedelta(minutes=30)).isoformat(),
-                "calendar_type": "task_deadline",
-                "source": "task_deadline",
-                "color": {
-                    "bg": "#ea580c",
-                    "bg2": "#ef4444",
-                },
-            })
+            calendar_items.append(
+                {
+                    "id": f"deadline-{task.id}",
+                    "task_id": task.id,
+                    "title": f"🔥 Deadline: {task.title}",
+                    "start": task.due_date.isoformat(),
+                    "end": (task.due_date + timedelta(minutes=30)).isoformat(),
+                    "calendar_type": "task_deadline",
+                    "source": "task_deadline",
+                    "color": {
+                        "bg": "#ea580c",
+                        "bg2": "#ef4444",
+                    },
+                }
+            )
 
         for block in blocks:
             task = db.query(Task).filter_by(id=block.task_id).first()
-            calendar_items.append(
-                serialize_task_schedule_block(block, task)
-            )
+            calendar_items.append(serialize_task_schedule_block(block, task))
 
         return jsonify(calendar_items)
 

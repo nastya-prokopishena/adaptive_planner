@@ -1,11 +1,10 @@
 import os
 
-from google_auth_oauthlib.flow import Flow
 from google.oauth2.credentials import Credentials
+from google_auth_oauthlib.flow import Flow
 from googleapiclient.discovery import build
 
 from backend.domain.interfaces.calendar_provider import CalendarProvider
-
 
 SCOPES = [
     "https://www.googleapis.com/auth/calendar",
@@ -86,10 +85,14 @@ class GoogleCalendarAdapter(CalendarProvider):
         if recurrence_rule:
             event_body["recurrence"] = [recurrence_rule]
 
-        return service.events().insert(
-            calendarId="primary",
-            body=event_body,
-        ).execute()
+        return (
+            service.events()
+            .insert(
+                calendarId="primary",
+                body=event_body,
+            )
+            .execute()
+        )
 
     def update_event(
         self,
@@ -102,10 +105,14 @@ class GoogleCalendarAdapter(CalendarProvider):
     ):
         service = self.build_service(credentials_dict)
 
-        event = service.events().get(
-            calendarId="primary",
-            eventId=event_id,
-        ).execute()
+        event = (
+            service.events()
+            .get(
+                calendarId="primary",
+                eventId=event_id,
+            )
+            .execute()
+        )
 
         event["summary"] = title
         event["start"] = {
@@ -122,16 +129,24 @@ class GoogleCalendarAdapter(CalendarProvider):
         else:
             event.pop("recurrence", None)
 
-        return service.events().update(
-            calendarId="primary",
-            eventId=event_id,
-            body=event,
-        ).execute()
+        return (
+            service.events()
+            .update(
+                calendarId="primary",
+                eventId=event_id,
+                body=event,
+            )
+            .execute()
+        )
 
     def delete_event(self, credentials_dict, event_id):
         service = self.build_service(credentials_dict)
 
-        return service.events().delete(
-            calendarId="primary",
-            eventId=event_id,
-        ).execute()
+        return (
+            service.events()
+            .delete(
+                calendarId="primary",
+                eventId=event_id,
+            )
+            .execute()
+        )

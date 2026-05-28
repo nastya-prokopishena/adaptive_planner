@@ -31,9 +31,7 @@ class ImageExtractor(BaseExtractor, FileExtractor):
                     "full_image": {
                         "filename": filename,
                         "mime_type": "image/png",
-                        "base64": base64.b64encode(
-                            output.getvalue()
-                        ).decode("utf-8"),
+                        "base64": base64.b64encode(output.getvalue()).decode("utf-8"),
                     },
                 }
             ],

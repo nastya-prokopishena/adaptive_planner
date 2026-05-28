@@ -1,6 +1,6 @@
-from sqlalchemy.orm import Session
 from backend.infrastructure.db.database import SessionLocal
 from backend.infrastructure.db.models import User
+
 
 class UserRepository:
     def get_by_email(self, email: str) -> User | None:

@@ -1,4 +1,5 @@
 import re
+
 import requests
 from bs4 import BeautifulSoup
 
@@ -24,11 +25,13 @@ class HTMLTaskExtractor:
             text = self.extract_text(url)
 
             if text and len(text) > 200:
-                extracted.append({
-                    **item,
-                    "text": text,
-                    "file_path": url,
-                })
+                extracted.append(
+                    {
+                        **item,
+                        "text": text,
+                        "file_path": url,
+                    }
+                )
 
         return extracted
 

@@ -10,7 +10,8 @@ class FakeQuery:
 
     def filter_by(self, **kwargs):
         self.items = [
-            item for item in self.items
+            item
+            for item in self.items
             if all(getattr(item, key, None) == value for key, value in kwargs.items())
         ]
         return self

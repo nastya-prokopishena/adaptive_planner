@@ -21,13 +21,21 @@ def test_analytics_service_builds_summary_weekly_load_and_distribution(monkeypat
     base = datetime(2026, 5, 1, 10, 0)
     tasks = [
         SimpleNamespace(status="done", due_date=base, created_at=base, difficulty_score=5),
-        SimpleNamespace(status="missed", due_date=base + timedelta(days=1), created_at=base, difficulty_score=2),
+        SimpleNamespace(
+            status="missed",
+            due_date=base + timedelta(days=1),
+            created_at=base,
+            difficulty_score=2,
+        ),
         SimpleNamespace(status="planned", due_date=None, created_at=base, difficulty_score=None),
         SimpleNamespace(status="in_progress", due_date=base, created_at=base, difficulty_score=4),
     ]
     events = [
         SimpleNamespace(start_time=base, end_time=base + timedelta(hours=2)),
-        SimpleNamespace(start_time=base + timedelta(days=2), end_time=base + timedelta(days=2, hours=1)),
+        SimpleNamespace(
+            start_time=base + timedelta(days=2),
+            end_time=base + timedelta(days=2, hours=1),
+        ),
     ]
 
     result = service.build_dashboard_analytics(tasks, events)
@@ -151,7 +159,10 @@ def test_model_registry_returns_none_when_model_and_metadata_are_absent(tmp_path
 
 def test_deadline_model_adapter_raises_when_model_file_missing(monkeypatch):
     adapter = DeadlineModelAdapter()
-    monkeypatch.setattr("backend.infrastructure.ml.deadline_model_adapter.os.path.exists", lambda path: False)
+    monkeypatch.setattr(
+        "backend.infrastructure.ml.deadline_model_adapter.os.path.exists",
+        lambda path: False,
+    )
 
     with pytest.raises(FileNotFoundError):
         adapter.load_model()

@@ -103,7 +103,8 @@ class ScheduleAIReaderService:
 Backend сам перевірить:
 cell.x1 < target_group.x2 AND cell.x2 > target_group.x1
 
-Тому НЕ треба фільтрувати клітинки за групою. Поверни всі клітинки таблиці, але з правильними координатами.
+Тому НЕ треба фільтрувати клітинки за групою.
+Поверни всі клітинки таблиці, але з правильними координатами.
 
 КООРДИНАТИ:
 - усі координати мають бути нормалізовані від 0 до 1;
@@ -166,7 +167,8 @@ scope:
 - elective, якщо вибіркова.
 
 ВАЖЛИВО:
-Навіть якщо користувач просить "{group_name}", не відкидай інші клітинки. Backend сам відфільтрує їх по координатах.
+Навіть якщо користувач просить "{group_name}", не відкидай інші клітинки.
+Backend сам відфільтрує їх по координатах.
 Твоя відповідальність — правильні координати груп, рядків і клітинок.
 
 OCR-текст сторінки для допомоги:
@@ -359,7 +361,12 @@ OCR-текст сторінки для допомоги:
                             "y2": {"type": "number"},
                             "source_cell_type": {
                                 "type": "string",
-                                "enum": ["exact", "merged", "shared_lecture", "full_document"],
+                                "enum": [
+                                    "exact",
+                                    "merged",
+                                    "shared_lecture",
+                                    "full_document",
+                                ],
                             },
                             "parsed_events": {
                                 "type": "array",
@@ -428,7 +435,14 @@ OCR-текст сторінки для допомоги:
                 "week_range": {"type": "string"},
                 "scope": {
                     "type": "string",
-                    "enum": ["subgroup", "group", "stream", "faculty", "elective", "unknown"],
+                    "enum": [
+                        "subgroup",
+                        "group",
+                        "stream",
+                        "faculty",
+                        "elective",
+                        "unknown",
+                    ],
                 },
                 "source_text": {"type": "string"},
                 "confidence": {"type": "number"},

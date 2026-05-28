@@ -33,9 +33,7 @@ class MLDeadlineService:
         now = datetime.utcnow()
 
         future_events = [
-            event
-            for event in subject_events or []
-            if event.start_time and event.start_time > now
+            event for event in subject_events or [] if event.start_time and event.start_time > now
         ]
 
         if not future_events:
@@ -59,21 +57,14 @@ class MLDeadlineService:
         free_hours_today=4,
     ):
         return {
-            "estimated_duration_hours": float(
-                getattr(task, "estimated_duration_hours", None) or 1
-            ),
-            "difficulty_score": int(
-                getattr(task, "difficulty_score", None) or 3
-            ),
-            "priority_score": self.priority_score(
-                getattr(task, "priority", "medium")
-            ),
-            "task_type_score": self.task_type_score(
-                getattr(task, "task_type", "other")
-            ),
+            "estimated_duration_hours": float(getattr(task, "estimated_duration_hours", None) or 1),
+            "difficulty_score": int(getattr(task, "difficulty_score", None) or 3),
+            "priority_score": self.priority_score(getattr(task, "priority", "medium")),
+            "task_type_score": self.task_type_score(getattr(task, "task_type", "other")),
             "subject_has_events": 1 if subject_events else 0,
-            "hours_until_next_subject_event":
-                self.get_hours_until_next_subject_event(subject_events),
+            "hours_until_next_subject_event": self.get_hours_until_next_subject_event(
+                subject_events
+            ),
             "day_load_score": day_load_score,
             "free_hours_today": free_hours_today,
             "days_until_deadline": 7,
@@ -121,15 +112,11 @@ class MLDeadlineService:
             selected_event = future_events[-1]
             extra_weeks = used_event_index - len(future_events) + 1
 
-        task_hours = float(
-            getattr(task, "estimated_duration_hours", None) or 1
-        )
+        task_hours = float(getattr(task, "estimated_duration_hours", None) or 1)
 
         before_event_hours = min(max(task_hours, 1), 4)
 
-        selected_start = selected_event.start_time + timedelta(
-            weeks=extra_weeks
-        )
+        selected_start = selected_event.start_time + timedelta(weeks=extra_weeks)
 
         deadline = selected_start - timedelta(hours=before_event_hours)
 
@@ -187,11 +174,13 @@ class MLDeadlineService:
                 + distance_penalty
             )
 
-            candidates.append({
-                "date": candidate_day,
-                "score": score,
-                "day_offset": day_offset,
-            })
+            candidates.append(
+                {
+                    "date": candidate_day,
+                    "score": score,
+                    "day_offset": day_offset,
+                }
+            )
 
         candidates = sorted(
             candidates,

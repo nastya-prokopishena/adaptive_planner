@@ -1,4 +1,5 @@
 import os
+
 import PyPDF2
 
 
@@ -44,10 +45,12 @@ class PDFTextExtractor:
                 text = self.extract_from_file(file_path)
 
                 if len(text) > 300:
-                    extracted.append({
-                        **item,
-                        "text": text,
-                    })
+                    extracted.append(
+                        {
+                            **item,
+                            "text": text,
+                        }
+                    )
                 else:
                     print(f"Skipped low-text PDF: {file_path}")
 

@@ -1,16 +1,12 @@
 import os
+
 import joblib
 import pandas as pd
-
 from sklearn.ensemble import RandomForestRegressor
-from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_absolute_error, r2_score
+from sklearn.model_selection import train_test_split
 
-
-DATASET_PATH = (
-    "backend/infrastructure/ml/datasets/processed/"
-    "deadline_recommendation_dataset.csv"
-)
+DATASET_PATH = "backend/infrastructure/ml/datasets/processed/" "deadline_recommendation_dataset.csv"
 
 MODEL_PATH = "backend/infrastructure/ml/models/deadline_model.joblib"
 

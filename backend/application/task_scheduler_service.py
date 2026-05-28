@@ -1,9 +1,6 @@
 from datetime import timedelta
 
-from backend.infrastructure.db.models import (
-    Event,
-    TaskScheduleBlock,
-)
+from backend.infrastructure.db.models import Event, TaskScheduleBlock
 
 
 class TaskSchedulerService:
@@ -14,30 +11,16 @@ class TaskSchedulerService:
         task,
         deadline,
     ):
-        existing_events = (
-            db.query(Event)
-            .filter(Event.user_id == user_id)
-            .all()
-        )
+        existing_events = db.query(Event).filter(Event.user_id == user_id).all()
 
-        start_time = deadline - timedelta(
-            hours=task.estimated_duration_hours or 1
-        )
+        start_time = deadline - timedelta(hours=task.estimated_duration_hours or 1)
 
         for event in existing_events:
-            overlaps = (
-                start_time < event.end_time
-                and deadline > event.start_time
-            )
+            overlaps = start_time < event.end_time and deadline > event.start_time
 
             if overlaps:
                 start_time = event.end_time + timedelta(minutes=30)
-                deadline = (
-                    start_time
-                    + timedelta(
-                        hours=task.estimated_duration_hours or 1
-                    )
-                )
+                deadline = start_time + timedelta(hours=task.estimated_duration_hours or 1)
 
         block = TaskScheduleBlock(
             user_id=user_id,

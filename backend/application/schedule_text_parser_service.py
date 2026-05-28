@@ -251,7 +251,11 @@ class ScheduleTextParserService:
         event_subgroup = self._normalize_subgroup(fields.get("підгрупа", ""))
         normalized_target_subgroup = self._normalize_subgroup(target_subgroup)
 
-        if normalized_target_subgroup and event_subgroup and event_subgroup != normalized_target_subgroup:
+        if (
+            normalized_target_subgroup
+            and event_subgroup
+            and event_subgroup != normalized_target_subgroup
+        ):
             return None
 
         day_of_week = self._normalize_day(fields.get("день", ""))

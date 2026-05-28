@@ -52,7 +52,7 @@ class Event:
             "id": self.id,
             "user_id": self.user_id,
             "title": self.title,
-            "start": self.start.isoformat() if hasattr(self.start, "isoformat") else self.start,
+            "start": (self.start.isoformat() if hasattr(self.start, "isoformat") else self.start),
             "end": self.end.isoformat() if hasattr(self.end, "isoformat") else self.end,
             "description": self.description,
             "source": self.source,

@@ -3,10 +3,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from backend.domain.services.auto_planner import (
-    build_candidate_slots,
-    plan_task_with_ortools,
-)
+from backend.domain.services.auto_planner import build_candidate_slots, plan_task_with_ortools
 
 
 def test_auto_planner_rejects_empty_title():
@@ -52,9 +49,6 @@ def test_build_candidate_slots_excludes_busy_time():
 
     assert candidates
     assert all(
-        not (
-            item["start"] < busy_event.end_time
-            and item["end"] > busy_event.start_time
-        )
+        not (item["start"] < busy_event.end_time and item["end"] > busy_event.start_time)
         for item in candidates
     )

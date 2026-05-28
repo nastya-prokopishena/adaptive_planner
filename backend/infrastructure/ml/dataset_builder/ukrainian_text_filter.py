@@ -57,21 +57,16 @@ class UkrainianTextFilter:
 
         cyrillic_ratio = cyrillic_count / max(1, cyrillic_count + latin_count)
 
-        ukrainian_marker_count = sum(
-            text.count(char) for char in self.UKRAINIAN_CHARS
-        )
+        ukrainian_marker_count = sum(text.count(char) for char in self.UKRAINIAN_CHARS)
 
         lower_text = text.lower()
 
         stopword_count = sum(
-            1 for word in self.UKRAINIAN_STOPWORDS
+            1
+            for word in self.UKRAINIAN_STOPWORDS
             if re.search(rf"\b{re.escape(word)}\b", lower_text)
         )
 
-        return (
-            cyrillic_ratio >= min_cyrillic_ratio
-            and (
-                ukrainian_marker_count >= min_ukrainian_markers
-                or stopword_count >= min_stopwords
-            )
+        return cyrillic_ratio >= min_cyrillic_ratio and (
+            ukrainian_marker_count >= min_ukrainian_markers or stopword_count >= min_stopwords
         )

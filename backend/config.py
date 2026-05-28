@@ -14,8 +14,7 @@ class Config:
     SESSION_COOKIE_SECURE = os.getenv("SESSION_COOKIE_SECURE", "false").lower() == "true"
 
     CORS_ALLOWED_ORIGINS = os.getenv(
-        "CORS_ALLOWED_ORIGINS",
-        "http://localhost:5000,http://127.0.0.1:5000"
+        "CORS_ALLOWED_ORIGINS", "http://localhost:5000,http://127.0.0.1:5000"
     ).split(",")
 
 

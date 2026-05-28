@@ -9,6 +9,7 @@ auth_bp = Blueprint("auth", __name__)
 # AUTH
 # ---------------------------
 
+
 @auth_bp.route("/auth/register", methods=["POST"])
 def register():
     data = request.json or {}
@@ -39,12 +40,14 @@ def register():
 
         session["user_id"] = user.id
 
-        return jsonify({
-            "id": user.id,
-            "email": user.email,
-            "authenticated": True,
-            "auth_provider": user.auth_provider,
-        })
+        return jsonify(
+            {
+                "id": user.id,
+                "email": user.email,
+                "authenticated": True,
+                "auth_provider": user.auth_provider,
+            }
+        )
 
     finally:
         db.close()
@@ -70,12 +73,14 @@ def login_local():
 
         session["user_id"] = user.id
 
-        return jsonify({
-            "id": user.id,
-            "email": user.email,
-            "authenticated": True,
-            "auth_provider": user.auth_provider,
-        })
+        return jsonify(
+            {
+                "id": user.id,
+                "email": user.email,
+                "authenticated": True,
+                "auth_provider": user.auth_provider,
+            }
+        )
 
     finally:
         db.close()
@@ -179,9 +184,11 @@ def me():
     if not user:
         return jsonify({"authenticated": False})
 
-    return jsonify({
-        "id": user.id,
-        "email": user.email,
-        "authenticated": True,
-        "auth_provider": user.auth_provider,
-    })
+    return jsonify(
+        {
+            "id": user.id,
+            "email": user.email,
+            "authenticated": True,
+            "auth_provider": user.auth_provider,
+        }
+    )

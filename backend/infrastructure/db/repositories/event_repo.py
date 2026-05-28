@@ -1,6 +1,7 @@
 from backend.infrastructure.db.database import SessionLocal
 from backend.infrastructure.db.models import Event
 
+
 class EventRepository:
 
     def create_event(self, data):
@@ -12,7 +13,7 @@ class EventRepository:
             start_time=data["start"],
             end_time=data["end"],
             source="google",
-            google_event_id=data.get("google_event_id")
+            google_event_id=data.get("google_event_id"),
         )
 
         db.add(event)

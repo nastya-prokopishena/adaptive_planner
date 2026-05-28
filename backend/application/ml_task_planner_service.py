@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 
-from backend.infrastructure.db.models import Task, Event, TaskScheduleBlock
+from backend.infrastructure.db.models import Event, Task, TaskScheduleBlock
 
 
 class MLTaskPlannerService:

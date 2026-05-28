@@ -1,4 +1,3 @@
-from datetime import datetime, timedelta
 from collections import defaultdict
 
 from backend.application.productivity_model_service import ProductivityModelService

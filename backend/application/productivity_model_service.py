@@ -91,12 +91,7 @@ class ProductivityModelService:
 
         load_score = min(100, busy_hours * 8 + task_count * 10 + difficulty * 6)
 
-        productivity_score = (
-            completion_history
-            - busy_hours * 3
-            - task_count * 4
-            - difficulty * 2
-        )
+        productivity_score = completion_history - busy_hours * 3 - task_count * 4 - difficulty * 2
 
         productivity_score = max(0, min(100, productivity_score))
 

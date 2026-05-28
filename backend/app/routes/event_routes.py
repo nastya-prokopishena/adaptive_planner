@@ -9,6 +9,7 @@ event_bp = Blueprint("event", __name__)
 # EVENTS
 # ---------------------------
 
+
 @event_bp.route("/api/events", methods=["GET"])
 def get_events():
     user = current_user()
@@ -21,12 +22,7 @@ def get_events():
     try:
         sync_google_events_to_db(user, db)
 
-        events = (
-            db.query(Event)
-            .filter_by(user_id=user.id)
-            .order_by(Event.start_time.asc())
-            .all()
-        )
+        events = db.query(Event).filter_by(user_id=user.id).order_by(Event.start_time.asc()).all()
 
         result = []
 
@@ -92,11 +88,16 @@ def create_event_api():
         )
 
         if conflict_event:
-            return jsonify({
-                "error": "Time conflict",
-                "message": "This event overlaps with another event",
-                "conflict_event": serialize_event(conflict_event),
-            }), 409
+            return (
+                jsonify(
+                    {
+                        "error": "Time conflict",
+                        "message": "This event overlaps with another event",
+                        "conflict_event": serialize_event(conflict_event),
+                    }
+                ),
+                409,
+            )
 
         event = Event(
             user_id=user.id,
@@ -167,11 +168,7 @@ def update_event_api(event_id):
     db = SessionLocal()
 
     try:
-        event = (
-            db.query(Event)
-            .filter_by(id=event_id, user_id=user.id)
-            .first()
-        )
+        event = db.query(Event).filter_by(id=event_id, user_id=user.id).first()
 
         if not event:
             return jsonify({"error": "Event not found"}), 404
@@ -208,11 +205,16 @@ def update_event_api(event_id):
         )
 
         if conflict_event:
-            return jsonify({
-                "error": "Time conflict",
-                "message": "This event overlaps with another event",
-                "conflict_event": serialize_event(conflict_event),
-            }), 409
+            return (
+                jsonify(
+                    {
+                        "error": "Time conflict",
+                        "message": "This event overlaps with another event",
+                        "conflict_event": serialize_event(conflict_event),
+                    }
+                ),
+                409,
+            )
 
         event.title = title
         event.start_time = start_time
@@ -269,11 +271,7 @@ def delete_event_api(event_id):
     db = SessionLocal()
 
     try:
-        event = (
-            db.query(Event)
-            .filter_by(id=event_id, user_id=user.id)
-            .first()
-        )
+        event = db.query(Event).filter_by(id=event_id, user_id=user.id).first()
 
         if not event:
             return jsonify({"error": "Event not found"}), 404
@@ -305,10 +303,12 @@ def delete_event_api(event_id):
 
             db.commit()
 
-            return jsonify({
-                "message": "Single occurrence deleted",
-                "scope": "this",
-            })
+            return jsonify(
+                {
+                    "message": "Single occurrence deleted",
+                    "scope": "this",
+                }
+            )
 
         if delete_scope == "future":
             if not occurrence_start:
@@ -316,16 +316,6 @@ def delete_event_api(event_id):
 
             event.recurrence_end_type = "on"
             event.recurrence_end_date = occurrence_start
-
-            recurrence_data = {
-                "recurrence_type": event.recurrence_type,
-                "recurrence_interval": event.recurrence_interval,
-                "recurrence_unit": event.recurrence_unit,
-                "recurrence_days": event.recurrence_days,
-                "recurrence_end_type": event.recurrence_end_type,
-                "recurrence_end_date": event.recurrence_end_date,
-                "recurrence_count": event.recurrence_count,
-            }
 
             event.recurrence_rule = build_google_rrule(
                 recurrence_type=event.recurrence_type,
@@ -353,10 +343,12 @@ def delete_event_api(event_id):
 
             db.commit()
 
-            return jsonify({
-                "message": "Future occurrences deleted",
-                "scope": "future",
-            })
+            return jsonify(
+                {
+                    "message": "Future occurrences deleted",
+                    "scope": "future",
+                }
+            )
 
         if delete_scope == "all":
             if user.google_credentials and event.google_event_id:
@@ -371,15 +363,18 @@ def delete_event_api(event_id):
             db.delete(event)
             db.commit()
 
-            return jsonify({
-                "message": "Recurring event series deleted",
-                "scope": "all",
-            })
+            return jsonify(
+                {
+                    "message": "Recurring event series deleted",
+                    "scope": "all",
+                }
+            )
 
         return jsonify({"error": "Invalid delete scope"}), 400
 
     finally:
         db.close()
+
 
 @event_bp.route("/api/events/search", methods=["GET"])
 def search_events_api():
@@ -394,10 +389,7 @@ def search_events_api():
 
     try:
         events = (
-            db.query(Event)
-            .filter(Event.user_id == user.id)
-            .order_by(Event.start_time.asc())
-            .all()
+            db.query(Event).filter(Event.user_id == user.id).order_by(Event.start_time.asc()).all()
         )
 
         result = []
@@ -425,6 +417,7 @@ def search_events_api():
     finally:
         db.close()
 
+
 @event_bp.route("/api/events/bulk-delete", methods=["POST"])
 def bulk_delete_events_api():
     user = current_user()
@@ -444,16 +437,9 @@ def bulk_delete_events_api():
         deleted_count = 0
 
         if delete_all_by_title and title:
-            events = (
-                db.query(Event)
-                .filter(Event.user_id == user.id)
-                .all()
-            )
+            events = db.query(Event).filter(Event.user_id == user.id).all()
 
-            events_to_delete = [
-                event for event in events
-                if event.title.lower() == title
-            ]
+            events_to_delete = [event for event in events if event.title.lower() == title]
 
         else:
             clean_ids = []
@@ -486,13 +472,16 @@ def bulk_delete_events_api():
 
         db.commit()
 
-        return jsonify({
-            "message": "Events deleted",
-            "deleted_count": deleted_count,
-        })
+        return jsonify(
+            {
+                "message": "Events deleted",
+                "deleted_count": deleted_count,
+            }
+        )
 
     finally:
         db.close()
+
 
 @event_bp.route("/api/planner/auto-plan", methods=["POST"], strict_slashes=False)
 def auto_plan_event_api():
@@ -520,10 +509,7 @@ def auto_plan_event_api():
 
     try:
         existing_events = (
-            db.query(Event)
-            .filter_by(user_id=user.id)
-            .order_by(Event.start_time.asc())
-            .all()
+            db.query(Event).filter_by(user_id=user.id).order_by(Event.start_time.asc()).all()
         )
 
         planned = plan_task_with_ortools(
@@ -541,10 +527,15 @@ def auto_plan_event_api():
         )
 
         if not planned:
-            return jsonify({
-                "error": "No free slot",
-                "message": "No available time slot was found for this task",
-            }), 409
+            return (
+                jsonify(
+                    {
+                        "error": "No free slot",
+                        "message": "No available time slot was found for this task",
+                    }
+                ),
+                409,
+            )
 
         created_events = []
         google_sync_errors = []
@@ -584,14 +575,19 @@ def auto_plan_event_api():
 
         db.commit()
 
-        return jsonify({
-            "message": "Auto plan created",
-            "events": created_events,
-            "planned_count": len(created_events),
-            "candidates_count": planned.get("candidates_count", 0),
-            "google_sync_failed": len(google_sync_errors) > 0,
-            "google_sync_errors": google_sync_errors[:3],
-        }), 201
+        return (
+            jsonify(
+                {
+                    "message": "Auto plan created",
+                    "events": created_events,
+                    "planned_count": len(created_events),
+                    "candidates_count": planned.get("candidates_count", 0),
+                    "google_sync_failed": len(google_sync_errors) > 0,
+                    "google_sync_errors": google_sync_errors[:3],
+                }
+            ),
+            201,
+        )
 
     except ValueError as error:
         db.rollback()
@@ -600,10 +596,15 @@ def auto_plan_event_api():
     except Exception as error:
         db.rollback()
         print("Auto plan error:", error)
-        return jsonify({
-            "error": "Auto planning failed",
-            "details": str(error),
-        }), 500
+        return (
+            jsonify(
+                {
+                    "error": "Auto planning failed",
+                    "details": str(error),
+                }
+            ),
+            500,
+        )
 
     finally:
         db.close()

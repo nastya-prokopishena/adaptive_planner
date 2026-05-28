@@ -2,7 +2,6 @@ from sqlalchemy import text
 
 from backend.infrastructure.db.database import engine
 
-
 MIGRATION_SQL = """
 ALTER TABLE tasks
 ADD COLUMN IF NOT EXISTS task_type VARCHAR(100) DEFAULT 'other';

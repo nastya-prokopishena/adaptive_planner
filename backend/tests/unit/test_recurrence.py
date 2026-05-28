@@ -1,10 +1,6 @@
 from datetime import datetime
 
-from backend.domain.recurrence import (
-    build_google_rrule,
-    generate_occurrences,
-    time_ranges_overlap,
-)
+from backend.domain.recurrence import build_google_rrule, generate_occurrences, time_ranges_overlap
 
 
 def test_time_ranges_overlap_returns_true_for_intersection():

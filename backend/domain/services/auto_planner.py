@@ -1,5 +1,5 @@
-from datetime import datetime, timedelta, time
 from collections import defaultdict
+from datetime import datetime, time, timedelta
 
 from ortools.sat.python import cp_model
 
@@ -53,13 +53,42 @@ def normalize_allowed_days(allowed_days):
     result = set()
 
     aliases = {
-        "MO": "MO", "MON": "MO", "MONDAY": "MO", "ПН": "MO", "ПОНЕДІЛОК": "MO",
-        "TU": "TU", "TUE": "TU", "TUESDAY": "TU", "ВТ": "TU", "ВІВТОРОК": "TU",
-        "WE": "WE", "WED": "WE", "WEDNESDAY": "WE", "СР": "WE", "СЕРЕДА": "WE",
-        "TH": "TH", "THU": "TH", "THURSDAY": "TH", "ЧТ": "TH", "ЧЕТВЕР": "TH",
-        "FR": "FR", "FRI": "FR", "FRIDAY": "FR", "ПТ": "FR", "ПʼЯТНИЦЯ": "FR", "П'ЯТНИЦЯ": "FR",
-        "SA": "SA", "SAT": "SA", "SATURDAY": "SA", "СБ": "SA", "СУБОТА": "SA",
-        "SU": "SU", "SUN": "SU", "SUNDAY": "SU", "НД": "SU", "НЕДІЛЯ": "SU",
+        "MO": "MO",
+        "MON": "MO",
+        "MONDAY": "MO",
+        "ПН": "MO",
+        "ПОНЕДІЛОК": "MO",
+        "TU": "TU",
+        "TUE": "TU",
+        "TUESDAY": "TU",
+        "ВТ": "TU",
+        "ВІВТОРОК": "TU",
+        "WE": "WE",
+        "WED": "WE",
+        "WEDNESDAY": "WE",
+        "СР": "WE",
+        "СЕРЕДА": "WE",
+        "TH": "TH",
+        "THU": "TH",
+        "THURSDAY": "TH",
+        "ЧТ": "TH",
+        "ЧЕТВЕР": "TH",
+        "FR": "FR",
+        "FRI": "FR",
+        "FRIDAY": "FR",
+        "ПТ": "FR",
+        "ПʼЯТНИЦЯ": "FR",
+        "П'ЯТНИЦЯ": "FR",
+        "SA": "SA",
+        "SAT": "SA",
+        "SATURDAY": "SA",
+        "СБ": "SA",
+        "СУБОТА": "SA",
+        "SU": "SU",
+        "SUN": "SU",
+        "SUNDAY": "SU",
+        "НД": "SU",
+        "НЕДІЛЯ": "SU",
     }
 
     for day in allowed_days:
@@ -277,11 +306,7 @@ def score_slot(
 
     # Якщо користувач обрав preferred days, то інші дні гірші,
     # але не заборонені повністю.
-    non_preferred_penalty = (
-        350
-        if preferred_days and slot["weekday"] not in preferred_days
-        else 0
-    )
+    non_preferred_penalty = 350 if preferred_days and slot["weekday"] not in preferred_days else 0
 
     # Вихідні не заборонені, але якщо вони не preferred — трохи гірші.
     weekend_penalty = 90 if slot["weekday"] in {"SA", "SU"} else 0
@@ -324,10 +349,7 @@ def choose_single_slot_with_ortools(
 
     model.Add(sum(choices) == 1)
 
-    scores = [
-        int(score_slot(slot, preferred_time, preferred_days))
-        for slot in candidates
-    ]
+    scores = [int(score_slot(slot, preferred_time, preferred_days)) for slot in candidates]
 
     model.Minimize(sum(scores[i] * choices[i] for i in range(len(candidates))))
 
@@ -452,11 +474,7 @@ def choose_repeating_slots_greedy(
         week_selected = []
 
         for _ in range(min(times_per_week, len(week_slots))):
-            available = [
-                slot
-                for slot in week_slots
-                if slot["day"] not in selected_day_counts
-            ]
+            available = [slot for slot in week_slots if slot["day"] not in selected_day_counts]
 
             if not available:
                 break

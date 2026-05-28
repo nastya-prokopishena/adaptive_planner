@@ -1,32 +1,35 @@
-from flask import Blueprint, redirect, request, session, jsonify, current_app
-from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import datetime, time, timedelta
 import json
-import requests
+from datetime import datetime, time, timedelta
 from types import SimpleNamespace
 
-from backend.domain.services.auto_planner import plan_task_with_ortools
-from backend.domain.models.time_slot import TimeSlot
-from backend.infrastructure.db.database import SessionLocal
-from backend.infrastructure.db.models import User, Event, EventType, Subject, Task, TaskActivityLog, TaskScheduleBlock
-from backend.infrastructure.google_calendar_adapter import GoogleCalendarAdapter
-from backend.application.schedule_service import ScheduleService
-from backend.application.schedule_import_service import ScheduleImportService
-from backend.domain.recurrence import (
-    build_google_rrule,
-    generate_occurrences,
-    time_ranges_overlap,
-)
+import requests
+from flask import Blueprint, current_app, jsonify, redirect, request, session
+from werkzeug.security import check_password_hash, generate_password_hash
 
-from backend.application.task_nlp_service import TaskNLPService
-from backend.application.task_file_extractor_service import TaskFileExtractorService
 from backend.application.analytics_service import AnalyticsService
-from backend.application.productivity_model_service import ProductivityModelService
-from backend.application.ml_task_planner_service import MLTaskPlannerService
 from backend.application.ml_deadline_service import MLDeadlineService
-from backend.application.task_schedule_block_service import TaskScheduleBlockService
+from backend.application.ml_task_planner_service import MLTaskPlannerService
+from backend.application.productivity_model_service import ProductivityModelService
+from backend.application.schedule_import_service import ScheduleImportService
+from backend.application.schedule_service import ScheduleService
 from backend.application.synthetic_deadline_dataset_service import SyntheticDeadlineDatasetService
-
+from backend.application.task_file_extractor_service import TaskFileExtractorService
+from backend.application.task_nlp_service import TaskNLPService
+from backend.application.task_schedule_block_service import TaskScheduleBlockService
+from backend.domain.models.time_slot import TimeSlot
+from backend.domain.recurrence import build_google_rrule, generate_occurrences, time_ranges_overlap
+from backend.domain.services.auto_planner import plan_task_with_ortools
+from backend.infrastructure.db.database import SessionLocal
+from backend.infrastructure.db.models import (
+    Event,
+    EventType,
+    Subject,
+    Task,
+    TaskActivityLog,
+    TaskScheduleBlock,
+    User,
+)
+from backend.infrastructure.google_calendar_adapter import GoogleCalendarAdapter
 
 calendar_adapter = GoogleCalendarAdapter()
 schedule_service = ScheduleService()
@@ -39,6 +42,7 @@ ml_task_planner_service = MLTaskPlannerService()
 ml_deadline_service = MLDeadlineService()
 task_schedule_block_service = TaskScheduleBlockService()
 synthetic_deadline_dataset_service = SyntheticDeadlineDatasetService()
+
 
 def current_user():
     user_id = session.get("user_id")
@@ -156,10 +160,11 @@ def serialize_event(event, occurrence_start=None, occurrence_end=None):
             "unit": event.recurrence_unit,
             "days": event.recurrence_days.split(",") if event.recurrence_days else [],
             "endType": event.recurrence_end_type or "never",
-            "endDate": event.recurrence_end_date.isoformat() if event.recurrence_end_date else "",
+            "endDate": (event.recurrence_end_date.isoformat() if event.recurrence_end_date else ""),
             "count": event.recurrence_count or "",
         },
     }
+
 
 def parse_optional_datetime(value):
     if not value:
@@ -180,7 +185,7 @@ def serialize_event_type(event_type):
         "name": event_type.name,
         "color": event_type.color,
         "is_default": event_type.is_default,
-        "created_at": event_type.created_at.isoformat() if event_type.created_at else None,
+        "created_at": (event_type.created_at.isoformat() if event_type.created_at else None),
     }
 
 
@@ -210,20 +215,15 @@ def serialize_task(task):
         "user_id": task.user_id,
         "event_id": task.event_id,
         "subject_id": task.subject_id,
-
         "title": task.title,
         "description": task.description,
         "status": task.status,
         "priority": task.priority,
-
         "due_date": task.due_date.isoformat() if task.due_date else None,
-        "completed_at": task.completed_at.isoformat()
-        if getattr(task, "completed_at", None)
-        else None,
-        "missed_at": task.missed_at.isoformat()
-        if getattr(task, "missed_at", None)
-        else None,
-
+        "completed_at": (
+            task.completed_at.isoformat() if getattr(task, "completed_at", None) else None
+        ),
+        "missed_at": (task.missed_at.isoformat() if getattr(task, "missed_at", None) else None),
         "task_type": getattr(task, "task_type", "other"),
         "keywords": keywords,
         "estimated_duration_hours": getattr(
@@ -233,14 +233,10 @@ def serialize_task(task):
         ),
         "difficulty_score": getattr(task, "difficulty_score", None),
         "nlp_source": getattr(task, "nlp_source", None),
-
-        "created_at": task.created_at.isoformat()
-        if getattr(task, "created_at", None)
-        else None,
-        "updated_at": task.updated_at.isoformat()
-        if getattr(task, "updated_at", None)
-        else None,
+        "created_at": (task.created_at.isoformat() if getattr(task, "created_at", None) else None),
+        "updated_at": (task.updated_at.isoformat() if getattr(task, "updated_at", None) else None),
     }
+
 
 def serialize_activity_log(log):
     return {
@@ -292,11 +288,7 @@ def get_excluded_dates(event):
     if not event.recurrence_excluded_dates:
         return []
 
-    return [
-        item.strip()
-        for item in event.recurrence_excluded_dates.split(",")
-        if item.strip()
-    ]
+    return [item.strip() for item in event.recurrence_excluded_dates.split(",") if item.strip()]
 
 
 def add_excluded_date(event, occurrence_start):
@@ -440,6 +432,7 @@ def sync_google_events_to_db(user, db):
 
     db.commit()
 
+
 def serialize_task_schedule_block(block, task=None):
     return {
         "id": block.id,
@@ -571,12 +564,7 @@ def get_subject_events(db, user_id, subject_id=None, subject_name=None):
             subject_id=subject_id,
         )
 
-    events = (
-        db.query(Event)
-        .filter(Event.user_id == user_id)
-        .order_by(Event.start_time.asc())
-        .all()
-    )
+    events = db.query(Event).filter(Event.user_id == user_id).order_by(Event.start_time.asc()).all()
 
     matched_events = [
         event
@@ -622,12 +610,7 @@ def get_subject_events(db, user_id, subject_id=None, subject_name=None):
 def get_user_calendar_events(db, user_id):
     now = datetime.utcnow()
 
-    events = (
-        db.query(Event)
-        .filter(Event.user_id == user_id)
-        .order_by(Event.start_time.asc())
-        .all()
-    )
+    events = db.query(Event).filter(Event.user_id == user_id).order_by(Event.start_time.asc()).all()
 
     expanded_events = []
 
@@ -704,11 +687,7 @@ def get_existing_deadline_dates(db, user_id):
         .all()
     )
 
-    return [
-        task.due_date.date()
-        for task in tasks
-        if task.due_date
-    ]
+    return [task.due_date.date() for task in tasks if task.due_date]
 
 
 def build_subject_distribution_index(
@@ -783,7 +762,6 @@ def apply_auto_deadline_to_task(
     return prediction, block
 
 
-
 def normalize_deadline_mode(mode):
     if mode in ["subject", "subject_pairs", "subject_based", "by_subject"]:
         return "subject_based"
@@ -829,10 +807,7 @@ def fallback_deadline_prediction(
     duration_bonus = int(float(getattr(task, "estimated_duration_hours", 1) or 1) // 2)
     deadline_date = (now + timedelta(days=base_days + duration_bonus)).date()
 
-    blocked_dates = {
-        item if hasattr(item, "isoformat") else item
-        for item in used_best_time_dates
-    }
+    blocked_dates = {item if hasattr(item, "isoformat") else item for item in used_best_time_dates}
 
     while deadline_date in blocked_dates:
         deadline_date = deadline_date + timedelta(days=1)

@@ -3,16 +3,12 @@
 from flask import Flask
 from flask_cors import CORS
 
-from backend.app.routes import register_routes
 from backend.app.errors import register_error_handlers
+from backend.app.routes import register_routes
 
 
 def create_app():
-    app = Flask(
-        __name__,
-        static_folder="../static",
-        static_url_path=""
-    )
+    app = Flask(__name__, static_folder="../static", static_url_path="")
 
     app.secret_key = "super_secret_key_123"
 
@@ -26,10 +22,7 @@ def create_app():
     CORS(
         app,
         supports_credentials=True,
-        origins=[
-            "http://localhost:5000",
-            "http://127.0.0.1:5000"
-        ]
+        origins=["http://localhost:5000", "http://127.0.0.1:5000"],
     )
 
     register_routes(app)

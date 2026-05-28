@@ -2,7 +2,13 @@ from types import SimpleNamespace
 
 import pytest
 
-from backend.app.routes import analytics_routes, event_routes, frontend_routes, schedule_import_routes, task_routes
+from backend.app.routes import (
+    analytics_routes,
+    event_routes,
+    frontend_routes,
+    schedule_import_routes,
+    task_routes,
+)
 
 
 def test_event_create_requires_title_start_and_end(app, monkeypatch):
@@ -56,7 +62,11 @@ def test_auto_plan_event_rejects_empty_title(app, monkeypatch):
     with app.test_request_context(
         "/api/planner/auto-plan",
         method="POST",
-        json={"duration_minutes": 60, "date_from": "2026-05-28", "date_to": "2026-05-29"},
+        json={
+            "duration_minutes": 60,
+            "date_from": "2026-05-28",
+            "date_to": "2026-05-29",
+        },
     ):
         response, status = event_routes.auto_plan_event_api()
 

@@ -132,10 +132,7 @@ class ScheduleImportService:
             else:
                 continue
 
-            rows_by_id = {
-                str(row.get("row_id")): row
-                for row in page.get("rows", [])
-            }
+            rows_by_id = {str(row.get("row_id")): row for row in page.get("rows", [])}
 
             for cell in page.get("cells", []):
                 if not self._cell_intersects_group(cell, target_group_box):
@@ -259,14 +256,14 @@ class ScheduleImportService:
             "source_cell_type": source_cell_type,
             "group_evidence": group_evidence,
             "subgroup": self._normalize_subgroup_value(parsed_event.get("subgroup")),
-            "subgroup_evidence": self._normalize_subgroup_evidence(parsed_event.get("subgroup_evidence")),
+            "subgroup_evidence": self._normalize_subgroup_evidence(
+                parsed_event.get("subgroup_evidence")
+            ),
             "week_pattern": self._normalize_week_pattern(parsed_event.get("week_pattern")),
             "week_range": self._clean_text(parsed_event.get("week_range")),
             "scope": self._normalize_scope(parsed_event.get("scope")),
             "source_text": self._clean_text(
-                parsed_event.get("source_text")
-                or cell.get("text")
-                or ""
+                parsed_event.get("source_text") or cell.get("text") or ""
             ),
             "source_page": page_number,
             "cell_coordinates": {
@@ -327,18 +324,13 @@ class ScheduleImportService:
             grouped[key].append(event)
 
         for items in grouped.values():
-            weekly_items = [
-                item for item in items
-                if item.get("week_pattern") == "weekly"
-            ]
+            weekly_items = [item for item in items if item.get("week_pattern") == "weekly"]
 
             if len(weekly_items) < 2:
                 continue
 
             explicit_subgroups = {
-                item.get("subgroup")
-                for item in weekly_items
-                if item.get("subgroup")
+                item.get("subgroup") for item in weekly_items if item.get("subgroup")
             }
 
             if len(explicit_subgroups) > 1:
@@ -469,9 +461,7 @@ class ScheduleImportService:
         warnings.extend(document_analysis.get("warnings", []))
 
         if not events:
-            warnings.append(
-                "Не знайдено подій, які перетинають колонку потрібної групи."
-            )
+            warnings.append("Не знайдено подій, які перетинають колонку потрібної групи.")
 
         review_count = len([event for event in events if event.get("needs_review")])
 

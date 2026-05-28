@@ -50,7 +50,8 @@ def test_analyze_uses_provided_subject_name():
 def test_analyze_many_splits_long_document_into_learning_blocks():
     service = build_service()
 
-    text = """
+    text = (
+        """
     --- PAGE 1 ---
     Зміст
     Лабораторна робота №1 ................................ 2
@@ -59,12 +60,16 @@ def test_analyze_many_splits_long_document_into_learning_blocks():
     Лабораторна робота №1
     Мета роботи: навчитися працювати з файлами.
     Завдання: створити програму, виконати аналіз, оформити звіт.
-    """ + (" Додатковий опис." * 40) + """
+    """
+        + (" Додатковий опис." * 40)
+        + """
     --- PAGE 4 ---
     Лабораторна робота №2
     Мета роботи: навчитися працювати з базою даних.
     Завдання: розробити моделі, створити запити, проаналізувати результати.
-    """ + (" Додатковий опис." * 40)
+    """
+        + (" Додатковий опис." * 40)
+    )
 
     results = service.analyze_many(text, subject_name="Software")
 
@@ -89,10 +94,7 @@ def test_calibrate_difficulty_raises_project_complexity():
 
     difficulty = service._calibrate_difficulty(
         difficulty=2,
-        text=(
-            "створити систему машинне навчання "
-            "архітектура ci/cd інтеграція"
-        ),
+        text=("створити систему машинне навчання " "архітектура ci/cd інтеграція"),
         task_type="project",
     )
 

@@ -16,10 +16,7 @@ def get_event_types():
 
     try:
         event_types = (
-            db.query(EventType)
-            .filter_by(user_id=user.id)
-            .order_by(EventType.name.asc())
-            .all()
+            db.query(EventType).filter_by(user_id=user.id).order_by(EventType.name.asc()).all()
         )
 
         return jsonify([serialize_event_type(item) for item in event_types])
@@ -62,6 +59,7 @@ def create_event_type():
     finally:
         db.close()
 
+
 @task_bp.route("/api/subjects", methods=["GET"])
 def get_subjects():
     user = current_user()
@@ -72,12 +70,7 @@ def get_subjects():
     db = SessionLocal()
 
     try:
-        subjects = (
-            db.query(Subject)
-            .filter_by(user_id=user.id)
-            .order_by(Subject.name.asc())
-            .all()
-        )
+        subjects = db.query(Subject).filter_by(user_id=user.id).order_by(Subject.name.asc()).all()
 
         return jsonify([serialize_subject(subject) for subject in subjects])
 
@@ -122,6 +115,7 @@ def create_subject():
     finally:
         db.close()
 
+
 @task_bp.route("/api/subjects/<int:subject_id>", methods=["PUT"])
 def update_subject(subject_id):
     user = current_user()
@@ -134,11 +128,7 @@ def update_subject(subject_id):
     db = SessionLocal()
 
     try:
-        subject = (
-            db.query(Subject)
-            .filter_by(id=subject_id, user_id=user.id)
-            .first()
-        )
+        subject = db.query(Subject).filter_by(id=subject_id, user_id=user.id).first()
 
         if not subject:
             return jsonify({"error": "Subject not found"}), 404
@@ -156,6 +146,7 @@ def update_subject(subject_id):
     finally:
         db.close()
 
+
 @task_bp.route("/api/event-types/<int:event_type_id>", methods=["PUT"])
 def update_event_type(event_type_id):
     user = current_user()
@@ -168,11 +159,7 @@ def update_event_type(event_type_id):
     db = SessionLocal()
 
     try:
-        event_type = (
-            db.query(EventType)
-            .filter_by(id=event_type_id, user_id=user.id)
-            .first()
-        )
+        event_type = db.query(EventType).filter_by(id=event_type_id, user_id=user.id).first()
 
         if not event_type:
             return jsonify({"error": "Event type not found"}), 404
@@ -187,6 +174,7 @@ def update_event_type(event_type_id):
 
     finally:
         db.close()
+
 
 @task_bp.route("/api/tasks", methods=["GET"])
 def get_tasks():
@@ -238,9 +226,7 @@ def create_task():
     db = SessionLocal()
 
     try:
-        due_date = parse_optional_datetime(
-            data.get("due_date") or data.get("deadline")
-        )
+        due_date = parse_optional_datetime(data.get("due_date") or data.get("deadline"))
 
         task = Task(
             user_id=user.id,
@@ -253,9 +239,7 @@ def create_task():
             due_date=due_date,
             task_type=data.get("task_type", "other"),
             keywords=json.dumps(data.get("keywords", []), ensure_ascii=False),
-            estimated_duration_hours=float(
-                data.get("estimated_duration_hours") or 1
-            ),
+            estimated_duration_hours=float(data.get("estimated_duration_hours") or 1),
             difficulty_score=int(data.get("difficulty_score") or 3),
             nlp_source=data.get("nlp_source", "manual"),
             created_at=datetime.utcnow(),
@@ -295,6 +279,7 @@ def create_task():
     finally:
         db.close()
 
+
 @task_bp.route("/api/tasks/<int:task_id>", methods=["PUT"])
 def update_task(task_id):
     user = current_user()
@@ -307,11 +292,7 @@ def update_task(task_id):
     db = SessionLocal()
 
     try:
-        task = (
-            db.query(Task)
-            .filter_by(id=task_id, user_id=user.id)
-            .first()
-        )
+        task = db.query(Task).filter_by(id=task_id, user_id=user.id).first()
 
         if not task:
             return jsonify({"error": "Task not found"}), 404
@@ -355,6 +336,7 @@ def update_task(task_id):
     finally:
         db.close()
 
+
 @task_bp.route("/api/tasks/<int:task_id>/deadline", methods=["PUT"])
 def update_task_deadline(task_id):
     user = current_user()
@@ -371,11 +353,7 @@ def update_task_deadline(task_id):
     db = SessionLocal()
 
     try:
-        task = (
-            db.query(Task)
-            .filter_by(id=task_id, user_id=user.id)
-            .first()
-        )
+        task = db.query(Task).filter_by(id=task_id, user_id=user.id).first()
 
         if not task:
             return jsonify({"error": "Task not found"}), 404
@@ -402,11 +380,7 @@ def delete_task(task_id):
     db = SessionLocal()
 
     try:
-        task = (
-            db.query(Task)
-            .filter_by(id=task_id, user_id=user.id)
-            .first()
-        )
+        task = db.query(Task).filter_by(id=task_id, user_id=user.id).first()
 
         if not task:
             return jsonify({"error": "Task not found"}), 404
@@ -448,11 +422,7 @@ def update_task_status(task_id):
     db = SessionLocal()
 
     try:
-        task = (
-            db.query(Task)
-            .filter_by(id=task_id, user_id=user.id)
-            .first()
-        )
+        task = db.query(Task).filter_by(id=task_id, user_id=user.id).first()
 
         if not task:
             return jsonify({"error": "Task not found"}), 404
@@ -469,7 +439,6 @@ def update_task_status(task_id):
         elif new_status == "missed":
             task.missed_at = datetime.utcnow()
             task.completed_at = None
-            auto_replan = bool(data.get("auto_replan", False))
 
         else:
             task.completed_at = None
@@ -492,6 +461,7 @@ def update_task_status(task_id):
 
     finally:
         db.close()
+
 
 @task_bp.route("/api/activity-logs", methods=["GET"])
 def get_activity_logs():
@@ -518,11 +488,10 @@ def get_activity_logs():
         db.close()
 
 
-
-
 # ---------------------------
 # TASK DEADLINE ML PLANNING
 # ---------------------------
+
 
 @task_bp.route("/api/tasks/auto-deadline", methods=["POST"], strict_slashes=False)
 def auto_deadline_for_manual_task():
@@ -553,9 +522,7 @@ def auto_deadline_for_manual_task():
             description=data.get("description"),
             priority=data.get("priority", "medium"),
             task_type=data.get("task_type", "other"),
-            estimated_duration_hours=float(
-                data.get("estimated_duration_hours") or 1
-            ),
+            estimated_duration_hours=float(data.get("estimated_duration_hours") or 1),
             difficulty_score=int(data.get("difficulty_score") or 3),
             subject_id=subject_id,
             status="planned",
@@ -589,11 +556,13 @@ def auto_deadline_for_manual_task():
             used_best_time_dates=get_existing_deadline_dates(db, user.id),
         )
 
-        return jsonify({
-            "due_date": prediction["deadline"].isoformat(),
-            "confidence_score": prediction["confidence"],
-            "reason": prediction["reason"],
-        })
+        return jsonify(
+            {
+                "due_date": prediction["deadline"].isoformat(),
+                "confidence_score": prediction["confidence"],
+                "reason": prediction["reason"],
+            }
+        )
 
     finally:
         db.close()
@@ -635,16 +604,16 @@ def auto_plan_deadlines_preview():
 
             subject_key = subject_id or subject_name or "general"
 
-            normalized_tasks.append({
-                "raw_task": raw_task,
-                "subject_id": subject_id,
-                "subject_name": subject_name,
-                "subject_key": subject_key,
-            })
-
-            subject_batch_counts[subject_key] = (
-                subject_batch_counts.get(subject_key, 0) + 1
+            normalized_tasks.append(
+                {
+                    "raw_task": raw_task,
+                    "subject_id": subject_id,
+                    "subject_name": subject_name,
+                    "subject_key": subject_key,
+                }
             )
+
+            subject_batch_counts[subject_key] = subject_batch_counts.get(subject_key, 0) + 1
 
         subject_positions = {}
         used_best_time_dates = get_existing_deadline_dates(db, user.id)
@@ -665,9 +634,7 @@ def auto_plan_deadlines_preview():
                 description=raw_task.get("description"),
                 priority=raw_task.get("priority", "medium"),
                 task_type=raw_task.get("task_type", "other"),
-                estimated_duration_hours=float(
-                    raw_task.get("estimated_duration_hours") or 1
-                ),
+                estimated_duration_hours=float(raw_task.get("estimated_duration_hours") or 1),
                 difficulty_score=int(raw_task.get("difficulty_score") or 3),
                 subject_id=subject_id,
                 status="planned",
@@ -705,16 +672,18 @@ def auto_plan_deadlines_preview():
 
             used_best_time_dates.append(prediction["deadline"].date())
 
-            planned_tasks.append({
-                "title": temp_task.title,
-                "due_date": prediction["deadline"].isoformat(),
-                "confidence_score": prediction["confidence"],
-                "reason": prediction["reason"],
-                "subject_id": temp_task.subject_id,
-                "subject_events_count": len(subject_events),
-                "used_event_index": used_event_index,
-                "mode": mode,
-            })
+            planned_tasks.append(
+                {
+                    "title": temp_task.title,
+                    "due_date": prediction["deadline"].isoformat(),
+                    "confidence_score": prediction["confidence"],
+                    "reason": prediction["reason"],
+                    "subject_id": temp_task.subject_id,
+                    "subject_events_count": len(subject_events),
+                    "used_event_index": used_event_index,
+                    "mode": mode,
+                }
+            )
 
         return jsonify({"tasks": planned_tasks})
 
@@ -734,12 +703,7 @@ def auto_plan_existing_task(task_id):
     db = SessionLocal()
 
     try:
-        task = (
-            db.query(Task)
-            .filter(Task.id == task_id)
-            .filter(Task.user_id == user.id)
-            .first()
-        )
+        task = db.query(Task).filter(Task.id == task_id).filter(Task.user_id == user.id).first()
 
         if not task:
             return jsonify({"error": "Task not found"}), 404
@@ -755,11 +719,13 @@ def auto_plan_existing_task(task_id):
         db.refresh(task)
         db.refresh(block)
 
-        return jsonify({
-            "task": serialize_task(task),
-            "schedule_block": serialize_task_schedule_block(block, task),
-            "reason": prediction["reason"],
-        })
+        return jsonify(
+            {
+                "task": serialize_task(task),
+                "schedule_block": serialize_task_schedule_block(block, task),
+                "reason": prediction["reason"],
+            }
+        )
 
     finally:
         db.close()
@@ -803,15 +769,18 @@ def generate_synthetic_deadline_dataset():
 
     path = synthetic_deadline_dataset_service.save_csv()
 
-    return jsonify({
-        "message": "Synthetic deadline dataset generated",
-        "path": path,
-    })
+    return jsonify(
+        {
+            "message": "Synthetic deadline dataset generated",
+            "path": path,
+        }
+    )
 
 
 # ---------------------------
 # TASK NLP IMPORT
 # ---------------------------
+
 
 @task_bp.route("/api/task-import/model-info", methods=["GET"], strict_slashes=False)
 def task_model_info_api():
@@ -825,10 +794,15 @@ def task_model_info_api():
         return jsonify(info), 200
 
     except Exception as error:
-        return jsonify({
-            "loaded": False,
-            "error": str(error),
-        }), 500
+        return (
+            jsonify(
+                {
+                    "loaded": False,
+                    "error": str(error),
+                }
+            ),
+            500,
+        )
 
 
 @task_bp.route("/api/task-import/analyze-text", methods=["POST"], strict_slashes=False)
@@ -866,26 +840,34 @@ def analyze_task_text_api():
 
                 result["subject_id"] = subject.id if subject else None
                 result["subject_exists"] = subject is not None
-                result["should_create_subject"] = (
-                    bool(result.get("subject")) and subject is None
-                )
+                result["should_create_subject"] = bool(result.get("subject")) and subject is None
                 result["source_filename"] = None
 
                 tasks.append(result)
 
-            return jsonify({
-                "tasks": tasks,
-                "count": len(tasks),
-            }), 200
+            return (
+                jsonify(
+                    {
+                        "tasks": tasks,
+                        "count": len(tasks),
+                    }
+                ),
+                200,
+            )
 
         finally:
             db.close()
 
     except Exception as error:
-        return jsonify({
-            "error": "Не вдалося проаналізувати текст",
-            "details": str(error),
-        }), 500
+        return (
+            jsonify(
+                {
+                    "error": "Не вдалося проаналізувати текст",
+                    "details": str(error),
+                }
+            ),
+            500,
+        )
 
 
 @task_bp.route("/api/task-import/analyze-file", methods=["POST"], strict_slashes=False)
@@ -940,25 +922,35 @@ def analyze_task_file_api():
                     result["subject_id"] = subject.id if subject else None
                     result["subject_exists"] = subject is not None
                     result["should_create_subject"] = (
-                            bool(result.get("subject")) and subject is None
+                        bool(result.get("subject")) and subject is None
                     )
                     result["source_filename"] = file.filename
 
                     tasks.append(result)
 
-            return jsonify({
-                "tasks": tasks,
-                "count": len(tasks),
-            }), 200
+            return (
+                jsonify(
+                    {
+                        "tasks": tasks,
+                        "count": len(tasks),
+                    }
+                ),
+                200,
+            )
 
         finally:
             db.close()
 
     except Exception as error:
-        return jsonify({
-            "error": "Не вдалося проаналізувати файл",
-            "details": str(error),
-        }), 500
+        return (
+            jsonify(
+                {
+                    "error": "Не вдалося проаналізувати файл",
+                    "details": str(error),
+                }
+            ),
+            500,
+        )
 
 
 @task_bp.route("/api/task-import/create-subject", methods=["POST"], strict_slashes=False)
@@ -999,6 +991,7 @@ def create_subject_from_task_import_api():
 
     finally:
         db.close()
+
 
 @task_bp.route("/api/task-import/create-tasks", methods=["POST"], strict_slashes=False)
 def create_tasks_from_import_api():
@@ -1053,16 +1046,16 @@ def create_tasks_from_import_api():
 
             subject_key = subject_id or subject_name or "general"
 
-            normalized_tasks.append({
-                "item": item,
-                "subject_id": subject_id,
-                "subject_name": subject_name,
-                "subject_key": subject_key,
-            })
-
-            subject_batch_counts[subject_key] = (
-                subject_batch_counts.get(subject_key, 0) + 1
+            normalized_tasks.append(
+                {
+                    "item": item,
+                    "subject_id": subject_id,
+                    "subject_name": subject_name,
+                    "subject_key": subject_key,
+                }
             )
+
+            subject_batch_counts[subject_key] = subject_batch_counts.get(subject_key, 0) + 1
 
         subject_positions = {}
         used_best_time_dates = get_existing_deadline_dates(db, user.id)
@@ -1083,9 +1076,7 @@ def create_tasks_from_import_api():
                 description=item.get("description"),
                 status="planned",
                 priority=item.get("priority", "medium"),
-                due_date=parse_optional_datetime(
-                    item.get("due_date") or item.get("deadline")
-                ),
+                due_date=parse_optional_datetime(item.get("due_date") or item.get("deadline")),
                 task_type=item.get("task_type", "other"),
                 keywords=json.dumps(item.get("keywords") or [], ensure_ascii=False),
                 estimated_duration_hours=item.get("estimated_duration_hours", 1),
@@ -1148,17 +1139,27 @@ def create_tasks_from_import_api():
 
         db.commit()
 
-        return jsonify({
-            "tasks": [serialize_task(task) for task in created_tasks],
-            "count": len(created_tasks),
-        }), 201
+        return (
+            jsonify(
+                {
+                    "tasks": [serialize_task(task) for task in created_tasks],
+                    "count": len(created_tasks),
+                }
+            ),
+            201,
+        )
 
     except Exception as error:
         db.rollback()
-        return jsonify({
-            "error": "Не вдалося створити задачі",
-            "details": str(error),
-        }), 500
+        return (
+            jsonify(
+                {
+                    "error": "Не вдалося створити задачі",
+                    "details": str(error),
+                }
+            ),
+            500,
+        )
 
     finally:
         db.close()

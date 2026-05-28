@@ -9,6 +9,7 @@ frontend_bp = Blueprint("frontend", __name__)
 # REACT
 # ---------------------------
 
+
 @frontend_bp.route("/", defaults={"path": ""})
 @frontend_bp.route("/<path:path>")
 def serve_react(path):

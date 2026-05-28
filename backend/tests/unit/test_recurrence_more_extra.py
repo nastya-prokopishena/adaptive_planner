@@ -28,7 +28,9 @@ def test_build_google_rrule_covers_common_types():
     assert build_google_rrule("daily", 2) == "RRULE:FREQ=DAILY;INTERVAL=2"
     assert build_google_rrule("weekdays") == "RRULE:FREQ=WEEKLY;INTERVAL=1;BYDAY=MO,TU,WE,TH,FR"
     assert build_google_rrule("weekly", start_time=start) == "RRULE:FREQ=WEEKLY;INTERVAL=1;BYDAY=MO"
-    assert build_google_rrule("biweekly", start_time=start) == "RRULE:FREQ=WEEKLY;INTERVAL=2;BYDAY=MO"
+    assert (
+        build_google_rrule("biweekly", start_time=start) == "RRULE:FREQ=WEEKLY;INTERVAL=2;BYDAY=MO"
+    )
     assert build_google_rrule("monthly") == "RRULE:FREQ=MONTHLY;INTERVAL=1"
     assert build_google_rrule("yearly") == "RRULE:FREQ=YEARLY;INTERVAL=1"
     assert build_google_rrule("unknown") is None
@@ -62,7 +64,9 @@ def test_generate_occurrences_covers_multiple_recurrence_modes():
     assert generate_occurrences(start, None) == []
     assert len(generate_occurrences(start, end, "none")) == 1
 
-    daily = generate_occurrences(start, end, "daily", recurrence_end_type="after", recurrence_count=3)
+    daily = generate_occurrences(
+        start, end, "daily", recurrence_end_type="after", recurrence_count=3
+    )
     assert len(daily) == 3
     assert daily[1][0] == start + timedelta(days=1)
 
@@ -77,8 +81,12 @@ def test_generate_occurrences_covers_multiple_recurrence_modes():
     )
     assert len(weekly_custom) == 4
 
-    monthly = generate_occurrences(start, end, "monthly", recurrence_end_type="after", recurrence_count=2)
-    yearly = generate_occurrences(start, end, "yearly", recurrence_end_type="after", recurrence_count=2)
+    monthly = generate_occurrences(
+        start, end, "monthly", recurrence_end_type="after", recurrence_count=2
+    )
+    yearly = generate_occurrences(
+        start, end, "yearly", recurrence_end_type="after", recurrence_count=2
+    )
     assert len(monthly) == 2
     assert len(yearly) == 2
 

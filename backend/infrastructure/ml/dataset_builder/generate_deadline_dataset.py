@@ -6,11 +6,7 @@ from datetime import datetime
 from backend.infrastructure.db.database import SessionLocal
 from backend.infrastructure.db.models import Event, Task
 
-
-OUTPUT_PATH = (
-    "backend/infrastructure/ml/datasets/processed/"
-    "deadline_recommendation_dataset.csv"
-)
+OUTPUT_PATH = "backend/infrastructure/ml/datasets/processed/" "deadline_recommendation_dataset.csv"
 
 FIELDNAMES = [
     "estimated_duration_hours",
@@ -119,11 +115,7 @@ def build_real_rows():
     db = SessionLocal()
 
     try:
-        tasks = (
-            db.query(Task)
-            .filter(Task.due_date.isnot(None))
-            .all()
-        )
+        tasks = db.query(Task).filter(Task.due_date.isnot(None)).all()
 
         events = db.query(Event).all()
 
@@ -141,13 +133,10 @@ def build_real_rows():
             task_day_events = [
                 event
                 for event in events
-                if event.start_time
-                and event.start_time.date() == reference_time.date()
+                if event.start_time and event.start_time.date() == reference_time.date()
             ]
 
-            recommended_hours = (
-                task.due_date - reference_time
-            ).total_seconds() / 3600
+            recommended_hours = (task.due_date - reference_time).total_seconds() / 3600
 
             if recommended_hours <= 0:
                 continue
@@ -164,9 +153,7 @@ def build_real_rows():
             )
 
             row = {
-                "estimated_duration_hours": float(
-                    task.estimated_duration_hours or 1
-                ),
+                "estimated_duration_hours": float(task.estimated_duration_hours or 1),
                 "difficulty_score": int(task.difficulty_score or 3),
                 "priority_score": get_priority_score(task.priority),
                 "task_type_score": get_task_type_score(task.task_type),
@@ -195,9 +182,7 @@ def generate_synthetic_row():
     subject_has_events = random.choice([0, 1])
 
     hours_until_next_subject_event = (
-        random.choice([6, 12, 18, 24, 36, 48, 72])
-        if subject_has_events
-        else 0
+        random.choice([6, 12, 18, 24, 36, 48, 72]) if subject_has_events else 0
     )
 
     day_load_score = random.randint(0, 100)
@@ -254,10 +239,7 @@ def generate_dataset(total_rows=3000):
 
     synthetic_count = max(total_rows - len(real_rows), 0)
 
-    synthetic_rows = [
-        generate_synthetic_row()
-        for _ in range(synthetic_count)
-    ]
+    synthetic_rows = [generate_synthetic_row() for _ in range(synthetic_count)]
 
     rows = real_rows + synthetic_rows
 

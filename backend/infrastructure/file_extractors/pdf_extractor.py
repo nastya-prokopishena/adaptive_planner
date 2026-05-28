@@ -27,9 +27,7 @@ class PdfExtractor(BaseExtractor, FileExtractor):
                 page_number = page_index + 1
 
                 page_text = self._clean_text(page.get_text("text") or "")
-                text_parts.append(
-                    f"\n\n--- PDF PAGE {page_number} TEXT ---\n{page_text}"
-                )
+                text_parts.append(f"\n\n--- PDF PAGE {page_number} TEXT ---\n{page_text}")
 
                 pixmap = page.get_pixmap(
                     matrix=fitz.Matrix(self.PDF_ZOOM, self.PDF_ZOOM),
@@ -49,9 +47,7 @@ class PdfExtractor(BaseExtractor, FileExtractor):
                         "full_image": {
                             "filename": f"{filename}_page_{page_number}.png",
                             "mime_type": "image/png",
-                            "base64": base64.b64encode(
-                                output.getvalue()
-                            ).decode("utf-8"),
+                            "base64": base64.b64encode(output.getvalue()).decode("utf-8"),
                         },
                     }
                 )

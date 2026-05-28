@@ -1,6 +1,6 @@
 from backend.infrastructure.ml.dataset_builder.generate_deadline_dataset import (
-    generate_dataset,
     OUTPUT_PATH,
+    generate_dataset,
 )
 
 
