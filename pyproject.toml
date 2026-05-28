@@ -1,0 +1,46 @@
+[tool.black]
+line-length = 88
+target-version = ["py311"]
+
+[tool.isort]
+profile = "black"
+line_length = 88
+
+[tool.pytest.ini_options]
+testpaths = ["backend/tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+
+addopts = "-v --cov=backend --cov-report=term-missing --cov-report=html"
+
+markers = [
+    "unit: unit tests",
+    "integration: integration tests",
+    "security: security tests",
+    "performance: performance tests"
+]
+
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::PendingDeprecationWarning"
+]
+
+[tool.coverage.run]
+source = ["backend"]
+omit = [
+    "backend/tests/*",
+    "backend/**/__init__.py",
+    "backend/infrastructure/ml/dataset_builder/*",
+    "backend/infrastructure/ml/train_*.py"
+]
+
+[tool.coverage.report]
+show_missing = true
+skip_empty = true
+exclude_lines = [
+    "pragma: no cover",
+    "if __name__ == .__main__.:",
+    "raise NotImplementedError",
+    "pass"
+]

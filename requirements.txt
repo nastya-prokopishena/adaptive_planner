@@ -35,4 +35,8 @@ beautifulsoup4
 lxml
 scikit-learn
 joblib
-
+Flask-Cors
+ortools
+python-dateutil
+openpyxl
+pillow
