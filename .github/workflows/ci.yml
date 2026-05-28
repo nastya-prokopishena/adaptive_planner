@@ -10,16 +10,16 @@ jobs:
 
     env:
       FLASK_ENV: testing
-      SECRET_KEY: test-secret-key
-      DATABASE_URL: sqlite:///:memory:
-      REDIS_HOST: localhost
-      REDIS_PORT: 6379
+      SECRET_KEY: "test-secret-key"
+      DATABASE_URL: "sqlite:///:memory:"
+      REDIS_HOST: "localhost"
+      REDIS_PORT: "6379"
       OAUTHLIB_INSECURE_TRANSPORT: "1"
-      GOOGLE_CLIENT_SECRET_FILE: backend/infrastructure/credentials.example.json
-      GOOGLE_REDIRECT_URI: http://localhost:5000/callback
-      OPENAI_API_KEY: test-key
-      OPENAI_SCHEDULE_MODEL: gpt-4o
-      SERPAPI_KEY: test-key
+      GOOGLE_CLIENT_SECRET_FILE: "backend/infrastructure/credentials.example.json"
+      GOOGLE_REDIRECT_URI: "http://localhost:5000/callback"
+      OPENAI_API_KEY: "test-key"
+      OPENAI_SCHEDULE_MODEL: "gpt-4o"
+      SERPAPI_KEY: "test-key"
 
     steps:
       - name: Checkout repository
