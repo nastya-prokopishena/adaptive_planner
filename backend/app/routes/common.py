@@ -1031,10 +1031,19 @@ def fallback_deadline_prediction(
             len(subject_events) - 1,
         )
         target_event = subject_events[event_index]
-        deadline = target_event.start_time - timedelta(hours=2)
+
+        event_start = target_event.start_time
+
+        if event_start.tzinfo is None:
+            event_start = event_start.replace(tzinfo=UTC)
+
+        deadline = event_start - timedelta(hours=2)
 
         if deadline <= now:
-            deadline = target_event.start_time - timedelta(minutes=30)
+            deadline = event_start - timedelta(minutes=30)
+
+        if target_event.start_time.tzinfo is None:
+            deadline = deadline.replace(tzinfo=None)
 
         return {
             "deadline": deadline,
