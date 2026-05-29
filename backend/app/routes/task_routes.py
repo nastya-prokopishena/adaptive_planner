@@ -1,5 +1,3 @@
-from flask import Blueprint
-
 from backend.app.routes.common import *
 
 task_bp = Blueprint("task", __name__)

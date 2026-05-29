@@ -1,5 +1,3 @@
-from flask import Blueprint
-
 from backend.app.routes.common import *
 
 analytics_bp = Blueprint("analytics", __name__)

@@ -1,5 +1,3 @@
-from flask import Blueprint
-
 from backend.app.routes.common import *
 
 event_bp = Blueprint("event", __name__)

@@ -1,5 +1,3 @@
-from flask import Blueprint
-
 from backend.app.routes.common import *
 
 schedule_import_bp = Blueprint("schedule_import", __name__)
