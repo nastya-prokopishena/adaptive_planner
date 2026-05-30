@@ -727,107 +727,136 @@ def normalize_text(value):
     return (value or "").strip().lower()
 
 
+def is_recurring_event(event):
+    return bool(event.recurrence_type and event.recurrence_type != "none")
+
+
+def query_user_events_ordered(db, user_id):
+    return db.query(Event).filter(Event.user_id == user_id).order_by(Event.start_time.asc()).all()
+
+
 def event_matches_subject(event, subject_id=None, subject_name=None):
     if subject_id and event.subject_id == int(subject_id):
         return True
 
-    if subject_name:
-        event_title = normalize_text(event.title)
-        subject_text = normalize_text(subject_name)
+    if not subject_name:
+        return False
 
-        if subject_text and subject_text in event_title:
-            return True
+    event_title = normalize_text(event.title)
+    subject_text = normalize_text(subject_name)
 
-    return False
+    return bool(subject_text and subject_text in event_title)
 
 
-def get_subject_events(db, user_id, subject_id=None, subject_name=None):
-    now = datetime.now(UTC)
+def create_event_occurrence(event, occurrence_start, occurrence_end):
+    return SimpleNamespace(
+        id=event.id,
+        master_id=event.id,
+        title=event.title,
+        start_time=occurrence_start,
+        end_time=occurrence_end,
+        subject_id=event.subject_id,
+        source=event.source,
+    )
 
+
+def should_include_future_occurrence(occurrence_start, occurrence_end, now, require_end_time):
+    if require_end_time and not occurrence_end:
+        return False
+
+    return bool(occurrence_start and occurrence_start > now)
+
+
+def expand_event_to_future_occurrences(event, now, require_end_time=False):
+    expanded_events = []
+
+    if is_recurring_event(event):
+        for occurrence_start, occurrence_end in get_event_occurrences(event):
+            if should_include_future_occurrence(
+                occurrence_start,
+                occurrence_end,
+                now,
+                require_end_time,
+            ):
+                expanded_events.append(
+                    create_event_occurrence(
+                        event=event,
+                        occurrence_start=occurrence_start,
+                        occurrence_end=occurrence_end,
+                    )
+                )
+
+        return expanded_events
+
+    if should_include_future_occurrence(
+        event.start_time,
+        getattr(event, "end_time", None),
+        now,
+        require_end_time,
+    ):
+        return [event]
+
+    return []
+
+
+def resolve_subject_name(db, user_id, subject_id, subject_name):
     if subject_id and not subject_name:
-        subject_name = get_subject_name_by_id(
+        return get_subject_name_by_id(
             db=db,
             user_id=user_id,
             subject_id=subject_id,
         )
 
-    events = db.query(Event).filter(Event.user_id == user_id).order_by(Event.start_time.asc()).all()
+    return subject_name
+
+
+def get_subject_events(db, user_id, subject_id=None, subject_name=None):
+    now = datetime.now(UTC)
+    resolved_subject_name = resolve_subject_name(
+        db=db,
+        user_id=user_id,
+        subject_id=subject_id,
+        subject_name=subject_name,
+    )
 
     matched_events = [
         event
-        for event in events
+        for event in query_user_events_ordered(db, user_id)
         if event_matches_subject(
             event=event,
             subject_id=subject_id,
-            subject_name=subject_name,
+            subject_name=resolved_subject_name,
         )
     ]
 
     expanded_events = []
 
     for event in matched_events:
-        is_recurring = event.recurrence_type and event.recurrence_type != "none"
+        expanded_events.extend(
+            expand_event_to_future_occurrences(
+                event=event,
+                now=now,
+                require_end_time=False,
+            )
+        )
 
-        if is_recurring:
-            occurrences = get_event_occurrences(event)
-
-            for occurrence_start, occurrence_end in occurrences:
-                if occurrence_start and occurrence_start > now:
-                    expanded_events.append(
-                        SimpleNamespace(
-                            id=event.id,
-                            master_id=event.id,
-                            title=event.title,
-                            start_time=occurrence_start,
-                            end_time=occurrence_end,
-                            subject_id=event.subject_id,
-                            source=event.source,
-                        )
-                    )
-        else:
-            if event.start_time and event.start_time > now:
-                expanded_events.append(event)
-
-    return sorted(
-        expanded_events,
-        key=lambda item: item.start_time,
-    )
+    return sorted(expanded_events, key=lambda item: item.start_time)
 
 
 def get_user_calendar_events(db, user_id):
     now = datetime.now(UTC)
-
-    events = db.query(Event).filter(Event.user_id == user_id).order_by(Event.start_time.asc()).all()
-
     expanded_events = []
 
-    for event in events:
-        is_recurring = event.recurrence_type and event.recurrence_type != "none"
+    for event in query_user_events_ordered(db, user_id):
+        expanded_events.extend(
+            expand_event_to_future_occurrences(
+                event=event,
+                now=now,
+                require_end_time=True,
+            )
+        )
 
-        if is_recurring:
-            occurrences = get_event_occurrences(event)
-
-            for occurrence_start, occurrence_end in occurrences:
-                if occurrence_start and occurrence_end and occurrence_start > now:
-                    expanded_events.append(
-                        SimpleNamespace(
-                            id=event.id,
-                            master_id=event.id,
-                            title=event.title,
-                            start_time=occurrence_start,
-                            end_time=occurrence_end,
-                            subject_id=event.subject_id,
-                            source=event.source,
-                        )
-                    )
-        else:
-            if event.start_time and event.end_time and event.start_time > now:
-                expanded_events.append(event)
-
-    return sorted(
-        expanded_events,
-        key=lambda item: item.start_time,
-    )
+    return sorted(expanded_events, key=lambda item: item.start_time)
 
 
 def get_existing_subject_deadline_count(
@@ -963,10 +992,10 @@ def normalize_deadline_mode(mode):
 def fallback_deadline_prediction(
     task,
     subject_events=None,
-    calendar_events=None,
     mode="subject_based",
     used_event_index=0,
     used_best_time_dates=None,
+    **_ignored,
 ):
     subject_events = subject_events or []
     used_best_time_dates = used_best_time_dates or []
@@ -1004,7 +1033,9 @@ def fallback_deadline_prediction(
     duration_bonus = int(float(getattr(task, "estimated_duration_hours", 1) or 1) // 2)
     deadline_date = (now + timedelta(days=base_days + duration_bonus)).date()
 
-    blocked_dates = {item if hasattr(item, "isoformat") else item for item in used_best_time_dates}
+    blocked_dates = {
+        item.date() if isinstance(item, datetime) else item for item in used_best_time_dates
+    }
 
     while deadline_date in blocked_dates:
         deadline_date = deadline_date + timedelta(days=1)
@@ -1043,7 +1074,6 @@ def safe_predict_deadline(
         return fallback_deadline_prediction(
             task=task,
             subject_events=subject_events or [],
-            calendar_events=calendar_events or [],
             mode=normalized_mode,
             used_event_index=used_event_index,
             used_best_time_dates=used_best_time_dates or [],

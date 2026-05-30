@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 from flask import Blueprint, jsonify, request
 
@@ -99,7 +99,7 @@ def replan_task_api(task_id):
         if not task:
             return jsonify({"error": "Task not found"}), 404
 
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
 
         date_from = data.get("date_from") or now.date().isoformat()
         date_to = data.get("date_to")
@@ -159,7 +159,7 @@ def replan_task_api(task_id):
 
         task.status = "planned"
         task.event_id = event.id
-        task.updated_at = datetime.utcnow()
+        task.updated_at = datetime.now(UTC)
         task.missed_at = None
 
         create_task_log(
