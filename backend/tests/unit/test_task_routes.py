@@ -1310,9 +1310,6 @@ def test_auto_deadline_returns_500_on_global_exception(app, monkeypatch):
 
     patch_user_and_db(monkeypatch, db)
 
-    def raise_error(**kwargs):
-        raise RuntimeError("global fail")
-
     monkeypatch.setattr(
         routes,
         "safe_predict_deadline",
@@ -1336,3 +1333,186 @@ def test_auto_deadline_returns_500_on_global_exception(app, monkeypatch):
 
     assert "due_date" in data
     assert "confidence_score" in data
+
+
+def test_auto_deadline_without_title_returns_400(app, monkeypatch):
+    db = FakeDB()
+
+    patch_user_and_db(monkeypatch, db)
+
+    with app.test_request_context(
+        "/api/tasks/auto-deadline",
+        method="POST",
+        json={},
+    ):
+        response = routes.auto_deadline_for_manual_task()
+
+    assert response.status_code == 400
+
+    data = response.get_json()
+
+    assert "error" in data
+
+
+def test_auto_deadline_handles_prediction_failure(app, monkeypatch):
+    db = FakeDB()
+
+    patch_user_and_db(monkeypatch, db)
+
+    monkeypatch.setattr(
+        routes,
+        "safe_predict_deadline",
+        lambda **kwargs: None,
+    )
+
+    with app.test_request_context(
+        "/api/tasks/auto-deadline",
+        method="POST",
+        json={
+            "title": "Test task",
+        },
+    ):
+        response = routes.auto_deadline_for_manual_task()
+
+    assert response.status_code == 200
+
+    data = response.get_json()
+
+    assert data["due_date"] is None
+
+
+def test_auto_plan_preview_returns_empty_for_no_tasks(app, monkeypatch):
+    db = FakeDB()
+
+    patch_user_and_db(monkeypatch, db)
+
+    with app.test_request_context(
+        "/api/tasks/auto-plan-deadlines-preview",
+        method="POST",
+        json={"tasks": []},
+    ):
+        response = routes.auto_plan_deadlines_preview()
+
+    assert response.status_code == 200
+
+    data = response.get_json()
+
+    assert data["tasks"] == []
+
+
+def test_auto_plan_preview_skips_invalid_task(app, monkeypatch):
+    db = FakeDB()
+
+    patch_user_and_db(monkeypatch, db)
+
+    monkeypatch.setattr(
+        routes,
+        "safe_predict_deadline",
+        lambda **kwargs: {
+            "deadline": datetime.now(UTC) + timedelta(days=2),
+            "confidence": 0.7,
+            "reason": "predicted",
+        },
+    )
+
+    with app.test_request_context(
+        "/api/tasks/auto-plan-deadlines-preview",
+        method="POST",
+        json={
+            "tasks": [
+                {},
+                {"title": "Valid task"},
+            ]
+        },
+    ):
+        response = routes.auto_plan_deadlines_preview()
+
+    assert response.status_code == 200
+
+    data = response.get_json()
+
+    assert len(data["tasks"]) >= 1
+
+
+def test_auto_deadline_without_title_returns_400(app, monkeypatch):
+    db = FakeDB()
+
+    patch_user_and_db(monkeypatch, db)
+
+    with app.test_request_context(
+        "/api/tasks/auto-deadline",
+        method="POST",
+        json={},
+    ):
+        response, status_code = routes.auto_deadline_for_manual_task()
+
+    assert status_code == 400
+
+    data = response.get_json()
+
+    assert "error" in data
+
+
+def test_auto_deadline_handles_prediction_failure(app, monkeypatch):
+    db = FakeDB()
+
+    patch_user_and_db(monkeypatch, db)
+
+    monkeypatch.setattr(
+        routes,
+        "safe_predict_deadline",
+        lambda **kwargs: {
+            "deadline": None,
+            "confidence": 0,
+            "reason": "fallback",
+        },
+    )
+
+    with app.test_request_context(
+        "/api/tasks/auto-deadline",
+        method="POST",
+        json={
+            "title": "Test task",
+        },
+    ):
+        response = routes.auto_deadline_for_manual_task()
+
+    if isinstance(response, tuple):
+        response, status_code = response
+    else:
+        status_code = response.status_code
+
+    assert status_code == 200
+
+    data = response.get_json()
+
+    assert "due_date" in data
+
+
+def test_auto_plan_preview_handles_exception(app, monkeypatch):
+    db = FakeDB()
+
+    patch_user_and_db(monkeypatch, db)
+
+    monkeypatch.setattr(
+        routes,
+        "safe_predict_deadline",
+        lambda **kwargs: (_ for _ in ()).throw(RuntimeError("planner fail")),
+    )
+
+    with app.test_request_context(
+        "/api/tasks/auto-plan-deadlines-preview",
+        method="POST",
+        json={
+            "tasks": [
+                {"title": "Task"},
+            ]
+        },
+    ):
+        response = routes.auto_plan_deadlines_preview()
+
+    assert response.status_code == 200
+
+    data = response.get_json()
+
+    assert "tasks" in data
