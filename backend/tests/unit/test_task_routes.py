@@ -1026,3 +1026,305 @@ def test_create_tasks_from_import_rolls_back_on_error(app, monkeypatch):
     assert status == 500
     assert db.rolled_back is True
     assert "broken" in response.get_json()["details"]
+
+
+def test_auto_plan_deadlines_preview_handles_prediction_error(app, monkeypatch):
+    db = FakeDB()
+    patch_user_and_db(monkeypatch, db)
+
+    monkeypatch.setattr(routes, "resolve_subject_id", lambda **kwargs: 10)
+    monkeypatch.setattr(routes, "get_existing_deadline_dates", lambda db, user_id: [])
+    monkeypatch.setattr(routes, "get_user_calendar_events", lambda db, user_id: [])
+    monkeypatch.setattr(routes, "get_subject_events", lambda **kwargs: [])
+
+    def raise_prediction_error(**kwargs):
+        raise RuntimeError("prediction failed")
+
+    monkeypatch.setattr(
+        routes,
+        "safe_predict_deadline",
+        raise_prediction_error,
+    )
+
+    with app.test_request_context(
+        "/api/tasks/auto-plan-deadlines-preview",
+        method="POST",
+        json={
+            "tasks": [
+                {
+                    "title": "Broken task",
+                    "subject": "Math",
+                }
+            ]
+        },
+    ):
+        response = routes.auto_plan_deadlines_preview()
+
+    data = response.get_json()
+
+    assert response.status_code == 200
+    assert len(data["tasks"]) == 1
+    assert data["tasks"][0]["error"] == "prediction failed"
+
+
+def test_auto_plan_existing_task_returns_500(app, monkeypatch):
+    task = make_task()
+    db = FakeDB(task=task)
+
+    patch_user_and_db(monkeypatch, db)
+
+    def raise_error(**kwargs):
+        raise RuntimeError("planner crashed")
+
+    monkeypatch.setattr(
+        routes,
+        "apply_auto_deadline_to_task",
+        raise_error,
+    )
+
+    with app.test_request_context(
+        "/api/tasks/1/auto-plan",
+        method="POST",
+        json={},
+    ):
+        response, status = routes.auto_plan_existing_task(1)
+
+    assert status == 500
+    assert db.rolled_back is True
+    assert "planner crashed" in response.get_json()["details"]
+
+
+def test_get_task_schedule_blocks_unauthorized(app, monkeypatch):
+    monkeypatch.setattr(routes, "current_user", lambda: None)
+
+    with app.test_request_context("/api/task-schedule-blocks"):
+        response, status = routes.get_task_schedule_blocks()
+
+    assert status == 401
+
+
+def test_generate_dataset_unauthorized(app, monkeypatch):
+    monkeypatch.setattr(routes, "current_user", lambda: None)
+
+    with app.test_request_context(
+        "/api/ml/deadline-dataset/generate",
+        method="POST",
+    ):
+        response, status = routes.generate_synthetic_deadline_dataset()
+
+    assert status == 401
+
+
+def test_analyze_text_returns_500(app, monkeypatch):
+    db = FakeDB()
+
+    patch_user_and_db(monkeypatch, db)
+
+    def raise_error(**kwargs):
+        raise RuntimeError("nlp failed")
+
+    monkeypatch.setattr(
+        routes.task_nlp_service,
+        "analyze_many",
+        raise_error,
+    )
+
+    with app.test_request_context(
+        "/api/task-import/analyze-text",
+        method="POST",
+        json={"text": "test"},
+    ):
+        response, status = routes.analyze_task_text_api()
+
+    assert status == 500
+    assert "nlp failed" in response.get_json()["details"]
+
+
+def test_analyze_file_returns_500(app, monkeypatch):
+    db = FakeDB()
+
+    patch_user_and_db(monkeypatch, db)
+
+    def raise_error(*args, **kwargs):
+        raise RuntimeError("extract failed")
+
+    monkeypatch.setattr(
+        routes.task_file_extractor_service,
+        "extract_text",
+        raise_error,
+    )
+
+    with app.test_request_context(
+        "/api/task-import/analyze-file",
+        method="POST",
+        data={"file": (BytesIO(b"data"), "test.txt")},
+        content_type="multipart/form-data",
+    ):
+        response, status = routes.analyze_task_file_api()
+
+    assert status == 500
+    assert "extract failed" in response.get_json()["details"]
+
+
+def test_create_tasks_from_import_auto_planning_error_is_ignored(app, monkeypatch):
+    db = FakeDB()
+
+    patch_user_and_db(monkeypatch, db)
+
+    monkeypatch.setattr(routes, "find_subject_by_name", lambda *args, **kwargs: None)
+    monkeypatch.setattr(routes, "get_existing_deadline_dates", lambda db, user_id: [])
+
+    monkeypatch.setattr(
+        routes,
+        "get_subject_events",
+        lambda **kwargs: [],
+    )
+
+    monkeypatch.setattr(
+        routes,
+        "get_existing_subject_deadline_count",
+        lambda **kwargs: 0,
+    )
+
+    monkeypatch.setattr(
+        routes,
+        "build_subject_distribution_index",
+        lambda **kwargs: 0,
+    )
+
+    def raise_error(**kwargs):
+        raise RuntimeError("planning failed")
+
+    monkeypatch.setattr(
+        routes,
+        "apply_auto_deadline_to_task",
+        raise_error,
+    )
+
+    monkeypatch.setattr(
+        routes,
+        "create_task_log",
+        lambda **kwargs: None,
+    )
+
+    monkeypatch.setattr(
+        routes,
+        "serialize_task",
+        lambda task: {"title": task.title},
+    )
+
+    with app.test_request_context(
+        "/api/task-import/create-tasks",
+        method="POST",
+        json={
+            "tasks": [
+                {
+                    "title": "Task without deadline",
+                    "subject": "Math",
+                }
+            ]
+        },
+    ):
+        response, status = routes.create_tasks_from_import_api()
+
+    data = response.get_json()
+
+    assert status == 201
+    assert data["count"] == 1
+    assert data["tasks"][0]["title"] == "Task without deadline"
+
+
+def test_update_task_status_handles_auto_replan_error(app, monkeypatch):
+    task = make_task(status="planned")
+
+    db = FakeDB(task=task)
+
+    patch_user_and_db(monkeypatch, db)
+
+    monkeypatch.setattr(routes, "create_task_log", lambda **kwargs: None)
+    monkeypatch.setattr(routes, "set_auto_replan_metadata", lambda db, task: None)
+
+    def raise_error(**kwargs):
+        raise RuntimeError("replan crashed")
+
+    monkeypatch.setattr(
+        routes,
+        "auto_replan_missed_task",
+        raise_error,
+    )
+
+    monkeypatch.setattr(
+        routes,
+        "serialize_task",
+        lambda task: {"status": task.status},
+    )
+
+    with app.test_request_context(
+        "/api/tasks/1/status",
+        method="PUT",
+        json={"status": "missed"},
+    ):
+        response = routes.update_task_status(1)
+
+    assert response.status_code == 200
+    assert response.get_json()["status"] == "missed"
+
+
+def test_auto_deadline_returns_prediction_without_deadline(app, monkeypatch):
+    db = FakeDB()
+
+    patch_user_and_db(monkeypatch, db)
+
+    monkeypatch.setattr(routes, "resolve_subject_id", lambda **kwargs: 10)
+    monkeypatch.setattr(routes, "get_subject_events", lambda **kwargs: [])
+    monkeypatch.setattr(routes, "get_user_calendar_events", lambda **kwargs: [])
+    monkeypatch.setattr(routes, "get_existing_subject_deadline_count", lambda **kwargs: 0)
+    monkeypatch.setattr(routes, "get_existing_deadline_dates", lambda db, user_id: [])
+
+    monkeypatch.setattr(
+        routes,
+        "safe_predict_deadline",
+        lambda **kwargs: {
+            "deadline": None,
+            "confidence": 0.1,
+            "reason": "not enough data",
+        },
+    )
+
+    with app.test_request_context(
+        "/api/tasks/auto-deadline",
+        method="POST",
+        json={"title": "Task"},
+    ):
+        response = routes.auto_deadline_for_manual_task()
+
+    data = response.get_json()
+
+    assert response.status_code == 200
+    assert data["due_date"] is None
+    assert data["confidence_score"] == 0.1
+
+
+def test_auto_deadline_returns_500_on_global_exception(app, monkeypatch):
+    db = FakeDB()
+
+    patch_user_and_db(monkeypatch, db)
+
+    def raise_error(**kwargs):
+        raise RuntimeError("global fail")
+
+    monkeypatch.setattr(
+        routes,
+        "resolve_subject_id",
+        raise_error,
+    )
+
+    with app.test_request_context(
+        "/api/tasks/auto-deadline",
+        method="POST",
+        json={"title": "Task"},
+    ):
+        response, status = routes.auto_deadline_for_manual_task()
+
+    assert status == 500
+    assert "global fail" in response.get_json()["details"]
