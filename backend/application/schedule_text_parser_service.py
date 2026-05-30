@@ -175,7 +175,10 @@ class ScheduleTextParserService:
         current_key = None
 
         for line in lines:
-            match = re.match(r"^([^:]+):\s*(.*)$", line)
+            match = re.match(
+                r"^([^:\n]{1,50}):\s*([^\n]{0,500})$",
+                line,
+            )
 
             if match:
                 raw_key = match.group(1).strip().lower()

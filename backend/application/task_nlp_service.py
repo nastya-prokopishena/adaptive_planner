@@ -418,7 +418,7 @@ class TaskNLPService:
         if "зміст" not in before:
             return False
 
-        if re.search(r"\.{3,}\s*\d+", after):
+        if re.search(r"\.{3,}\s*\d{1,3}", after):
             return True
 
         if after.count("лабораторна робота") >= 2:
@@ -463,7 +463,11 @@ class TaskNLPService:
         return any(marker in lower for marker in markers)
 
     def _extract_section_number(self, title):
-        match = re.search(r"(?:№|N|No)?\s*(\d+)", title, re.IGNORECASE)
+        match = re.search(
+            r"(?:№|N|No)?\s*(\d{1,3})",
+            title,
+            re.IGNORECASE,
+        )
         return int(match.group(1)) if match else None
 
     def _extract_section_kind(self, title):
@@ -539,7 +543,7 @@ class TaskNLPService:
     def _normalize_title(self, title):
         title = title or "Навчальна задача"
         title = re.sub(r"\s+", " ", title)
-        title = re.sub(r"\.{3,}.*$", "", title)
+        title = re.sub(r"\.{3,}[^\n]{0,200}$", "", title)
         title = title.strip(" .:-—")
 
         return title[:160]

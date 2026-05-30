@@ -4,12 +4,16 @@ from flask import Flask
 from flask_cors import CORS
 
 from backend.app.routes import main
+from flask_wtf.csrf import CSRFProtect
 
+csrf = CSRFProtect()
 
 def create_app():
     app = Flask(__name__, static_folder="static", static_url_path="/static")
 
     app.secret_key = os.getenv("SECRET_KEY", "dev-secret-key")
+
+    csrf.init_app(app)
 
     CORS(
         app,

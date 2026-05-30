@@ -43,3 +43,4 @@ pillow
 bcrypt
 flasgger
 pytest-benchmark
+flask_wtf
