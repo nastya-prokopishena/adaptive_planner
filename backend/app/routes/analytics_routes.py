@@ -1,32 +1,29 @@
-from backend.app.routes.common import *
+from datetime import datetime, timedelta
+
+from flask import Blueprint, jsonify, request
+
+from backend.app.routes.common import (
+    Event,
+    SessionLocal,
+    Task,
+    TaskScheduleBlock,
+    analytics_service,
+    create_task_log,
+    current_user,
+    ml_task_planner_service,
+    parse_optional_datetime,
+    plan_task_with_ortools,
+    productivity_model_service,
+    serialize_event,
+    serialize_task,
+    serialize_task_schedule_block,
+)
 
 analytics_bp = Blueprint("analytics", __name__)
 
 
 @analytics_bp.route("/api/analytics/dashboard", methods=["GET"])
 def analytics_dashboard_api():
-    """
-    Get dashboard analytics
-    ---
-    tags:
-      - Analytics
-    parameters:
-      - in: query
-        name: date_from
-        type: string
-        format: date-time
-        required: false
-      - in: query
-        name: date_to
-        type: string
-        format: date-time
-        required: false
-    responses:
-      200:
-        description: Dashboard analytics
-      401:
-        description: Unauthorized
-    """
     user = current_user()
 
     if not user:
@@ -56,20 +53,6 @@ def analytics_dashboard_api():
 
 @analytics_bp.route("/api/ml/productivity/predict", methods=["POST"])
 def productivity_predict_api():
-    """
-    Predict productivity for selected date
-    ---
-    tags:
-      - Analytics
-      - ML
-    responses:
-      200:
-        description: Productivity prediction
-      400:
-        description: Date is required
-      401:
-        description: Unauthorized
-    """
     user = current_user()
 
     if not user:
@@ -101,27 +84,6 @@ def productivity_predict_api():
 
 @analytics_bp.route("/api/tasks/<int:task_id>/replan", methods=["POST"])
 def replan_task_api(task_id):
-    """
-    Replan missed task
-    ---
-    tags:
-      - Tasks
-      - Planner
-    parameters:
-      - in: path
-        name: task_id
-        type: integer
-        required: true
-    responses:
-      201:
-        description: Task replanned
-      401:
-        description: Unauthorized
-      404:
-        description: Task not found
-      409:
-        description: No free slot
-    """
     user = current_user()
 
     if not user:
@@ -230,18 +192,6 @@ def replan_task_api(task_id):
 
 @analytics_bp.route("/api/ml/plan-tasks", methods=["POST"])
 def generate_ml_task_plan():
-    """
-    Generate ML task plan
-    ---
-    tags:
-      - Planner
-      - ML
-    responses:
-      200:
-        description: ML task plan generated
-      401:
-        description: Unauthorized
-    """
     user = current_user()
 
     if not user:
@@ -278,17 +228,6 @@ def generate_ml_task_plan():
 
 @analytics_bp.route("/api/unified-calendar", methods=["GET"])
 def get_unified_calendar():
-    """
-    Get unified calendar
-    ---
-    tags:
-      - Calendar
-    responses:
-      200:
-        description: Combined calendar items
-      401:
-        description: Unauthorized
-    """
     user = current_user()
 
     if not user:
