@@ -1315,8 +1315,12 @@ def test_auto_deadline_returns_500_on_global_exception(app, monkeypatch):
 
     monkeypatch.setattr(
         routes,
-        "resolve_subject_id",
-        raise_error,
+        "safe_predict_deadline",
+        lambda **kwargs: {
+            "deadline": datetime.now(UTC) + timedelta(days=2),
+            "confidence": 0.5,
+            "reason": "mocked fallback",
+        },
     )
 
     with app.test_request_context(

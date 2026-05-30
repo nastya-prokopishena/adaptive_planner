@@ -1,9 +1,475 @@
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from types import SimpleNamespace
 
-import pytest
+from flask import session
 
 from backend.app.routes import common
+
+
+class ExtraFakeQuery:
+    def __init__(self, items=None, first_item=None, count_value=0):
+        self.items = items or []
+        self.first_item = first_item
+        self.count_value = count_value
+
+    def filter(self, *args, **kwargs):
+        return self
+
+    def filter_by(self, *args, **kwargs):
+        return self
+
+    def order_by(self, *args, **kwargs):
+        return self
+
+    def all(self):
+        return self.items
+
+    def first(self):
+        return self.first_item
+
+    def count(self):
+        return self.count_value
+
+
+class ExtraFakeDB:
+    def __init__(self, items=None, first_item=None, count_value=0):
+        self.items = items or []
+        self.first_item = first_item
+        self.count_value = count_value
+        self.added = []
+        self.closed = False
+
+    def query(self, model):
+        return ExtraFakeQuery(
+            items=self.items,
+            first_item=self.first_item,
+            count_value=self.count_value,
+        )
+
+    def add(self, item):
+        self.added.append(item)
+
+    def close(self):
+        self.closed = True
+
+
+def test_to_aware_utc_and_storage_datetime():
+    naive = datetime(2026, 5, 30, 10, 0)
+    aware = datetime(2026, 5, 30, 10, 0, tzinfo=UTC)
+
+    assert common.to_aware_utc(None) is None
+    assert common.to_aware_utc(naive).tzinfo == UTC
+    assert common.to_aware_utc(aware).tzinfo == UTC
+
+    stored = common.to_storage_datetime(aware)
+
+    assert stored.tzinfo is None
+    assert stored.hour == 10
+
+
+def test_refresh_task_deadline_status_marks_missed():
+    now = datetime(2026, 5, 30, 12, 0, tzinfo=UTC)
+
+    task = SimpleNamespace(
+        due_date=datetime(2026, 5, 29, 12, 0),
+        status="planned",
+        missed_at=None,
+        completed_at=datetime(2026, 5, 29, 13, 0),
+        updated_at=None,
+    )
+
+    changed = common.refresh_task_deadline_status(task, now=now)
+
+    assert changed is True
+    assert task.status == common.MISSED_TASK_STATUS
+    assert task.completed_at is None
+    assert task.missed_at is not None
+
+
+def test_refresh_task_deadline_status_ignores_completed_and_empty_task():
+    now = datetime(2026, 5, 30, 12, 0, tzinfo=UTC)
+
+    completed_task = SimpleNamespace(
+        due_date=datetime(2026, 5, 29, 12, 0),
+        status="done",
+        missed_at=None,
+        completed_at=None,
+        updated_at=None,
+    )
+
+    assert common.refresh_task_deadline_status(None, now=now) is False
+    assert common.refresh_task_deadline_status(completed_task, now=now) is False
+
+
+def test_should_auto_replan_task_edge_cases():
+    now = datetime(2026, 5, 30, 12, 0, tzinfo=UTC)
+
+    overdue = SimpleNamespace(
+        due_date=datetime(2026, 5, 29, 12, 0),
+        status="planned",
+    )
+    future = SimpleNamespace(
+        due_date=datetime(2026, 6, 1, 12, 0),
+        status="planned",
+    )
+    done = SimpleNamespace(
+        due_date=datetime(2026, 5, 29, 12, 0),
+        status="completed",
+    )
+
+    assert common.should_auto_replan_task(overdue, now=now) is True
+    assert common.should_auto_replan_task(future, now=now) is False
+    assert common.should_auto_replan_task(done, now=now) is False
+    assert common.should_auto_replan_task(None, now=now) is False
+
+
+def test_get_replan_count_and_limit_log_empty_task_id():
+    db = ExtraFakeDB(count_value=2)
+
+    assert common.get_task_auto_replan_count(db, None) == 0
+    assert common.has_auto_replan_limit_log(db, None) is False
+
+
+def test_set_tasks_auto_replan_metadata_updates_all_tasks():
+    db = ExtraFakeDB(count_value=1)
+
+    tasks = [
+        SimpleNamespace(id=1),
+        SimpleNamespace(id=2),
+    ]
+
+    result = common.set_tasks_auto_replan_metadata(db, tasks)
+
+    assert result == tasks
+    assert tasks[0].auto_replan_count == 1
+    assert tasks[1].auto_replan_attempts_left == 2
+
+
+def test_current_user_returns_none_without_session(app):
+    with app.test_request_context("/"):
+        assert common.current_user() is None
+
+
+def test_current_user_loads_user_from_session(app, monkeypatch):
+    user = SimpleNamespace(id=1, email="test@example.com")
+    db = ExtraFakeDB(first_item=user)
+
+    monkeypatch.setattr(common, "SessionLocal", lambda: db)
+
+    with app.test_request_context("/"):
+        session["user_id"] = 1
+
+        result = common.current_user()
+
+    assert result == user
+    assert db.closed is True
+
+
+def test_parse_optional_datetime_accepts_z_and_rejects_invalid():
+    result = common.parse_optional_datetime("2026-05-30T10:00:00Z")
+
+    assert result is not None
+    assert common.parse_optional_datetime("bad-date") is None
+    assert common.parse_optional_datetime(None) is None
+
+
+def test_serializers_for_event_type_subject_activity_log_and_block():
+    now = datetime(2026, 5, 30, 10, 0)
+
+    event_type = SimpleNamespace(
+        id=1,
+        user_id=2,
+        name="Lecture",
+        color="#fff",
+        is_default=True,
+        created_at=now,
+    )
+    subject = SimpleNamespace(
+        id=3,
+        user_id=2,
+        name="Math",
+        teacher="Teacher",
+        description="Desc",
+        color="#000",
+        created_at=now,
+    )
+    log = SimpleNamespace(
+        id=4,
+        user_id=2,
+        task_id=5,
+        action="created",
+        old_status=None,
+        new_status="planned",
+        details="details",
+        created_at=now,
+    )
+    block = SimpleNamespace(
+        id=6,
+        task_id=5,
+        start_time=now,
+        end_time=now + timedelta(hours=1),
+        source="ai",
+        generated_by_ai=True,
+        confidence_score=0.8,
+        reason="reason",
+    )
+    task = SimpleNamespace(title="Task")
+
+    assert common.serialize_event_type(event_type)["name"] == "Lecture"
+    assert common.serialize_subject(subject)["teacher"] == "Teacher"
+    assert common.serialize_activity_log(log)["action"] == "created"
+
+    serialized_block = common.serialize_task_schedule_block(block, task)
+
+    assert serialized_block["id"] == 6
+    assert serialized_block["calendar_type"] == "ai_task_block"
+    assert "Task" in serialized_block["title"]
+
+
+def test_create_task_log_adds_log_to_db():
+    db = ExtraFakeDB()
+
+    common.create_task_log(
+        db=db,
+        user_id=1,
+        task_id=2,
+        action="status_changed",
+        old_status="planned",
+        new_status="done",
+        details="changed",
+    )
+
+    assert len(db.added) == 1
+    assert db.added[0].action == "status_changed"
+    assert db.added[0].new_status == "done"
+
+
+def test_find_subject_by_name_returns_none_for_empty_name():
+    db = ExtraFakeDB()
+
+    assert common.find_subject_by_name(db, user_id=1, subject_name="") is None
+
+
+def test_resolve_subject_id_parses_int_and_falls_back_to_subject(monkeypatch):
+    subject = SimpleNamespace(id=15, name="Math")
+    db = ExtraFakeDB(first_item=subject)
+
+    assert common.resolve_subject_id(db, user_id=1, subject_id="12") == 12
+
+    monkeypatch.setattr(common, "find_subject_by_name", lambda **kwargs: subject)
+
+    assert (
+        common.resolve_subject_id(
+            db,
+            user_id=1,
+            subject_id="bad-id",
+            subject_name="Math",
+        )
+        == 15
+    )
+
+
+def test_get_subject_name_by_id_empty_and_found():
+    subject = SimpleNamespace(id=10, name="Physics")
+    db = ExtraFakeDB(first_item=subject)
+
+    assert common.get_subject_name_by_id(db, user_id=1, subject_id=None) is None
+    assert common.get_subject_name_by_id(db, user_id=1, subject_id=10) == "Physics"
+
+
+def test_get_excluded_dates_filters_empty_values():
+    event = SimpleNamespace(recurrence_excluded_dates="2026-05-30T10:00:00, ,2026-06-01T10:00:00")
+
+    result = common.get_excluded_dates(event)
+
+    assert result == ["2026-05-30T10:00:00", "2026-06-01T10:00:00"]
+
+
+def test_get_event_occurrences_filters_excluded_dates(monkeypatch):
+    start = datetime(2026, 5, 30, 10, 0)
+    end = datetime(2026, 5, 30, 11, 0)
+    second_start = datetime(2026, 6, 1, 10, 0)
+    second_end = datetime(2026, 6, 1, 11, 0)
+
+    event = SimpleNamespace(
+        start_time=start,
+        end_time=end,
+        recurrence_type="weekly",
+        recurrence_interval=1,
+        recurrence_unit=None,
+        recurrence_days=None,
+        recurrence_end_type="count",
+        recurrence_end_date=None,
+        recurrence_count=2,
+        recurrence_excluded_dates=start.isoformat(),
+    )
+
+    monkeypatch.setattr(
+        common,
+        "generate_occurrences",
+        lambda **kwargs: [(start, end), (second_start, second_end)],
+    )
+
+    result = common.get_event_occurrences(event)
+
+    assert result == [(second_start, second_end)]
+
+
+def test_has_time_conflict_returns_matching_event(monkeypatch):
+    start = datetime(2026, 5, 30, 10, 0)
+    end = datetime(2026, 5, 30, 11, 0)
+
+    existing = SimpleNamespace(
+        id=1,
+        start_time=start,
+        end_time=end,
+    )
+
+    db = ExtraFakeDB(items=[existing])
+
+    monkeypatch.setattr(common, "get_candidate_occurrences", lambda *args, **kwargs: [(start, end)])
+    monkeypatch.setattr(common, "get_event_occurrences", lambda event: [(start, end)])
+
+    result = common.has_time_conflict(
+        db=db,
+        user_id=1,
+        start_time=start,
+        end_time=end,
+        recurrence_data={
+            "recurrence_type": "none",
+            "recurrence_interval": 1,
+            "recurrence_unit": None,
+            "recurrence_days": "",
+            "recurrence_end_type": "never",
+            "recurrence_end_date": None,
+            "recurrence_count": None,
+        },
+    )
+
+    assert result == existing
+
+
+def test_has_time_conflict_returns_none_when_no_overlap(monkeypatch):
+    start = datetime(2026, 5, 30, 10, 0)
+    end = datetime(2026, 5, 30, 11, 0)
+
+    existing = SimpleNamespace(
+        id=1,
+        start_time=start + timedelta(hours=3),
+        end_time=end + timedelta(hours=3),
+    )
+
+    db = ExtraFakeDB(items=[existing])
+
+    monkeypatch.setattr(common, "get_candidate_occurrences", lambda *args, **kwargs: [(start, end)])
+    monkeypatch.setattr(
+        common,
+        "get_event_occurrences",
+        lambda event: [(existing.start_time, existing.end_time)],
+    )
+
+    result = common.has_time_conflict(
+        db=db,
+        user_id=1,
+        start_time=start,
+        end_time=end,
+        recurrence_data={
+            "recurrence_type": "none",
+            "recurrence_interval": 1,
+            "recurrence_unit": None,
+            "recurrence_days": "",
+            "recurrence_end_type": "never",
+            "recurrence_end_date": None,
+            "recurrence_count": None,
+        },
+    )
+
+    assert result is None
+
+
+def test_sync_google_events_to_db_skips_user_without_credentials():
+    db = ExtraFakeDB()
+    user = SimpleNamespace(id=1, google_credentials=None)
+
+    result = common.sync_google_events_to_db(user, db)
+
+    assert result is None
+    assert db.added == []
+
+
+def test_build_subject_distribution_index_all_branches():
+    assert (
+        common.build_subject_distribution_index(
+            existing_count=2,
+            task_position=0,
+            task_total=1,
+            subject_events_count=5,
+        )
+        == 2
+    )
+
+    assert (
+        common.build_subject_distribution_index(
+            existing_count=1,
+            task_position=1,
+            task_total=3,
+            subject_events_count=10,
+        )
+        == 4
+    )
+
+    assert (
+        common.build_subject_distribution_index(
+            existing_count=1,
+            task_position=2,
+            task_total=5,
+            subject_events_count=2,
+        )
+        == 3
+    )
+
+
+def test_apply_auto_deadline_to_task_success(monkeypatch):
+    deadline = datetime(2026, 6, 1, 20, 0)
+
+    task = SimpleNamespace(
+        id=1,
+        user_id=1,
+        subject_id=10,
+        due_date=None,
+        updated_at=None,
+    )
+    block = SimpleNamespace(id=99)
+    db = ExtraFakeDB()
+
+    monkeypatch.setattr(common, "get_subject_events", lambda **kwargs: [])
+    monkeypatch.setattr(common, "get_user_calendar_events", lambda **kwargs: [])
+    monkeypatch.setattr(common, "get_existing_subject_deadline_count", lambda **kwargs: 0)
+    monkeypatch.setattr(
+        common,
+        "safe_predict_deadline",
+        lambda **kwargs: {
+            "deadline": deadline,
+            "confidence": 0.8,
+            "reason": "planned",
+        },
+    )
+    monkeypatch.setattr(
+        common.task_schedule_block_service,
+        "recreate_block_for_task",
+        lambda **kwargs: block,
+    )
+
+    prediction, result_block = common.apply_auto_deadline_to_task(
+        db=db,
+        user_id=1,
+        task=task,
+        mode="best_time",
+    )
+
+    assert task.due_date == deadline
+    assert prediction["deadline"] == deadline
+    assert result_block == block
 
 
 def test_parse_datetime_accepts_iso_with_z():
