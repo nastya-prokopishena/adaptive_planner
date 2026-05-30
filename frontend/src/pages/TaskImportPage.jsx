@@ -372,34 +372,6 @@ export default function TaskImportPage() {
             визначить назву, предмет, тип, ключові слова, складність і
             орієнтовний час виконання.
           </p>
-
-          {modelInfo && (
-            <div
-              className={
-                modelInfo.loaded
-                  ? "model-info-box success"
-                  : "model-info-box warning"
-              }
-            >
-              {modelInfo.loaded ? (
-                <>
-                  <strong>ML-модель активна</strong>
-
-                  {modelInfo.fine_accuracy && (
-                    <span>
-                      Accuracy:
-                      {(Number(modelInfo.fine_accuracy) * 100).toFixed(1)}%
-                    </span>
-                  )}
-                </>
-              ) : (
-                <>
-                  <strong>ML-модель не завантажена</strong>
-                  <span>Буде використано fallback-оцінювання.</span>
-                </>
-              )}
-            </div>
-          )}
         </div>
 
         <Link to="/" className="secondary-button">

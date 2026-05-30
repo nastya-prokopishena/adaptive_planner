@@ -2086,6 +2086,57 @@ button:disabled {
   resize: vertical;
 }
 
+.task-preview-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+
+.task-preview-actions select {
+  background: rgba(255, 255, 255, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 14px;
+  padding: 12px 18px;
+  font-size: 15px;
+  font-weight: 500;
+  color: #1e293b;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow:
+    0 4px 12px rgba(15, 23, 42, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.15s ease,
+    background 0.2s ease;
+  cursor: pointer;
+  outline: none;
+  min-width: 260px;
+}
+
+.task-preview-actions select:hover {
+  border-color: rgba(99, 102, 241, 0.45);
+  box-shadow:
+    0 6px 18px rgba(99, 102, 241, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  transform: translateY(-1px);
+}
+
+.task-preview-actions select:focus {
+  border-color: #818cf8;
+  box-shadow:
+    0 0 0 4px rgba(129, 140, 248, 0.18),
+    0 8px 20px rgba(99, 102, 241, 0.15);
+}
+
+.task-preview-actions select option {
+  color: #111827;
+  background: #ffffff;
+}
+
 .full-width {
   width: 100%;
   margin-top: 16px;

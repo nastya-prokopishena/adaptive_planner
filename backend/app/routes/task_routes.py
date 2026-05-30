@@ -523,13 +523,27 @@ def get_activity_logs():
 
 @task_bp.route("/api/tasks/auto-deadline", methods=["POST"], strict_slashes=False)
 def auto_deadline_for_manual_task():
+    """
+    Predict deadline for manual task
+    ---
+    tags:
+      - Tasks
+      - ML
+    responses:
+      200:
+        description: Predicted deadline
+      400:
+        description: Task title is required
+      401:
+        description: Unauthorized
+    """
     user = current_user()
 
     if not user:
         return jsonify({"error": "Unauthorized"}), 401
 
-    data = request.json or {}
-    title = data.get("title")
+    data = request.get_json(silent=True) or {}
+    title = data.get("title") or data.get("name")
 
     if not title:
         return jsonify({"error": "Task title is required"}), 400
@@ -537,12 +551,28 @@ def auto_deadline_for_manual_task():
     db = SessionLocal()
 
     try:
-        subject_id = resolve_subject_id(
-            db=db,
-            user_id=user.id,
-            subject_id=data.get("subject_id"),
-            subject_name=data.get("subject"),
-        )
+        subject_name = data.get("subject")
+        subject_id = None
+
+        try:
+            subject_id = resolve_subject_id(
+                db=db,
+                user_id=user.id,
+                subject_id=data.get("subject_id"),
+                subject_name=subject_name,
+            )
+        except Exception as error:
+            print("auto_deadline resolve_subject_id error:", error)
+
+        try:
+            estimated_duration_hours = float(data.get("estimated_duration_hours") or 1)
+        except (TypeError, ValueError):
+            estimated_duration_hours = 1
+
+        try:
+            difficulty_score = int(data.get("difficulty_score") or 3)
+        except (TypeError, ValueError):
+            difficulty_score = 3
 
         temp_task = Task(
             user_id=user.id,
@@ -550,30 +580,54 @@ def auto_deadline_for_manual_task():
             description=data.get("description"),
             priority=data.get("priority", "medium"),
             task_type=data.get("task_type", "other"),
-            estimated_duration_hours=float(data.get("estimated_duration_hours") or 1),
-            difficulty_score=int(data.get("difficulty_score") or 3),
+            estimated_duration_hours=estimated_duration_hours,
+            difficulty_score=difficulty_score,
             subject_id=subject_id,
             status="planned",
         )
 
-        subject_events = get_subject_events(
-            db=db,
-            user_id=user.id,
-            subject_id=temp_task.subject_id,
-            subject_name=data.get("subject"),
-        )
+        try:
+            subject_events = (
+                get_subject_events(
+                    db=db,
+                    user_id=user.id,
+                    subject_id=temp_task.subject_id,
+                    subject_name=subject_name,
+                )
+                or []
+            )
+        except Exception as error:
+            print("auto_deadline get_subject_events error:", error)
+            subject_events = []
 
-        calendar_events = get_user_calendar_events(
-            db=db,
-            user_id=user.id,
-        )
+        try:
+            calendar_events = (
+                get_user_calendar_events(
+                    db=db,
+                    user_id=user.id,
+                )
+                or []
+            )
+        except Exception as error:
+            print("auto_deadline get_user_calendar_events error:", error)
+            calendar_events = []
 
-        existing_count = get_existing_subject_deadline_count(
-            db=db,
-            user_id=user.id,
-            subject_id=temp_task.subject_id,
-            subject_name=data.get("subject"),
-        )
+        try:
+            existing_count = get_existing_subject_deadline_count(
+                db=db,
+                user_id=user.id,
+                subject_id=temp_task.subject_id,
+                subject_name=subject_name,
+            )
+        except Exception as error:
+            print("auto_deadline get_existing_subject_deadline_count error:", error)
+            existing_count = 0
+
+        try:
+            used_best_time_dates = get_existing_deadline_dates(db, user.id) or []
+        except Exception as error:
+            print("auto_deadline get_existing_deadline_dates error:", error)
+            used_best_time_dates = []
 
         prediction = safe_predict_deadline(
             task=temp_task,
@@ -581,15 +635,46 @@ def auto_deadline_for_manual_task():
             calendar_events=calendar_events,
             mode=data.get("mode", "subject_based"),
             used_event_index=existing_count,
-            used_best_time_dates=get_existing_deadline_dates(db, user.id),
+            used_best_time_dates=used_best_time_dates,
         )
+
+        deadline = prediction.get("deadline")
+
+        if not deadline:
+            return (
+                jsonify(
+                    {
+                        "error": "Deadline was not predicted",
+                        "due_date": None,
+                        "confidence_score": prediction.get("confidence", 0),
+                        "reason": prediction.get("reason", ""),
+                    }
+                ),
+                200,
+            )
 
         return jsonify(
             {
-                "due_date": prediction["deadline"].isoformat(),
-                "confidence_score": prediction["confidence"],
-                "reason": prediction["reason"],
+                "due_date": deadline.isoformat(),
+                "confidence_score": prediction.get("confidence", 0),
+                "reason": prediction.get("reason", ""),
             }
+        )
+
+    except Exception as error:
+        print("AUTO DEADLINE ERROR:", error)
+
+        return (
+            jsonify(
+                {
+                    "error": "Не вдалося автоматично підібрати дедлайн",
+                    "details": str(error),
+                    "due_date": None,
+                    "confidence_score": 0,
+                    "reason": "",
+                }
+            ),
+            500,
         )
 
     finally:
@@ -598,122 +683,234 @@ def auto_deadline_for_manual_task():
 
 @task_bp.route("/api/tasks/auto-plan-deadlines-preview", methods=["POST"], strict_slashes=False)
 def auto_plan_deadlines_preview():
+    """
+    Preview automatic deadline planning for multiple tasks
+    ---
+    tags:
+      - Tasks
+      - ML
+    responses:
+      200:
+        description: Preview of planned deadlines
+      401:
+        description: Unauthorized
+    """
     user = current_user()
 
     if not user:
         return jsonify({"error": "Unauthorized"}), 401
 
-    data = request.json or {}
-    raw_tasks = data.get("tasks", [])
+    data = request.get_json(silent=True) or {}
+    raw_tasks = data.get("tasks") or []
     mode = normalize_deadline_mode(data.get("mode", "subject_based"))
+
+    if isinstance(raw_tasks, dict):
+        raw_tasks = [raw_tasks]
+
+    if not isinstance(raw_tasks, list):
+        raw_tasks = []
 
     db = SessionLocal()
 
     try:
         planned_tasks = []
-        normalized_tasks = []
-        subject_batch_counts = {}
+        normalized_raw_tasks = []
 
         for raw_task in raw_tasks:
-            subject_name = raw_task.get("subject")
-            subject_id = resolve_subject_id(
-                db=db,
-                user_id=user.id,
-                subject_id=raw_task.get("subject_id"),
-                subject_name=subject_name,
-            )
-
-            if subject_id and not subject_name:
-                subject_name = get_subject_name_by_id(
-                    db=db,
-                    user_id=user.id,
-                    subject_id=subject_id,
+            if isinstance(raw_task, dict):
+                normalized_raw_tasks.append(raw_task)
+            else:
+                normalized_raw_tasks.append(
+                    {
+                        "title": str(raw_task) if raw_task else "Без назви",
+                        "description": str(raw_task) if raw_task else "",
+                    }
                 )
 
+        used_best_time_dates = []
+        calendar_events = []
+
+        try:
+            used_best_time_dates = get_existing_deadline_dates(db, user.id) or []
+        except Exception as error:
+            print("preview get_existing_deadline_dates error:", error)
+
+        try:
+            calendar_events = get_user_calendar_events(db, user.id) or []
+        except Exception as error:
+            print("preview get_user_calendar_events error:", error)
+
+        subject_batch_counts = {}
+
+        for raw_task in normalized_raw_tasks:
+            subject_name = raw_task.get("subject")
+            subject_id = None
+
+            try:
+                subject_id = resolve_subject_id(
+                    db=db,
+                    user_id=user.id,
+                    subject_id=raw_task.get("subject_id"),
+                    subject_name=subject_name,
+                )
+            except Exception as error:
+                print("preview resolve_subject_id error:", error)
+
             subject_key = subject_id or subject_name or "general"
-
-            normalized_tasks.append(
-                {
-                    "raw_task": raw_task,
-                    "subject_id": subject_id,
-                    "subject_name": subject_name,
-                    "subject_key": subject_key,
-                }
-            )
-
             subject_batch_counts[subject_key] = subject_batch_counts.get(subject_key, 0) + 1
 
         subject_positions = {}
-        used_best_time_dates = get_existing_deadline_dates(db, user.id)
-        calendar_events = get_user_calendar_events(db, user.id)
 
-        for item in normalized_tasks:
-            raw_task = item["raw_task"]
-            subject_id = item["subject_id"]
-            subject_name = item["subject_name"]
-            subject_key = item["subject_key"]
+        for raw_task in normalized_raw_tasks:
+            title = raw_task.get("title") or raw_task.get("name") or "Без назви"
 
-            current_position = subject_positions.get(subject_key, 0)
-            subject_positions[subject_key] = current_position + 1
+            try:
+                subject_name = raw_task.get("subject")
+                subject_id = None
 
-            temp_task = Task(
-                user_id=user.id,
-                title=raw_task.get("title") or "Без назви",
-                description=raw_task.get("description"),
-                priority=raw_task.get("priority", "medium"),
-                task_type=raw_task.get("task_type", "other"),
-                estimated_duration_hours=float(raw_task.get("estimated_duration_hours") or 1),
-                difficulty_score=int(raw_task.get("difficulty_score") or 3),
-                subject_id=subject_id,
-                status="planned",
-            )
+                try:
+                    subject_id = resolve_subject_id(
+                        db=db,
+                        user_id=user.id,
+                        subject_id=raw_task.get("subject_id"),
+                        subject_name=subject_name,
+                    )
+                except Exception as error:
+                    print("preview resolve_subject_id error:", error)
 
-            subject_events = get_subject_events(
-                db=db,
-                user_id=user.id,
-                subject_id=subject_id,
-                subject_name=subject_name,
-            )
+                if subject_id and not subject_name:
+                    try:
+                        subject_name = get_subject_name_by_id(
+                            db=db,
+                            user_id=user.id,
+                            subject_id=subject_id,
+                        )
+                    except Exception as error:
+                        print("preview get_subject_name_by_id error:", error)
 
-            existing_count = get_existing_subject_deadline_count(
-                db=db,
-                user_id=user.id,
-                subject_id=subject_id,
-                subject_name=subject_name,
-            )
+                subject_key = subject_id or subject_name or "general"
 
-            used_event_index = build_subject_distribution_index(
-                existing_count=existing_count,
-                task_position=current_position,
-                task_total=subject_batch_counts[subject_key],
-                subject_events_count=len(subject_events),
-            )
+                current_position = subject_positions.get(subject_key, 0)
+                subject_positions[subject_key] = current_position + 1
 
-            prediction = safe_predict_deadline(
-                task=temp_task,
-                subject_events=subject_events,
-                calendar_events=calendar_events,
-                mode=mode,
-                used_event_index=used_event_index,
-                used_best_time_dates=used_best_time_dates,
-            )
+                try:
+                    estimated_duration_hours = float(raw_task.get("estimated_duration_hours") or 1)
+                except (TypeError, ValueError):
+                    estimated_duration_hours = 1
 
-            used_best_time_dates.append(prediction["deadline"].date())
+                try:
+                    difficulty_score = int(raw_task.get("difficulty_score") or 3)
+                except (TypeError, ValueError):
+                    difficulty_score = 3
 
-            planned_tasks.append(
+                temp_task = Task(
+                    user_id=user.id,
+                    title=title,
+                    description=raw_task.get("description"),
+                    priority=raw_task.get("priority", "medium"),
+                    task_type=raw_task.get("task_type", "other"),
+                    estimated_duration_hours=estimated_duration_hours,
+                    difficulty_score=difficulty_score,
+                    subject_id=subject_id,
+                    status="planned",
+                )
+
+                try:
+                    subject_events = (
+                        get_subject_events(
+                            db=db,
+                            user_id=user.id,
+                            subject_id=subject_id,
+                            subject_name=subject_name,
+                        )
+                        or []
+                    )
+                except Exception as error:
+                    print("preview get_subject_events error:", error)
+                    subject_events = []
+
+                try:
+                    existing_count = get_existing_subject_deadline_count(
+                        db=db,
+                        user_id=user.id,
+                        subject_id=subject_id,
+                        subject_name=subject_name,
+                    )
+                except Exception as error:
+                    print("preview get_existing_subject_deadline_count error:", error)
+                    existing_count = 0
+
+                try:
+                    used_event_index = build_subject_distribution_index(
+                        existing_count=existing_count,
+                        task_position=current_position,
+                        task_total=subject_batch_counts.get(subject_key, 1),
+                        subject_events_count=len(subject_events),
+                    )
+                except Exception as error:
+                    print("preview build_subject_distribution_index error:", error)
+                    used_event_index = current_position
+
+                prediction = safe_predict_deadline(
+                    task=temp_task,
+                    subject_events=subject_events,
+                    calendar_events=calendar_events,
+                    mode=mode,
+                    used_event_index=used_event_index,
+                    used_best_time_dates=used_best_time_dates,
+                )
+
+                deadline = prediction.get("deadline")
+
+                if deadline:
+                    used_best_time_dates.append(deadline.date())
+
+                planned_tasks.append(
+                    {
+                        "title": temp_task.title,
+                        "due_date": deadline.isoformat() if deadline else None,
+                        "confidence_score": prediction.get("confidence", 0),
+                        "reason": prediction.get("reason", ""),
+                        "subject_id": temp_task.subject_id,
+                        "subject_events_count": len(subject_events),
+                        "used_event_index": used_event_index,
+                        "mode": mode,
+                        "error": None,
+                    }
+                )
+
+            except Exception as error:
+                print("AUTO PLAN PREVIEW TASK ERROR:", error)
+
+                planned_tasks.append(
+                    {
+                        "title": title,
+                        "due_date": None,
+                        "confidence_score": 0,
+                        "reason": "",
+                        "subject_id": raw_task.get("subject_id"),
+                        "subject_events_count": 0,
+                        "used_event_index": 0,
+                        "mode": mode,
+                        "error": str(error),
+                    }
+                )
+
+        return jsonify({"tasks": planned_tasks}), 200
+
+    except Exception as error:
+        print("AUTO PLAN PREVIEW GLOBAL ERROR:", error)
+
+        return (
+            jsonify(
                 {
-                    "title": temp_task.title,
-                    "due_date": prediction["deadline"].isoformat(),
-                    "confidence_score": prediction["confidence"],
-                    "reason": prediction["reason"],
-                    "subject_id": temp_task.subject_id,
-                    "subject_events_count": len(subject_events),
-                    "used_event_index": used_event_index,
-                    "mode": mode,
+                    "tasks": [],
+                    "error": "Не вдалося автоматично підібрати дедлайни",
+                    "details": str(error),
                 }
-            )
-
-        return jsonify({"tasks": planned_tasks})
+            ),
+            500,
+        )
 
     finally:
         db.close()
@@ -721,12 +918,31 @@ def auto_plan_deadlines_preview():
 
 @task_bp.route("/api/tasks/<int:task_id>/auto-plan", methods=["POST"])
 def auto_plan_existing_task(task_id):
+    """
+    Automatically plan deadline for existing task
+    ---
+    tags:
+      - Tasks
+      - ML
+    parameters:
+      - in: path
+        name: task_id
+        type: integer
+        required: true
+    responses:
+      200:
+        description: Task auto-planned
+      401:
+        description: Unauthorized
+      404:
+        description: Task not found
+    """
     user = current_user()
 
     if not user:
         return jsonify({"error": "Unauthorized"}), 401
 
-    data = request.json or {}
+    data = request.get_json(silent=True) or {}
 
     db = SessionLocal()
 
@@ -745,14 +961,30 @@ def auto_plan_existing_task(task_id):
 
         db.commit()
         db.refresh(task)
-        db.refresh(block)
+
+        if block:
+            db.refresh(block)
 
         return jsonify(
             {
                 "task": serialize_task(task),
-                "schedule_block": serialize_task_schedule_block(block, task),
-                "reason": prediction["reason"],
+                "schedule_block": (serialize_task_schedule_block(block, task) if block else None),
+                "reason": prediction.get("reason", ""),
             }
+        )
+
+    except Exception as error:
+        db.rollback()
+        print("AUTO PLAN EXISTING TASK ERROR:", error)
+
+        return (
+            jsonify(
+                {
+                    "error": "Не вдалося автоматично запланувати задачу",
+                    "details": str(error),
+                }
+            ),
+            500,
         )
 
     finally:

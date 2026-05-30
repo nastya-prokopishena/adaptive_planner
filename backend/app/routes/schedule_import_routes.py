@@ -10,6 +10,34 @@ schedule_import_bp = Blueprint("schedule_import", __name__)
 
 @schedule_import_bp.route("/api/schedule-import/upload", methods=["POST"])
 def upload_schedule_api():
+    """
+    Upload schedule file and build preview
+    ---
+    tags:
+      - Schedule Import
+    consumes:
+      - multipart/form-data
+    parameters:
+      - in: formData
+        name: file
+        type: file
+        required: true
+      - in: formData
+        name: group_name
+        type: string
+        required: false
+      - in: formData
+        name: subgroup
+        type: string
+        required: false
+    responses:
+      200:
+        description: Schedule preview
+      400:
+        description: File not provided or invalid file
+      500:
+        description: Schedule processing failed
+    """
     if "file" not in request.files:
         return jsonify({"error": "Файл розкладу не передано"}), 400
 
@@ -45,6 +73,22 @@ def upload_schedule_api():
 
 @schedule_import_bp.route("/api/schedule-import/preview", methods=["POST"])
 def schedule_import_preview():
+    """
+    Build schedule import preview from text or file
+    ---
+    tags:
+      - Schedule Import
+    consumes:
+      - application/json
+      - multipart/form-data
+    responses:
+      200:
+        description: Schedule preview created
+      400:
+        description: Preview contains validation error
+      500:
+        description: Preview generation failed
+    """
     service = ScheduleImportService()
 
     try:

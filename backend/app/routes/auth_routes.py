@@ -22,6 +22,37 @@ auth_bp = Blueprint("auth", __name__)
 
 @auth_bp.route("/auth/register", methods=["POST"])
 def register():
+    """
+    Register a new user
+    ---
+    tags:
+      - Auth
+    consumes:
+      - application/json
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          required:
+            - email
+            - password
+          properties:
+            email:
+              type: string
+              example: student@example.com
+            password:
+              type: string
+              example: StrongPass123!
+    responses:
+      200:
+        description: User registered successfully
+      400:
+        description: Email and password are required
+      409:
+        description: User already exists
+    """
     data = request.json or {}
 
     email = data.get("email")
@@ -65,6 +96,35 @@ def register():
 
 @auth_bp.route("/auth/login", methods=["POST"])
 def login_local():
+    """
+    Log in with email and password
+    ---
+    tags:
+      - Auth
+    consumes:
+      - application/json
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          required:
+            - email
+            - password
+          properties:
+            email:
+              type: string
+              example: student@example.com
+            password:
+              type: string
+              example: StrongPass123!
+    responses:
+      200:
+        description: User authenticated successfully
+      401:
+        description: Invalid credentials
+    """
     data = request.json or {}
 
     email = data.get("email")
@@ -98,6 +158,15 @@ def login_local():
 
 @auth_bp.route("/auth/google", methods=["GET"])
 def google_login():
+    """
+    Start Google OAuth authorization
+    ---
+    tags:
+      - Auth
+    responses:
+      302:
+        description: Redirect to Google authorization page
+    """
     flow = calendar_adapter.create_flow()
 
     authorization_url, state = flow.authorization_url(
@@ -114,6 +183,17 @@ def google_login():
 
 @auth_bp.route("/callback", methods=["GET"])
 def google_callback():
+    """
+    Handle Google OAuth callback
+    ---
+    tags:
+      - Auth
+    responses:
+      302:
+        description: User authenticated and redirected
+      400:
+        description: Google email not found
+    """
     state = session.get("state")
     code_verifier = session.get("code_verifier")
 
@@ -183,12 +263,30 @@ def google_callback():
 
 @auth_bp.route("/auth/logout", methods=["POST"])
 def logout():
+    """
+    Log out current user
+    ---
+    tags:
+      - Auth
+    responses:
+      200:
+        description: Session cleared successfully
+    """
     session.clear()
     return jsonify({"message": "Logged out"})
 
 
 @auth_bp.route("/api/user/me", methods=["GET"])
 def me():
+    """
+    Get current user session
+    ---
+    tags:
+      - Auth
+    responses:
+      200:
+        description: Current authentication state
+    """
     user = current_user()
 
     if not user:

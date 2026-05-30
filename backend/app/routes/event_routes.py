@@ -10,6 +10,17 @@ event_bp = Blueprint("event", __name__)
 
 @event_bp.route("/api/events", methods=["GET"])
 def get_events():
+    """
+    Get calendar events
+    ---
+    tags:
+      - Events
+    responses:
+      200:
+        description: List of calendar events
+      401:
+        description: Unauthorized
+    """
     user = current_user()
 
     if not user:
@@ -47,6 +58,43 @@ def get_events():
 
 @event_bp.route("/api/events", methods=["POST"])
 def create_event_api():
+    """
+    Create calendar event
+    ---
+    tags:
+      - Events
+    consumes:
+      - application/json
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          required:
+            - title
+            - start
+            - end
+          properties:
+            title:
+              type: string
+              example: Lecture
+            start:
+              type: string
+              format: date-time
+            end:
+              type: string
+              format: date-time
+    responses:
+      201:
+        description: Event created
+      400:
+        description: Invalid request
+      401:
+        description: Unauthorized
+      409:
+        description: Time conflict
+    """
     user = current_user()
 
     if not user:
@@ -156,6 +204,28 @@ def create_event_api():
 
 @event_bp.route("/api/events/<int:event_id>", methods=["PUT"])
 def update_event_api(event_id):
+    """
+    Update calendar event
+    ---
+    tags:
+      - Events
+    parameters:
+      - in: path
+        name: event_id
+        type: integer
+        required: true
+    responses:
+      200:
+        description: Event updated
+      400:
+        description: Invalid request
+      401:
+        description: Unauthorized
+      404:
+        description: Event not found
+      409:
+        description: Time conflict
+    """
     user = current_user()
 
     if not user:
@@ -256,6 +326,26 @@ def update_event_api(event_id):
 
 @event_bp.route("/api/events/<int:event_id>", methods=["DELETE"])
 def delete_event_api(event_id):
+    """
+    Delete calendar event
+    ---
+    tags:
+      - Events
+    parameters:
+      - in: path
+        name: event_id
+        type: integer
+        required: true
+    responses:
+      200:
+        description: Event deleted
+      400:
+        description: Invalid delete scope
+      401:
+        description: Unauthorized
+      404:
+        description: Event not found
+    """
     user = current_user()
 
     if not user:
@@ -376,6 +466,23 @@ def delete_event_api(event_id):
 
 @event_bp.route("/api/events/search", methods=["GET"])
 def search_events_api():
+    """
+    Search calendar events
+    ---
+    tags:
+      - Events
+    parameters:
+      - in: query
+        name: query
+        type: string
+        required: false
+        example: physics
+    responses:
+      200:
+        description: Matching events
+      401:
+        description: Unauthorized
+    """
     user = current_user()
 
     if not user:
@@ -418,6 +525,17 @@ def search_events_api():
 
 @event_bp.route("/api/events/bulk-delete", methods=["POST"])
 def bulk_delete_events_api():
+    """
+    Bulk delete calendar events
+    ---
+    tags:
+      - Events
+    responses:
+      200:
+        description: Events deleted
+      401:
+        description: Unauthorized
+    """
     user = current_user()
 
     if not user:
@@ -483,6 +601,24 @@ def bulk_delete_events_api():
 
 @event_bp.route("/api/planner/auto-plan", methods=["POST"], strict_slashes=False)
 def auto_plan_event_api():
+    """
+    Automatically plan an event
+    ---
+    tags:
+      - Events
+      - Planner
+    responses:
+      201:
+        description: Auto plan created
+      400:
+        description: Invalid planning request
+      401:
+        description: Unauthorized
+      409:
+        description: No free slot
+      500:
+        description: Auto planning failed
+    """
     user = current_user()
 
     if not user:
