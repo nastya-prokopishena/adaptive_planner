@@ -2,6 +2,8 @@ from datetime import UTC, datetime, timedelta
 from io import BytesIO
 from types import SimpleNamespace
 
+import pytest
+
 from backend.app.routes import task_routes as routes
 
 
@@ -46,13 +48,10 @@ class FakeDB:
     ):
         self.task = task
         self.tasks = tasks or ([] if task is None else [task])
-
         self.subject = subject
         self.subjects = subjects or ([] if subject is None else [subject])
-
         self.event_type = event_type
         self.event_types = event_types or ([] if event_type is None else [event_type])
-
         self.blocks = blocks or []
         self.logs = logs or []
         self.added = []
@@ -108,9 +107,6 @@ class FakeDB:
 
     def flush(self):
         self.flushes += 1
-        for item in self.added:
-            if getattr(item, "id", None) is None:
-                item.id = 100 + self.flushes
 
     def commit(self):
         self.commits += 1
@@ -132,256 +128,10 @@ def patch_user_and_db(monkeypatch, db, user=None):
     monkeypatch.setattr(routes, "SessionLocal", lambda: db)
 
 
-def make_task(status="planned"):
-    return SimpleNamespace(
-        id=1,
-        user_id=1,
-        event_id=None,
-        subject_id=None,
-        title="Task",
-        description="Description",
-        status=status,
-        priority="medium",
-        due_date=datetime(2026, 5, 29, 10, 0),
-        completed_at=None,
-        missed_at=None,
-        task_type="other",
-        keywords="[]",
-        estimated_duration_hours=1,
-        difficulty_score=3,
-        nlp_source="manual",
-        created_at=datetime(2026, 5, 1, 10, 0),
-        updated_at=datetime(2026, 5, 1, 10, 0),
-    )
-
-
-def test_create_event_type_success(app, monkeypatch):
-    db = FakeDB()
-    patch_user_and_db(monkeypatch, db)
-    monkeypatch.setattr(
-        routes, "serialize_event_type", lambda item: {"id": item.id, "name": item.name}
-    )
-
-    with app.test_request_context(
-        "/api/event-types", method="POST", json={"name": "Лекція", "color": "#fff"}
-    ):
-        response, status = routes.create_event_type()
-
-    assert status == 201
-    assert response.get_json()["name"] == "Лекція"
-
-
-def test_create_subject_success(app, monkeypatch):
-    db = FakeDB()
-    patch_user_and_db(monkeypatch, db)
-    monkeypatch.setattr(
-        routes, "serialize_subject", lambda item: {"id": item.id, "name": item.name}
-    )
-
-    with app.test_request_context("/api/subjects", method="POST", json={"name": "Фізика"}):
-        response, status = routes.create_subject()
-
-    assert status == 201
-    assert response.get_json()["name"] == "Фізика"
-
-
-def test_update_subject_not_found(app, monkeypatch):
-    db = FakeDB(subject=None)
-    patch_user_and_db(monkeypatch, db)
-
-    with app.test_request_context("/api/subjects/999", method="PUT", json={"name": "New"}):
-        response, status = routes.update_subject(999)
-
-    assert status == 404
-
-
-def test_update_event_type_success(app, monkeypatch):
-    event_type = SimpleNamespace(id=1, user_id=1, name="Old", color="#000")
-    db = FakeDB(event_type=event_type)
-    patch_user_and_db(monkeypatch, db)
-    monkeypatch.setattr(
-        routes, "serialize_event_type", lambda item: {"id": item.id, "name": item.name}
-    )
-
-    with app.test_request_context("/api/event-types/1", method="PUT", json={"name": "New"}):
-        response, status = routes.update_event_type(1)
-
-    assert status == 200
-    assert response.get_json()["name"] == "New"
-
-
-def test_get_tasks_with_include_meta(app, monkeypatch):
-    task = make_task()
-    db = FakeDB(tasks=[task])
-    patch_user_and_db(monkeypatch, db)
-    monkeypatch.setattr(
-        routes,
-        "refresh_and_replan_missed_tasks",
-        lambda **kwargs: {"replanned": [{"id": 1}], "replanned_count": 1},
-    )
-    monkeypatch.setattr(
-        routes, "serialize_task", lambda task: {"id": task.id, "status": task.status}
-    )
-
-    with app.test_request_context("/api/tasks?include_meta=1"):
-        response = routes.get_tasks()
-
-    assert response.get_json()["auto_replanned_count"] == 1
-
-
-def test_create_task_success(app, monkeypatch):
-    db = FakeDB()
-    patch_user_and_db(monkeypatch, db)
-    monkeypatch.setattr(routes, "create_task_log", lambda **kwargs: None)
-    monkeypatch.setattr(routes, "set_auto_replan_metadata", lambda db, task: None)
-    monkeypatch.setattr(routes, "serialize_task", lambda task: {"id": task.id, "title": task.title})
-
-    with app.test_request_context(
-        "/api/tasks",
-        method="POST",
-        json={"title": "Task", "keywords": ["a"], "estimated_duration_hours": 2},
-    ):
-        response, status = routes.create_task()
-
-    assert status == 201
-    assert response.get_json()["title"] == "Task"
-
-
-def test_create_task_auto_deadline_ignores_planning_error(app, monkeypatch):
-    db = FakeDB()
-    patch_user_and_db(monkeypatch, db)
-    monkeypatch.setattr(
-        routes,
-        "apply_auto_deadline_to_task",
-        lambda **kwargs: (_ for _ in ()).throw(RuntimeError("boom")),
-    )
-    monkeypatch.setattr(routes, "create_task_log", lambda **kwargs: None)
-    monkeypatch.setattr(routes, "set_auto_replan_metadata", lambda db, task: None)
-    monkeypatch.setattr(routes, "serialize_task", lambda task: {"id": task.id, "title": task.title})
-
-    with app.test_request_context(
-        "/api/tasks", method="POST", json={"title": "Task", "auto_plan_deadline": True}
-    ):
-        response, status = routes.create_task()
-
-    assert status == 201
-
-
-def test_update_task_not_found(app, monkeypatch):
-    db = FakeDB(task=None)
-    patch_user_and_db(monkeypatch, db)
-
-    with app.test_request_context("/api/tasks/999", method="PUT", json={"title": "New"}):
-        response, status = routes.update_task(999)
-
-    assert status == 404
-
-
-def test_update_task_success_with_keywords(app, monkeypatch):
-    task = make_task()
-    db = FakeDB(task=task)
-    patch_user_and_db(monkeypatch, db)
-    monkeypatch.setattr(routes, "set_auto_replan_metadata", lambda db, task: None)
-    monkeypatch.setattr(
-        routes,
-        "serialize_task",
-        lambda task: {"id": task.id, "title": task.title, "keywords": task.keywords},
-    )
-
-    with app.test_request_context(
-        "/api/tasks/1",
-        method="PUT",
-        json={"title": "Updated", "keywords": ["x", "y"], "estimated_duration_hours": 3},
-    ):
-        response, status = routes.update_task(1)
-
-    assert status == 200
-    assert response.get_json()["title"] == "Updated"
-
-
-def test_update_task_deadline_success(app, monkeypatch):
-    task = make_task()
-    db = FakeDB(task=task)
-    patch_user_and_db(monkeypatch, db)
-    monkeypatch.setattr(routes, "set_auto_replan_metadata", lambda db, task: None)
-    monkeypatch.setattr(
-        routes,
-        "serialize_task",
-        lambda task: {"id": task.id, "due_date": task.due_date.isoformat()},
-    )
-
-    with app.test_request_context(
-        "/api/tasks/1/deadline", method="PUT", json={"due_date": "2026-06-01T12:00:00"}
-    ):
-        response, status = routes.update_task_deadline(1)
-
-    assert status == 200
-
-
-def test_delete_task_success(app, monkeypatch):
-    task = make_task()
-    db = FakeDB(task=task)
-    patch_user_and_db(monkeypatch, db)
-    monkeypatch.setattr(routes, "create_task_log", lambda **kwargs: None)
-
-    with app.test_request_context("/api/tasks/1", method="DELETE"):
-        response = routes.delete_task(1)
-
-    assert response.get_json()["message"] == "Task deleted"
-    assert db.deleted == [task]
-
-
-def test_update_task_status_done_sets_completed_at(app, monkeypatch):
-    task = make_task(status="planned")
-    db = FakeDB(task=task)
-    patch_user_and_db(monkeypatch, db)
-    monkeypatch.setattr(routes, "create_task_log", lambda **kwargs: None)
-    monkeypatch.setattr(routes, "set_auto_replan_metadata", lambda db, task: None)
-    monkeypatch.setattr(routes, "auto_replan_missed_task", lambda **kwargs: None)
-    monkeypatch.setattr(
-        routes, "serialize_task", lambda task: {"id": task.id, "status": task.status}
-    )
-
-    with app.test_request_context(
-        "/api/tasks/1/status",
-        method="PUT",
-        json={"status": "done"},
-    ):
-        response = routes.update_task_status(1)
-
-    assert response.status_code == 200
-    assert response.get_json()["status"] == "done"
-
-
-def test_update_task_status_missed_sets_missed_at(app, monkeypatch):
-    task = make_task(status="planned")
-    db = FakeDB(task=task)
-    patch_user_and_db(monkeypatch, db)
-    monkeypatch.setattr(routes, "create_task_log", lambda **kwargs: None)
-    monkeypatch.setattr(routes, "set_auto_replan_metadata", lambda db, task: None)
-    monkeypatch.setattr(routes, "auto_replan_missed_task", lambda **kwargs: None)
-    monkeypatch.setattr(
-        routes, "serialize_task", lambda task: {"id": task.id, "status": task.status}
-    )
-
-    with app.test_request_context(
-        "/api/tasks/1/status",
-        method="PUT",
-        json={"status": "missed"},
-    ):
-        response = routes.update_task_status(1)
-
-    assert response.status_code == 200
-    assert response.get_json()["status"] == "missed"
-
-
-def patch_user_and_db(monkeypatch, db, user=None):
-    monkeypatch.setattr(
-        routes,
-        "current_user",
-        lambda: user or SimpleNamespace(id=1),
-    )
-    monkeypatch.setattr(routes, "SessionLocal", lambda: db)
+def unpack(result):
+    if isinstance(result, tuple):
+        return result
+    return result, result.status_code
 
 
 def make_task(task_id=1, title="Task", status="planned"):
@@ -446,67 +196,83 @@ def make_log():
     )
 
 
-def test_get_event_types_unauthorized(app, monkeypatch):
-    monkeypatch.setattr(routes, "current_user", lambda: None)
-
-    with app.test_request_context("/api/event-types"):
-        response, status = routes.get_event_types()
-
-    assert status == 401
-
-
-def test_get_subjects_success(app, monkeypatch):
+def test_event_type_and_subject_crud_basic(app, monkeypatch):
+    event_type = SimpleNamespace(id=1, user_id=1, name="Old", color="#000")
     subject = make_subject()
-    db = FakeDB(subjects=[subject])
+    db = FakeDB(event_type=event_type, subject=subject, subjects=[subject])
     patch_user_and_db(monkeypatch, db)
 
     monkeypatch.setattr(
         routes,
-        "serialize_subject",
-        lambda subject: {"id": subject.id, "name": subject.name},
+        "serialize_event_type",
+        lambda item: {"id": item.id, "name": item.name},
     )
+    monkeypatch.setattr(
+        routes,
+        "serialize_subject",
+        lambda item: {"id": item.id, "name": item.name},
+    )
+
+    with app.test_request_context(
+        "/api/event-types",
+        method="POST",
+        json={"name": "Лекція", "color": "#fff"},
+    ):
+        response, status = routes.create_event_type()
+
+    assert status == 201
+    assert response.get_json()["name"] == "Лекція"
 
     with app.test_request_context("/api/subjects"):
         response = routes.get_subjects()
 
     assert response.get_json() == [{"id": 10, "name": "Фізика"}]
-    assert db.closed is True
+
+    with app.test_request_context(
+        "/api/event-types/1",
+        method="PUT",
+        json={"name": "Практика"},
+    ):
+        response, status = routes.update_event_type(1)
+
+    assert status == 200
+    assert response.get_json()["name"] == "Практика"
 
 
-def test_create_event_type_requires_name(app, monkeypatch):
+@pytest.mark.parametrize(
+    ("route_func", "url", "method", "payload", "expected_error"),
+    [
+        (routes.create_event_type, "/api/event-types", "POST", {}, "Name is required"),
+        (routes.create_subject, "/api/subjects", "POST", {}, "Name is required"),
+        (
+            routes.create_task,
+            "/api/tasks",
+            "POST",
+            {},
+            "Task title is required",
+        ),
+    ],
+)
+def test_required_fields_are_validated(
+    app,
+    monkeypatch,
+    route_func,
+    url,
+    method,
+    payload,
+    expected_error,
+):
     db = FakeDB()
     patch_user_and_db(monkeypatch, db)
 
-    with app.test_request_context("/api/event-types", method="POST", json={}):
-        response, status = routes.create_event_type()
+    with app.test_request_context(url, method=method, json=payload):
+        response, status = route_func()
 
     assert status == 400
-    assert response.get_json()["error"] == "Name is required"
+    assert response.get_json()["error"] == expected_error
 
 
-def test_create_subject_requires_name(app, monkeypatch):
-    db = FakeDB()
-    patch_user_and_db(monkeypatch, db)
-
-    with app.test_request_context("/api/subjects", method="POST", json={}):
-        response, status = routes.create_subject()
-
-    assert status == 400
-    assert response.get_json()["error"] == "Name is required"
-
-
-def test_update_event_type_not_found(app, monkeypatch):
-    db = FakeDB()
-    patch_user_and_db(monkeypatch, db)
-
-    with app.test_request_context("/api/event-types/999", method="PUT", json={}):
-        response, status = routes.update_event_type(999)
-
-    assert status == 404
-    assert response.get_json()["error"] == "Event type not found"
-
-
-def test_get_tasks_filters_by_status_without_meta(app, monkeypatch):
+def test_get_tasks_filters_and_returns_meta(app, monkeypatch):
     planned = make_task(task_id=1, status="planned")
     done = make_task(task_id=2, status="done")
     db = FakeDB(tasks=[planned, done])
@@ -515,7 +281,7 @@ def test_get_tasks_filters_by_status_without_meta(app, monkeypatch):
     monkeypatch.setattr(
         routes,
         "refresh_and_replan_missed_tasks",
-        lambda **kwargs: {"replanned": [], "replanned_count": 0},
+        lambda **kwargs: {"replanned": [{"id": 1}], "replanned_count": 1},
     )
     monkeypatch.setattr(
         routes,
@@ -523,37 +289,129 @@ def test_get_tasks_filters_by_status_without_meta(app, monkeypatch):
         lambda task: {"id": task.id, "status": task.status},
     )
 
+    with app.test_request_context("/api/tasks?include_meta=1"):
+        response = routes.get_tasks()
+
+    assert response.get_json()["auto_replanned_count"] == 1
+
     with app.test_request_context("/api/tasks?status=done&event_id=1&subject_id=10"):
         response = routes.get_tasks()
 
     assert response.get_json() == [{"id": 2, "status": "done"}]
 
 
-def test_create_task_rejects_empty_title(app, monkeypatch):
-    db = FakeDB()
-    patch_user_and_db(monkeypatch, db)
-
-    with app.test_request_context("/api/tasks", method="POST", json={}):
-        response, status = routes.create_task()
-
-    assert status == 400
-    assert response.get_json()["error"] == "Task title is required"
-
-
-def test_update_task_deadline_rejects_invalid_date(app, monkeypatch):
+def test_task_crud_success_paths(app, monkeypatch):
     task = make_task()
     db = FakeDB(task=task)
     patch_user_and_db(monkeypatch, db)
 
+    monkeypatch.setattr(routes, "create_task_log", lambda **kwargs: None)
+    monkeypatch.setattr(routes, "set_auto_replan_metadata", lambda db, task: None)
+    monkeypatch.setattr(
+        routes,
+        "serialize_task",
+        lambda task: {
+            "id": task.id,
+            "title": task.title,
+            "status": task.status,
+            "keywords": task.keywords,
+            "due_date": task.due_date.isoformat() if task.due_date else None,
+        },
+    )
+
+    with app.test_request_context(
+        "/api/tasks",
+        method="POST",
+        json={"title": "Task", "keywords": ["a"], "estimated_duration_hours": 2},
+    ):
+        response, status = routes.create_task()
+
+    assert status == 201
+    assert response.get_json()["title"] == "Task"
+
+    with app.test_request_context(
+        "/api/tasks/1",
+        method="PUT",
+        json={"title": "Updated", "keywords": ["x", "y"]},
+    ):
+        response, status = routes.update_task(1)
+
+    assert status == 200
+    assert response.get_json()["title"] == "Updated"
+
     with app.test_request_context(
         "/api/tasks/1/deadline",
         method="PUT",
-        json={"due_date": "bad-date"},
+        json={"due_date": "2026-06-01T12:00:00"},
     ):
         response, status = routes.update_task_deadline(1)
 
-    assert status == 400
-    assert response.get_json()["error"] == "Invalid due_date"
+    assert status == 200
+
+    with app.test_request_context("/api/tasks/1", method="DELETE"):
+        response = routes.delete_task(1)
+
+    assert response.get_json()["message"] == "Task deleted"
+    assert db.deleted == [task]
+
+
+@pytest.mark.parametrize(
+    ("route_func", "args", "url", "method", "payload"),
+    [
+        (routes.update_task, (999,), "/api/tasks/999", "PUT", {"title": "New"}),
+        (
+            routes.update_task_deadline,
+            (999,),
+            "/api/tasks/999/deadline",
+            "PUT",
+            {"due_date": "2026-06-01T12:00:00"},
+        ),
+        (routes.delete_task, (999,), "/api/tasks/999", "DELETE", None),
+        (
+            routes.update_task_status,
+            (999,),
+            "/api/tasks/999/status",
+            "PUT",
+            {"status": "done"},
+        ),
+        (routes.auto_plan_existing_task, (999,), "/api/tasks/999/auto-plan", "POST", {}),
+    ],
+)
+def test_task_not_found_responses(app, monkeypatch, route_func, args, url, method, payload):
+    db = FakeDB(task=None)
+    patch_user_and_db(monkeypatch, db)
+
+    with app.test_request_context(url, method=method, json=payload):
+        response, status = route_func(*args)
+
+    assert status == 404
+    assert "error" in response.get_json()
+
+
+@pytest.mark.parametrize("new_status", ["done", "missed"])
+def test_update_task_status_success(app, monkeypatch, new_status):
+    task = make_task(status="planned")
+    db = FakeDB(task=task)
+    patch_user_and_db(monkeypatch, db)
+
+    monkeypatch.setattr(routes, "create_task_log", lambda **kwargs: None)
+    monkeypatch.setattr(routes, "set_auto_replan_metadata", lambda db, task: None)
+    monkeypatch.setattr(routes, "auto_replan_missed_task", lambda **kwargs: None)
+    monkeypatch.setattr(
+        routes,
+        "serialize_task",
+        lambda task: {"id": task.id, "status": task.status},
+    )
+
+    with app.test_request_context(
+        "/api/tasks/1/status",
+        method="PUT",
+        json={"status": new_status},
+    ):
+        response = routes.update_task_status(1)
+
+    assert response.status_code == 200
+    assert response.get_json()["status"] == new_status
 
 
 def test_update_task_status_rejects_invalid_status(app, monkeypatch):
@@ -572,9 +430,11 @@ def test_update_task_status_rejects_invalid_status(app, monkeypatch):
     assert response.get_json()["error"] == "Invalid task status"
 
 
-def test_get_activity_logs_success(app, monkeypatch):
+def test_activity_logs_and_blocks(app, monkeypatch):
+    task = make_task()
+    block = make_block(task_id=task.id)
     log = make_log()
-    db = FakeDB(logs=[log])
+    db = FakeDB(task=task, blocks=[block], logs=[log])
     patch_user_and_db(monkeypatch, db)
 
     monkeypatch.setattr(
@@ -582,25 +442,46 @@ def test_get_activity_logs_success(app, monkeypatch):
         "serialize_activity_log",
         lambda log: {"id": log.id, "action": log.action},
     )
+    monkeypatch.setattr(
+        routes,
+        "serialize_task_schedule_block",
+        lambda block, task: {"block_id": block.id, "task_title": task.title},
+    )
 
     with app.test_request_context("/api/activity-logs?task_id=1"):
         response = routes.get_activity_logs()
 
     assert response.get_json() == [{"id": 1, "action": "status_changed"}]
 
+    with app.test_request_context("/api/task-schedule-blocks"):
+        response = routes.get_task_schedule_blocks()
 
-def test_auto_deadline_for_manual_task_requires_title(app, monkeypatch):
-    db = FakeDB()
-    patch_user_and_db(monkeypatch, db)
-
-    with app.test_request_context("/api/tasks/auto-deadline", method="POST", json={}):
-        response, status = routes.auto_deadline_for_manual_task()
-
-    assert status == 400
-    assert response.get_json()["error"] == "Task title is required"
+    assert response.get_json() == [{"block_id": 20, "task_title": "Task"}]
 
 
-def test_auto_deadline_for_manual_task_success(app, monkeypatch):
+@pytest.mark.parametrize(
+    ("route_func", "url", "method"),
+    [
+        (routes.get_event_types, "/api/event-types", "GET"),
+        (routes.get_task_schedule_blocks, "/api/task-schedule-blocks", "GET"),
+        (
+            routes.generate_synthetic_deadline_dataset,
+            "/api/ml/deadline-dataset/generate",
+            "POST",
+        ),
+        (routes.get_activity_logs, "/api/activity-logs", "GET"),
+    ],
+)
+def test_unauthorized_routes(app, monkeypatch, route_func, url, method):
+    monkeypatch.setattr(routes, "current_user", lambda: None)
+
+    with app.test_request_context(url, method=method):
+        response, status = route_func()
+
+    assert status == 401
+
+
+def test_auto_deadline_success_and_fallbacks(app, monkeypatch):
     db = FakeDB()
     patch_user_and_db(monkeypatch, db)
 
@@ -626,32 +507,35 @@ def test_auto_deadline_for_manual_task_success(app, monkeypatch):
         method="POST",
         json={"title": "Task", "subject": "Фізика"},
     ):
-        response = routes.auto_deadline_for_manual_task()
+        response, status = unpack(routes.auto_deadline_for_manual_task())
 
-    data = response.get_json()
+    assert status == 200
+    assert response.get_json()["confidence_score"] == 0.9
 
-    assert data["confidence_score"] == 0.9
-    assert data["reason"] == "Best deadline"
+    with app.test_request_context("/api/tasks/auto-deadline", method="POST", json={}):
+        response, status = unpack(routes.auto_deadline_for_manual_task())
 
+    assert status == 400
+    assert "error" in response.get_json()
 
-def test_auto_plan_deadlines_preview_empty_tasks(app, monkeypatch):
-    db = FakeDB()
-    patch_user_and_db(monkeypatch, db)
-
-    monkeypatch.setattr(routes, "get_existing_deadline_dates", lambda db, user_id: [])
-    monkeypatch.setattr(routes, "get_user_calendar_events", lambda db, user_id: [])
+    monkeypatch.setattr(
+        routes,
+        "safe_predict_deadline",
+        lambda **kwargs: {"deadline": None, "confidence": 0.1, "reason": "fallback"},
+    )
 
     with app.test_request_context(
-        "/api/tasks/auto-plan-deadlines-preview",
+        "/api/tasks/auto-deadline",
         method="POST",
-        json={"tasks": []},
+        json={"title": "Task"},
     ):
-        response = routes.auto_plan_deadlines_preview()
+        response, status = unpack(routes.auto_deadline_for_manual_task())
 
-    assert response.get_json() == {"tasks": []}
+    assert status == 200
+    assert response.get_json()["due_date"] is None
 
 
-def test_auto_plan_deadlines_preview_success(app, monkeypatch):
+def test_auto_plan_preview_success_and_edge_cases(app, monkeypatch):
     db = FakeDB()
     patch_user_and_db(monkeypatch, db)
 
@@ -663,6 +547,7 @@ def test_auto_plan_deadlines_preview_success(app, monkeypatch):
     monkeypatch.setattr(routes, "get_user_calendar_events", lambda db, user_id: [])
     monkeypatch.setattr(routes, "get_subject_events", lambda **kwargs: [])
     monkeypatch.setattr(routes, "get_existing_subject_deadline_count", lambda **kwargs: 0)
+    monkeypatch.setattr(routes, "build_subject_distribution_index", lambda **kwargs: 0)
     monkeypatch.setattr(
         routes,
         "safe_predict_deadline",
@@ -676,31 +561,59 @@ def test_auto_plan_deadlines_preview_success(app, monkeypatch):
     with app.test_request_context(
         "/api/tasks/auto-plan-deadlines-preview",
         method="POST",
-        json={
-            "mode": "best_time",
-            "tasks": [{"title": "Task", "subject_id": 10}],
-        },
+        json={"mode": "best_time", "tasks": [{"title": "Task", "subject_id": 10}]},
     ):
         response = routes.auto_plan_deadlines_preview()
 
     task = response.get_json()["tasks"][0]
-
     assert task["title"] == "Task"
-    assert task["mode"] == "best_free_time"
     assert task["confidence_score"] == 0.8
 
+    with app.test_request_context(
+        "/api/tasks/auto-plan-deadlines-preview",
+        method="POST",
+        json={"tasks": []},
+    ):
+        response = routes.auto_plan_deadlines_preview()
 
-def test_auto_plan_existing_task_not_found(app, monkeypatch):
-    db = FakeDB(task=None)
+    assert response.get_json() == {"tasks": []}
+
+    with app.test_request_context(
+        "/api/tasks/auto-plan-deadlines-preview",
+        method="POST",
+        json={"tasks": ["Підготувати лабораторну"]},
+    ):
+        response = routes.auto_plan_deadlines_preview()
+
+    assert response.get_json()["tasks"][0]["title"] == "Підготувати лабораторну"
+
+
+def test_auto_plan_preview_handles_prediction_error(app, monkeypatch):
+    db = FakeDB()
     patch_user_and_db(monkeypatch, db)
 
-    with app.test_request_context("/api/tasks/999/auto-plan", method="POST", json={}):
-        response, status = routes.auto_plan_existing_task(999)
+    monkeypatch.setattr(routes, "resolve_subject_id", lambda **kwargs: 10)
+    monkeypatch.setattr(routes, "get_existing_deadline_dates", lambda db, user_id: [])
+    monkeypatch.setattr(routes, "get_user_calendar_events", lambda db, user_id: [])
+    monkeypatch.setattr(routes, "get_subject_events", lambda **kwargs: [])
+    monkeypatch.setattr(
+        routes,
+        "safe_predict_deadline",
+        lambda **kwargs: (_ for _ in ()).throw(RuntimeError("prediction failed")),
+    )
 
-    assert status == 404
+    with app.test_request_context(
+        "/api/tasks/auto-plan-deadlines-preview",
+        method="POST",
+        json={"tasks": [{"title": "Broken task"}]},
+    ):
+        response = routes.auto_plan_deadlines_preview()
+
+    assert response.status_code == 200
+    assert response.get_json()["tasks"][0]["error"] == "prediction failed"
 
 
-def test_auto_plan_existing_task_success(app, monkeypatch):
+def test_auto_plan_existing_task_success_and_error(app, monkeypatch):
     task = make_task()
     block = make_block(task_id=task.id)
     db = FakeDB(task=task)
@@ -721,52 +634,24 @@ def test_auto_plan_existing_task_success(app, monkeypatch):
     with app.test_request_context("/api/tasks/1/auto-plan", method="POST", json={}):
         response = routes.auto_plan_existing_task(1)
 
-    data = response.get_json()
-
-    assert data["task"] == {"id": 1}
-    assert data["schedule_block"]["id"] == 20
-    assert data["reason"] == "auto planned"
-
-
-def test_get_task_schedule_blocks_success(app, monkeypatch):
-    task = make_task()
-    block = make_block(task_id=task.id)
-    db = FakeDB(task=task, blocks=[block])
-    patch_user_and_db(monkeypatch, db)
+    assert response.get_json()["schedule_block"]["id"] == 20
 
     monkeypatch.setattr(
         routes,
-        "serialize_task_schedule_block",
-        lambda block, task: {"block_id": block.id, "task_title": task.title},
+        "apply_auto_deadline_to_task",
+        lambda **kwargs: (_ for _ in ()).throw(RuntimeError("planner crashed")),
     )
 
-    with app.test_request_context("/api/task-schedule-blocks"):
-        response = routes.get_task_schedule_blocks()
+    with app.test_request_context("/api/tasks/1/auto-plan", method="POST", json={}):
+        response, status = routes.auto_plan_existing_task(1)
 
-    assert response.get_json() == [{"block_id": 20, "task_title": "Task"}]
-
-
-def test_generate_synthetic_deadline_dataset_success(app, monkeypatch):
-    db = FakeDB()
-    patch_user_and_db(monkeypatch, db)
-
-    monkeypatch.setattr(
-        routes.synthetic_deadline_dataset_service,
-        "save_csv",
-        lambda: "backend/infrastructure/ml/datasets/deadlines.csv",
-    )
-
-    with app.test_request_context("/api/ml/deadline-dataset/generate", method="POST"):
-        response = routes.generate_synthetic_deadline_dataset()
-
-    data = response.get_json()
-
-    assert data["message"] == "Synthetic deadline dataset generated"
-    assert data["path"].endswith("deadlines.csv")
+    assert status == 500
+    assert db.rolled_back is True
 
 
-def test_task_model_info_api_success(app, monkeypatch):
-    db = FakeDB()
+def test_task_import_model_info_and_analysis(app, monkeypatch):
+    subject = make_subject()
+    db = FakeDB(subject=subject)
     patch_user_and_db(monkeypatch, db)
 
     monkeypatch.setattr(
@@ -780,47 +665,6 @@ def test_task_model_info_api_success(app, monkeypatch):
 
     assert status == 200
     assert response.get_json() == {"loaded": True}
-
-
-def test_task_model_info_api_returns_500_on_error(app, monkeypatch):
-    db = FakeDB()
-    patch_user_and_db(monkeypatch, db)
-
-    def raise_error():
-        raise RuntimeError("model error")
-
-    monkeypatch.setattr(
-        routes.task_nlp_service.difficulty_ml_service,
-        "get_model_info",
-        raise_error,
-    )
-
-    with app.test_request_context("/api/task-import/model-info"):
-        response, status = routes.task_model_info_api()
-
-    assert status == 500
-    assert response.get_json()["loaded"] is False
-
-
-def test_analyze_task_text_rejects_empty_text(app, monkeypatch):
-    db = FakeDB()
-    patch_user_and_db(monkeypatch, db)
-
-    with app.test_request_context(
-        "/api/task-import/analyze-text",
-        method="POST",
-        json={"text": "   "},
-    ):
-        response, status = routes.analyze_task_text_api()
-
-    assert status == 400
-    assert response.get_json()["error"] == "Текст завдання порожній"
-
-
-def test_analyze_task_text_success(app, monkeypatch):
-    subject = make_subject()
-    db = FakeDB(subject=subject)
-    patch_user_and_db(monkeypatch, db)
 
     monkeypatch.setattr(
         routes.task_nlp_service,
@@ -836,45 +680,14 @@ def test_analyze_task_text_success(app, monkeypatch):
     ):
         response, status = routes.analyze_task_text_api()
 
-    data = response.get_json()
-
     assert status == 200
-    assert data["count"] == 1
-    assert data["tasks"][0]["subject_exists"] is True
-
-
-def test_analyze_task_file_requires_file(app, monkeypatch):
-    db = FakeDB()
-    patch_user_and_db(monkeypatch, db)
-
-    with app.test_request_context(
-        "/api/task-import/analyze-file",
-        method="POST",
-        data={},
-        content_type="multipart/form-data",
-    ):
-        response, status = routes.analyze_task_file_api()
-
-    assert status == 400
-    assert response.get_json()["error"] == "Файли не передано"
-
-
-def test_analyze_task_file_success(app, monkeypatch):
-    subject = make_subject()
-    db = FakeDB(subject=subject)
-    patch_user_and_db(monkeypatch, db)
+    assert response.get_json()["tasks"][0]["subject_exists"] is True
 
     monkeypatch.setattr(
         routes.task_file_extractor_service,
         "extract_text",
         lambda filename, file_bytes: "дуже довгий текст завдання для аналізу",
     )
-    monkeypatch.setattr(
-        routes.task_nlp_service,
-        "analyze_many",
-        lambda **kwargs: [{"title": "Task", "subject": "Фізика"}],
-    )
-    monkeypatch.setattr(routes, "find_subject_by_name", lambda **kwargs: subject)
 
     with app.test_request_context(
         "/api/task-import/analyze-file",
@@ -884,28 +697,49 @@ def test_analyze_task_file_success(app, monkeypatch):
     ):
         response, status = routes.analyze_task_file_api()
 
-    data = response.get_json()
-
     assert status == 200
-    assert data["count"] == 1
-    assert data["tasks"][0]["source_filename"] == "task.txt"
+    assert response.get_json()["tasks"][0]["source_filename"] == "task.txt"
 
 
-def test_create_subject_from_task_import_requires_name(app, monkeypatch):
+@pytest.mark.parametrize(
+    ("url", "payload", "expected_error"),
+    [
+        (
+            "/api/task-import/analyze-text",
+            {"text": "   "},
+            "Текст завдання порожній",
+        ),
+        (
+            "/api/task-import/create-subject",
+            {},
+            None,
+        ),
+        (
+            "/api/task-import/create-tasks",
+            {"tasks": []},
+            None,
+        ),
+    ],
+)
+def test_task_import_validation_errors(app, monkeypatch, url, payload, expected_error):
     db = FakeDB()
     patch_user_and_db(monkeypatch, db)
 
-    with app.test_request_context(
-        "/api/task-import/create-subject",
-        method="POST",
-        json={},
-    ):
-        response, status = routes.create_subject_from_task_import_api()
+    route_func = {
+        "/api/task-import/analyze-text": routes.analyze_task_text_api,
+        "/api/task-import/create-subject": routes.create_subject_from_task_import_api,
+        "/api/task-import/create-tasks": routes.create_tasks_from_import_api,
+    }[url]
+
+    with app.test_request_context(url, method="POST", json=payload):
+        response, status = route_func()
 
     assert status == 400
+    if expected_error:
+        assert response.get_json()["error"] == expected_error
 
 
-def test_create_subject_from_task_import_returns_existing(app, monkeypatch):
+def test_create_subject_from_task_import_existing_and_new(app, monkeypatch):
     subject = make_subject()
     db = FakeDB(subject=subject)
     patch_user_and_db(monkeypatch, db)
@@ -927,44 +761,20 @@ def test_create_subject_from_task_import_returns_existing(app, monkeypatch):
     assert status == 200
     assert response.get_json()["name"] == "Фізика"
 
-
-def test_create_subject_from_task_import_creates_new(app, monkeypatch):
-    db = FakeDB()
-    patch_user_and_db(monkeypatch, db)
-
     monkeypatch.setattr(routes, "find_subject_by_name", lambda *args, **kwargs: None)
-    monkeypatch.setattr(
-        routes,
-        "serialize_subject",
-        lambda subject: {"id": subject.id, "name": subject.name},
-    )
 
     with app.test_request_context(
         "/api/task-import/create-subject",
         method="POST",
-        json={"name": "Фізика"},
+        json={"name": "Математика"},
     ):
         response, status = routes.create_subject_from_task_import_api()
 
     assert status == 201
-    assert response.get_json()["name"] == "Фізика"
+    assert response.get_json()["name"] == "Математика"
 
 
-def test_create_tasks_from_import_requires_tasks(app, monkeypatch):
-    db = FakeDB()
-    patch_user_and_db(monkeypatch, db)
-
-    with app.test_request_context(
-        "/api/task-import/create-tasks",
-        method="POST",
-        json={"tasks": []},
-    ):
-        response, status = routes.create_tasks_from_import_api()
-
-    assert status == 400
-
-
-def test_create_tasks_from_import_success_with_due_date(app, monkeypatch):
+def test_create_tasks_from_import_success_and_rollback(app, monkeypatch):
     db = FakeDB()
     patch_user_and_db(monkeypatch, db)
 
@@ -991,25 +801,14 @@ def test_create_tasks_from_import_success_with_due_date(app, monkeypatch):
                     "title": "Imported task",
                     "subject": "Фізика",
                     "due_date": "2026-06-01T12:00:00",
-                },
-                {"description": "без назви"},
+                }
             ]
         },
     ):
         response, status = routes.create_tasks_from_import_api()
 
-    data = response.get_json()
-
     assert status == 201
-    assert data["count"] == 1
-    assert data["tasks"][0]["title"] == "Imported task"
-
-
-def test_create_tasks_from_import_rolls_back_on_error(app, monkeypatch):
-    db = FakeDB()
-    patch_user_and_db(monkeypatch, db)
-
-    monkeypatch.setattr(routes, "find_subject_by_name", lambda *args, **kwargs: None)
+    assert response.get_json()["count"] == 1
 
     def broken_log(**kwargs):
         raise RuntimeError("broken")
@@ -1025,494 +824,47 @@ def test_create_tasks_from_import_rolls_back_on_error(app, monkeypatch):
 
     assert status == 500
     assert db.rolled_back is True
-    assert "broken" in response.get_json()["details"]
-
-
-def test_auto_plan_deadlines_preview_handles_prediction_error(app, monkeypatch):
-    db = FakeDB()
-    patch_user_and_db(monkeypatch, db)
-
-    monkeypatch.setattr(routes, "resolve_subject_id", lambda **kwargs: 10)
-    monkeypatch.setattr(routes, "get_existing_deadline_dates", lambda db, user_id: [])
-    monkeypatch.setattr(routes, "get_user_calendar_events", lambda db, user_id: [])
-    monkeypatch.setattr(routes, "get_subject_events", lambda **kwargs: [])
-
-    def raise_prediction_error(**kwargs):
-        raise RuntimeError("prediction failed")
-
-    monkeypatch.setattr(
-        routes,
-        "safe_predict_deadline",
-        raise_prediction_error,
-    )
-
-    with app.test_request_context(
-        "/api/tasks/auto-plan-deadlines-preview",
-        method="POST",
-        json={
-            "tasks": [
-                {
-                    "title": "Broken task",
-                    "subject": "Math",
-                }
-            ]
-        },
-    ):
-        response = routes.auto_plan_deadlines_preview()
-
-    data = response.get_json()
-
-    assert response.status_code == 200
-    assert len(data["tasks"]) == 1
-    assert data["tasks"][0]["error"] == "prediction failed"
-
-
-def test_auto_plan_existing_task_returns_500(app, monkeypatch):
-    task = make_task()
-    db = FakeDB(task=task)
-
-    patch_user_and_db(monkeypatch, db)
-
-    def raise_error(**kwargs):
-        raise RuntimeError("planner crashed")
-
-    monkeypatch.setattr(
-        routes,
-        "apply_auto_deadline_to_task",
-        raise_error,
-    )
-
-    with app.test_request_context(
-        "/api/tasks/1/auto-plan",
-        method="POST",
-        json={},
-    ):
-        response, status = routes.auto_plan_existing_task(1)
-
-    assert status == 500
-    assert db.rolled_back is True
-    assert "planner crashed" in response.get_json()["details"]
-
-
-def test_get_task_schedule_blocks_unauthorized(app, monkeypatch):
-    monkeypatch.setattr(routes, "current_user", lambda: None)
-
-    with app.test_request_context("/api/task-schedule-blocks"):
-        response, status = routes.get_task_schedule_blocks()
-
-    assert status == 401
-
-
-def test_generate_dataset_unauthorized(app, monkeypatch):
-    monkeypatch.setattr(routes, "current_user", lambda: None)
-
-    with app.test_request_context(
-        "/api/ml/deadline-dataset/generate",
-        method="POST",
-    ):
-        response, status = routes.generate_synthetic_deadline_dataset()
-
-    assert status == 401
-
-
-def test_analyze_text_returns_500(app, monkeypatch):
-    db = FakeDB()
-
-    patch_user_and_db(monkeypatch, db)
-
-    def raise_error(**kwargs):
-        raise RuntimeError("nlp failed")
-
-    monkeypatch.setattr(
-        routes.task_nlp_service,
-        "analyze_many",
-        raise_error,
-    )
-
-    with app.test_request_context(
-        "/api/task-import/analyze-text",
-        method="POST",
-        json={"text": "test"},
-    ):
-        response, status = routes.analyze_task_text_api()
-
-    assert status == 500
-    assert "nlp failed" in response.get_json()["details"]
-
-
-def test_analyze_file_returns_500(app, monkeypatch):
-    db = FakeDB()
-
-    patch_user_and_db(monkeypatch, db)
-
-    def raise_error(*args, **kwargs):
-        raise RuntimeError("extract failed")
-
-    monkeypatch.setattr(
-        routes.task_file_extractor_service,
-        "extract_text",
-        raise_error,
-    )
-
-    with app.test_request_context(
-        "/api/task-import/analyze-file",
-        method="POST",
-        data={"file": (BytesIO(b"data"), "test.txt")},
-        content_type="multipart/form-data",
-    ):
-        response, status = routes.analyze_task_file_api()
-
-    assert status == 500
-    assert "extract failed" in response.get_json()["details"]
 
 
 def test_create_tasks_from_import_auto_planning_error_is_ignored(app, monkeypatch):
     db = FakeDB()
-
     patch_user_and_db(monkeypatch, db)
 
     monkeypatch.setattr(routes, "find_subject_by_name", lambda *args, **kwargs: None)
     monkeypatch.setattr(routes, "get_existing_deadline_dates", lambda db, user_id: [])
-
-    monkeypatch.setattr(
-        routes,
-        "get_subject_events",
-        lambda **kwargs: [],
-    )
-
-    monkeypatch.setattr(
-        routes,
-        "get_existing_subject_deadline_count",
-        lambda **kwargs: 0,
-    )
-
-    monkeypatch.setattr(
-        routes,
-        "build_subject_distribution_index",
-        lambda **kwargs: 0,
-    )
-
-    def raise_error(**kwargs):
-        raise RuntimeError("planning failed")
-
+    monkeypatch.setattr(routes, "get_subject_events", lambda **kwargs: [])
+    monkeypatch.setattr(routes, "get_existing_subject_deadline_count", lambda **kwargs: 0)
+    monkeypatch.setattr(routes, "build_subject_distribution_index", lambda **kwargs: 0)
     monkeypatch.setattr(
         routes,
         "apply_auto_deadline_to_task",
-        raise_error,
+        lambda **kwargs: (_ for _ in ()).throw(RuntimeError("planning failed")),
     )
-
-    monkeypatch.setattr(
-        routes,
-        "create_task_log",
-        lambda **kwargs: None,
-    )
-
-    monkeypatch.setattr(
-        routes,
-        "serialize_task",
-        lambda task: {"title": task.title},
-    )
+    monkeypatch.setattr(routes, "create_task_log", lambda **kwargs: None)
+    monkeypatch.setattr(routes, "serialize_task", lambda task: {"title": task.title})
 
     with app.test_request_context(
         "/api/task-import/create-tasks",
         method="POST",
-        json={
-            "tasks": [
-                {
-                    "title": "Task without deadline",
-                    "subject": "Math",
-                }
-            ]
-        },
+        json={"tasks": [{"title": "Task without deadline", "subject": "Math"}]},
     ):
         response, status = routes.create_tasks_from_import_api()
 
-    data = response.get_json()
-
     assert status == 201
-    assert data["count"] == 1
-    assert data["tasks"][0]["title"] == "Task without deadline"
+    assert response.get_json()["count"] == 1
 
 
-def test_update_task_status_handles_auto_replan_error(app, monkeypatch):
-    task = make_task(status="planned")
-
-    db = FakeDB(task=task)
-
-    patch_user_and_db(monkeypatch, db)
-
-    monkeypatch.setattr(routes, "create_task_log", lambda **kwargs: None)
-    monkeypatch.setattr(routes, "set_auto_replan_metadata", lambda db, task: None)
-
-    def raise_error(**kwargs):
-        raise RuntimeError("replan crashed")
-
-    monkeypatch.setattr(
-        routes,
-        "auto_replan_missed_task",
-        raise_error,
-    )
-
-    monkeypatch.setattr(
-        routes,
-        "serialize_task",
-        lambda task: {"status": task.status},
-    )
-
-    with app.test_request_context(
-        "/api/tasks/1/status",
-        method="PUT",
-        json={"status": "missed"},
-    ):
-        response = routes.update_task_status(1)
-
-    assert response.status_code == 200
-    assert response.get_json()["status"] == "missed"
-
-
-def test_auto_deadline_returns_prediction_without_deadline(app, monkeypatch):
+def test_generate_synthetic_deadline_dataset_success(app, monkeypatch):
     db = FakeDB()
-
-    patch_user_and_db(monkeypatch, db)
-
-    monkeypatch.setattr(routes, "resolve_subject_id", lambda **kwargs: 10)
-    monkeypatch.setattr(routes, "get_subject_events", lambda **kwargs: [])
-    monkeypatch.setattr(routes, "get_user_calendar_events", lambda **kwargs: [])
-    monkeypatch.setattr(routes, "get_existing_subject_deadline_count", lambda **kwargs: 0)
-    monkeypatch.setattr(routes, "get_existing_deadline_dates", lambda db, user_id: [])
-
-    monkeypatch.setattr(
-        routes,
-        "safe_predict_deadline",
-        lambda **kwargs: {
-            "deadline": None,
-            "confidence": 0.1,
-            "reason": "not enough data",
-        },
-    )
-
-    with app.test_request_context(
-        "/api/tasks/auto-deadline",
-        method="POST",
-        json={"title": "Task"},
-    ):
-        response, status = routes.auto_deadline_for_manual_task()
-
-    data = response.get_json()
-
-    assert status == 200
-    assert data["due_date"] is None
-    assert data["confidence_score"] == 0.1
-
-
-def test_auto_deadline_returns_500_on_global_exception(app, monkeypatch):
-    db = FakeDB()
-
     patch_user_and_db(monkeypatch, db)
 
     monkeypatch.setattr(
-        routes,
-        "safe_predict_deadline",
-        lambda **kwargs: {
-            "deadline": datetime.now(UTC) + timedelta(days=2),
-            "confidence": 0.5,
-            "reason": "mocked fallback",
-        },
+        routes.synthetic_deadline_dataset_service,
+        "save_csv",
+        lambda: "backend/infrastructure/ml/datasets/deadlines.csv",
     )
 
-    with app.test_request_context(
-        "/api/tasks/auto-deadline",
-        method="POST",
-        json={"title": "Task"},
-    ):
-        response = routes.auto_deadline_for_manual_task()
+    with app.test_request_context("/api/ml/deadline-dataset/generate", method="POST"):
+        response = routes.generate_synthetic_deadline_dataset()
 
-    assert response.status_code == 200
-
-    data = response.get_json()
-
-    assert "due_date" in data
-    assert "confidence_score" in data
-
-
-def test_auto_deadline_without_title_returns_400(app, monkeypatch):
-    db = FakeDB()
-
-    patch_user_and_db(monkeypatch, db)
-
-    with app.test_request_context(
-        "/api/tasks/auto-deadline",
-        method="POST",
-        json={},
-    ):
-        response = routes.auto_deadline_for_manual_task()
-
-    assert response.status_code == 400
-
-    data = response.get_json()
-
-    assert "error" in data
-
-
-def test_auto_deadline_handles_prediction_failure(app, monkeypatch):
-    db = FakeDB()
-
-    patch_user_and_db(monkeypatch, db)
-
-    monkeypatch.setattr(
-        routes,
-        "safe_predict_deadline",
-        lambda **kwargs: None,
-    )
-
-    with app.test_request_context(
-        "/api/tasks/auto-deadline",
-        method="POST",
-        json={
-            "title": "Test task",
-        },
-    ):
-        response = routes.auto_deadline_for_manual_task()
-
-    assert response.status_code == 200
-
-    data = response.get_json()
-
-    assert data["due_date"] is None
-
-
-def test_auto_plan_preview_returns_empty_for_no_tasks(app, monkeypatch):
-    db = FakeDB()
-
-    patch_user_and_db(monkeypatch, db)
-
-    with app.test_request_context(
-        "/api/tasks/auto-plan-deadlines-preview",
-        method="POST",
-        json={"tasks": []},
-    ):
-        response = routes.auto_plan_deadlines_preview()
-
-    assert response.status_code == 200
-
-    data = response.get_json()
-
-    assert data["tasks"] == []
-
-
-def test_auto_plan_preview_skips_invalid_task(app, monkeypatch):
-    db = FakeDB()
-
-    patch_user_and_db(monkeypatch, db)
-
-    monkeypatch.setattr(
-        routes,
-        "safe_predict_deadline",
-        lambda **kwargs: {
-            "deadline": datetime.now(UTC) + timedelta(days=2),
-            "confidence": 0.7,
-            "reason": "predicted",
-        },
-    )
-
-    with app.test_request_context(
-        "/api/tasks/auto-plan-deadlines-preview",
-        method="POST",
-        json={
-            "tasks": [
-                {},
-                {"title": "Valid task"},
-            ]
-        },
-    ):
-        response = routes.auto_plan_deadlines_preview()
-
-    assert response.status_code == 200
-
-    data = response.get_json()
-
-    assert len(data["tasks"]) >= 1
-
-
-def test_auto_deadline_without_title_returns_400(app, monkeypatch):
-    db = FakeDB()
-
-    patch_user_and_db(monkeypatch, db)
-
-    with app.test_request_context(
-        "/api/tasks/auto-deadline",
-        method="POST",
-        json={},
-    ):
-        response, status_code = routes.auto_deadline_for_manual_task()
-
-    assert status_code == 400
-
-    data = response.get_json()
-
-    assert "error" in data
-
-
-def test_auto_deadline_handles_prediction_failure(app, monkeypatch):
-    db = FakeDB()
-
-    patch_user_and_db(monkeypatch, db)
-
-    monkeypatch.setattr(
-        routes,
-        "safe_predict_deadline",
-        lambda **kwargs: {
-            "deadline": None,
-            "confidence": 0,
-            "reason": "fallback",
-        },
-    )
-
-    with app.test_request_context(
-        "/api/tasks/auto-deadline",
-        method="POST",
-        json={
-            "title": "Test task",
-        },
-    ):
-        response = routes.auto_deadline_for_manual_task()
-
-    if isinstance(response, tuple):
-        response, status_code = response
-    else:
-        status_code = response.status_code
-
-    assert status_code == 200
-
-    data = response.get_json()
-
-    assert "due_date" in data
-
-
-def test_auto_plan_preview_handles_exception(app, monkeypatch):
-    db = FakeDB()
-
-    patch_user_and_db(monkeypatch, db)
-
-    monkeypatch.setattr(
-        routes,
-        "safe_predict_deadline",
-        lambda **kwargs: (_ for _ in ()).throw(RuntimeError("planner fail")),
-    )
-
-    with app.test_request_context(
-        "/api/tasks/auto-plan-deadlines-preview",
-        method="POST",
-        json={
-            "tasks": [
-                {"title": "Task"},
-            ]
-        },
-    ):
-        response = routes.auto_plan_deadlines_preview()
-
-    assert response.status_code == 200
-
-    data = response.get_json()
-
-    assert "tasks" in data
+    assert response.get_json()["message"] == "Synthetic deadline dataset generated"

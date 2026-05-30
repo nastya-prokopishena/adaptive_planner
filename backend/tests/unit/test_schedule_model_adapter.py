@@ -1,6 +1,7 @@
 import importlib
 import sys
-from types import SimpleNamespace
+
+import pytest
 
 from backend.infrastructure.ml import model_registry
 
@@ -15,52 +16,42 @@ class FakeLoader:
 
 def load_adapter_module(monkeypatch):
     monkeypatch.setattr(model_registry, "MLModelLoader", FakeLoader, raising=False)
-
     sys.modules.pop("backend.infrastructure.ml.schedule_model_adapter", None)
-
     return importlib.import_module("backend.infrastructure.ml.schedule_model_adapter")
 
 
 def test_normalize_text(monkeypatch):
-    module = load_adapter_module(monkeypatch)
-    adapter = module.ScheduleModelAdapter()
+    adapter = load_adapter_module(monkeypatch).ScheduleModelAdapter()
 
     assert adapter.normalize_text("  Лекція — тест  ") == "лекція - тест"
 
 
-def test_predict_event_type_by_rules(monkeypatch):
-    module = load_adapter_module(monkeypatch)
-    adapter = module.ScheduleModelAdapter()
+@pytest.mark.parametrize(
+    ("method_name", "text", "expected_key", "expected_value", "expected_source"),
+    [
+        ("predict_event_type_by_rules", "лабораторна робота", "event_type", "laboratory", "rules"),
+        ("predict_event_type", "незрозумілий текст", "event_type", "unknown", "fallback"),
+        ("predict_subject", "будь-який текст", "subject", None, "fallback"),
+    ],
+)
+def test_rule_and_fallback_predictions(
+    monkeypatch,
+    method_name,
+    text,
+    expected_key,
+    expected_value,
+    expected_source,
+):
+    adapter = load_adapter_module(monkeypatch).ScheduleModelAdapter()
 
-    result = adapter.predict_event_type_by_rules("лабораторна робота")
+    result = getattr(adapter, method_name)(text)
 
-    assert result["event_type"] == "laboratory"
-    assert result["source"] == "rules"
-
-
-def test_predict_event_type_fallback(monkeypatch):
-    module = load_adapter_module(monkeypatch)
-    adapter = module.ScheduleModelAdapter()
-
-    result = adapter.predict_event_type("незрозумілий текст")
-
-    assert result["event_type"] == "unknown"
-    assert result["source"] == "fallback"
-
-
-def test_predict_subject_fallback(monkeypatch):
-    module = load_adapter_module(monkeypatch)
-    adapter = module.ScheduleModelAdapter()
-
-    result = adapter.predict_subject("будь-який текст")
-
-    assert result["subject"] is None
-    assert result["source"] == "fallback"
+    assert result[expected_key] == expected_value
+    assert result["source"] == expected_source
 
 
 def test_predict_event_type_with_fake_model(monkeypatch):
-    module = load_adapter_module(monkeypatch)
-    adapter = module.ScheduleModelAdapter()
+    adapter = load_adapter_module(monkeypatch).ScheduleModelAdapter()
 
     class FakeModel:
         def predict(self, values):
@@ -79,8 +70,7 @@ def test_predict_event_type_with_fake_model(monkeypatch):
 
 
 def test_predict_subject_with_fake_model(monkeypatch):
-    module = load_adapter_module(monkeypatch)
-    adapter = module.ScheduleModelAdapter()
+    adapter = load_adapter_module(monkeypatch).ScheduleModelAdapter()
 
     class FakeModel:
         def predict(self, values):

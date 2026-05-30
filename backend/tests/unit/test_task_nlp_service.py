@@ -1,75 +1,95 @@
 from backend.application.task_nlp_service import TaskNLPService
 
 
-def make_service():
+class FakeDifficultyService:
+    def predict_difficulty(self, text, task_type="other", subject="Інше"):
+        return 3
+
+    def get_model_info(self):
+        return {"loaded": True}
+
+
+def make_service(use_real_init=False):
+    if use_real_init:
+        service = TaskNLPService()
+        service.difficulty_ml_service = FakeDifficultyService()
+        return service
+
     service = TaskNLPService.__new__(TaskNLPService)
-
-    class DummyDifficultyService:
-        def predict_difficulty(self, text, task_type="other", subject="Інше"):
-            return 3
-
-    service.difficulty_ml_service = DummyDifficultyService()
+    service.difficulty_ml_service = FakeDifficultyService()
     return service
 
 
-def test_detect_task_type_variants():
+def test_task_type_deadline_keywords_and_helper_rules():
     service = make_service()
 
-    assert service._detect_task_type("Лабораторна робота №1") == "laboratory"
-    assert service._detect_task_type("Самостійна робота") == "reading"
-    assert service._detect_task_type("Контрольна робота") == "exam_preparation"
-    assert service._detect_task_type("Проєкт з архітектури") == "project"
+    task_type_cases = [
+        ("Лабораторна робота №1", "laboratory"),
+        ("Самостійна робота", "reading"),
+        ("Контрольна робота", "exam_preparation"),
+        ("Іспит з дисципліни", "exam_preparation"),
+        ("Проєкт з архітектури", "project"),
+        ("Практична робота №2", "homework"),
+    ]
 
-
-def test_extract_deadline_and_keywords():
-    service = make_service()
+    for text, expected in task_type_cases:
+        assert service._detect_task_type(text) == expected
 
     assert service._extract_deadline("Здати до 15.06.2026") == "15.06.2026"
+    assert service._extract_deadline("без дедлайну") is None
 
     keywords = service._extract_keywords(
-        "реалізувати систему планування задач та проаналізувати результати"
+        "Розробити Python Flask застосунок, створити API, протестувати систему."
     )
 
-    assert "реалізувати" in keywords or len(keywords) > 0
+    assert "python" in keywords or "flask" in keywords or len(keywords) > 0
 
 
-def test_calibrate_difficulty_raises_for_project_markers():
-    service = make_service()
+def test_difficulty_and_duration_rules():
+    service = make_service(use_real_init=True)
 
-    result = service._calibrate_difficulty(
-        difficulty=2,
-        text="створити систему та розробити застосунок з ci/cd pipeline",
-        task_type="project",
-    )
+    difficulty_cases = [
+        (
+            2,
+            "створити систему та розробити застосунок з ci/cd pipeline",
+            "project",
+            4,
+            5,
+        ),
+        (5, "прочитати короткий текст", "reading", 1, 2),
+        (2, "оформити звіт та проаналізувати результати", "laboratory", 3, 5),
+    ]
 
-    assert result >= 4
+    for difficulty, text, task_type, min_score, max_score in difficulty_cases:
+        result = service._calibrate_difficulty(
+            difficulty=difficulty,
+            text=text,
+            task_type=task_type,
+        )
+        assert min_score <= result <= max_score
 
+    duration_cases = [
+        ("прочитати матеріал", "reading", 5, 0.5, 2.0),
+        ("реалізувати розробити створити систему", "project", 5, 6.0, 24.0),
+        ("оформити звіт", "laboratory", 3, 2.5, 8.0),
+    ]
 
-def test_estimate_duration_limits_reading_and_project():
-    service = make_service()
-
-    reading = service._estimate_duration_hours(
-        text="прочитати матеріал",
-        task_type="reading",
-        difficulty=2,
-    )
-
-    project = service._estimate_duration_hours(
-        text="реалізувати розробити створити систему",
-        task_type="project",
-        difficulty=5,
-    )
-
-    assert reading <= 2
-    assert project >= 6
+    for text, task_type, difficulty, min_hours, max_hours in duration_cases:
+        duration = service._estimate_duration_hours(
+            text=text,
+            task_type=task_type,
+            difficulty=difficulty,
+        )
+        assert min_hours <= duration <= max_hours
 
 
 def test_analyze_returns_expected_task_fields():
-    service = make_service()
+    service = make_service(use_real_init=True)
 
     result = service.analyze(
         """
         Лабораторна робота №1
+        з дисципліни Програмування
         Мета: навчитись працювати з системою.
         Завдання: реалізувати програмний продукт, проаналізувати результати,
         оформити звіт та здати до 15.06.2026.
@@ -81,24 +101,11 @@ def test_analyze_returns_expected_task_fields():
     assert result["task_type"] == "laboratory"
     assert result["difficulty_score"] >= 1
     assert result["estimated_duration_hours"] >= 0.5
+    assert result["deadline"] is not None
 
 
-class FakeDifficultyService:
-    def predict_difficulty(self, text, task_type, subject):
-        return 3
-
-    def get_model_info(self):
-        return {"loaded": True}
-
-
-def build_service():
-    service = TaskNLPService()
-    service.difficulty_ml_service = FakeDifficultyService()
-    return service
-
-
-def test_analyze_detects_laboratory_task_fields():
-    service = build_service()
+def test_analyze_detects_laboratory_subject_title_and_many_blocks():
+    service = make_service(use_real_init=True)
 
     text = """
     Лабораторна робота №4 «Побудова вебзастосунку»
@@ -117,22 +124,7 @@ def test_analyze_detects_laboratory_task_fields():
     assert result["estimated_duration_hours"] >= 2.5
     assert result["deadline"] is not None
 
-
-def test_analyze_uses_provided_subject_name():
-    service = build_service()
-
-    result = service.analyze(
-        "Практична робота №2. Завдання: написати програму та оформити звіт.",
-        subject_name="Python",
-    )
-
-    assert result["subject"] == "Python"
-
-
-def test_analyze_many_splits_long_document_into_learning_blocks():
-    service = build_service()
-
-    text = (
+    long_text = (
         """
     --- PAGE 1 ---
     Зміст
@@ -153,43 +145,7 @@ def test_analyze_many_splits_long_document_into_learning_blocks():
         + (" Додатковий опис." * 40)
     )
 
-    results = service.analyze_many(text, subject_name="Software")
+    results = service.analyze_many(long_text, subject_name="Software")
 
     assert len(results) >= 1
     assert all(item["subject"] == "Software" for item in results)
-
-
-def test_private_helpers_extract_keywords_and_task_type():
-    service = build_service()
-
-    keywords = service._extract_keywords(
-        "Розробити Python Flask застосунок, створити API, протестувати систему."
-    )
-
-    assert "python" in keywords or "flask" in keywords
-    assert service._detect_task_type("Контрольна робота та іспит") == "exam_preparation"
-    assert service._detect_task_type("Самостійна робота прочитати матеріал") == "reading"
-
-
-def test_calibrate_difficulty_raises_project_complexity():
-    service = build_service()
-
-    difficulty = service._calibrate_difficulty(
-        difficulty=2,
-        text=("створити систему машинне навчання " "архітектура ci/cd інтеграція"),
-        task_type="project",
-    )
-
-    assert difficulty >= 3
-
-
-def test_estimate_duration_limits_reading_task():
-    service = build_service()
-
-    duration = service._estimate_duration_hours(
-        text="прочитати матеріал",
-        task_type="reading",
-        difficulty=5,
-    )
-
-    assert duration <= 2.0

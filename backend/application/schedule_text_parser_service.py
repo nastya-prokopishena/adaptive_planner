@@ -1,6 +1,18 @@
 import re
 from typing import Any
 
+FIELD_DAY = "день"
+FIELD_PAIR = "пара"
+FIELD_TIME = "час"
+FIELD_SUBJECT = "предмет"
+FIELD_TYPE = "тип"
+FIELD_TEACHER = "викладач"
+FIELD_ROOM = "аудиторія"
+FIELD_GROUP = "група"
+FIELD_SUBGROUP = "підгрупа"
+FIELD_WEEKS = "тижні"
+FIELD_SOURCE = "джерело"
+
 
 class ScheduleTextParserService:
     DEFAULT_PAIR_TIMES = {

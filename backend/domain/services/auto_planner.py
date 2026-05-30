@@ -479,7 +479,7 @@ def choose_repeating_slots_greedy(
             if not available:
                 break
 
-            best = sorted(
+            best = min(
                 available,
                 key=lambda slot: score_slot(
                     slot=slot,
@@ -487,7 +487,7 @@ def choose_repeating_slots_greedy(
                     preferred_days=preferred_days,
                     selected_day_counts=selected_day_counts,
                 ),
-            )[0]
+            )
 
             week_selected.append(best)
             selected_day_counts[best["day"]] = selected_day_counts.get(best["day"], 0) + 1
@@ -623,14 +623,14 @@ def plan_task_with_ortools(
         )
 
         if not slot:
-            slot = sorted(
+            slot = min(
                 candidates,
                 key=lambda candidate: score_slot(
                     candidate,
                     preferred_time=preferred_time,
                     preferred_days=preferred_days,
                 ),
-            )[0]
+            )
 
         selected_slots = [slot] if slot else []
 

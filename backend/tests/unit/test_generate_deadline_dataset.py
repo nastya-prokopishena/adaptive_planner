@@ -1,6 +1,8 @@
 from datetime import UTC, datetime, timedelta
 from types import SimpleNamespace
 
+import pytest
+
 from backend.infrastructure.ml.dataset_builder.generate_deadline_dataset import (
     calculate_day_load_score,
     clamp,
@@ -12,60 +14,56 @@ from backend.infrastructure.ml.dataset_builder.generate_deadline_dataset import 
 )
 
 
-def test_clamp():
-    assert clamp(15, 0, 10) == 10
-    assert clamp(-1, 0, 10) == 0
+@pytest.mark.parametrize(
+    ("value", "minimum", "maximum", "expected"),
+    [
+        (15, 0, 10, 10),
+        (-1, 0, 10, 0),
+    ],
+)
+def test_clamp(value, minimum, maximum, expected):
+    assert clamp(value, minimum, maximum) == expected
 
 
-def test_priority_score():
-    assert get_priority_score("urgent") == 4
-    assert get_priority_score("bad") == 2
+@pytest.mark.parametrize(
+    ("priority", "expected"),
+    [
+        ("urgent", 4),
+        ("bad", 2),
+    ],
+)
+def test_priority_score(priority, expected):
+    assert get_priority_score(priority) == expected
 
 
-def test_task_type_score():
-    assert get_task_type_score("project") == 4
-    assert get_task_type_score("unknown") == 2
+@pytest.mark.parametrize(
+    ("task_type", "expected"),
+    [
+        ("project", 4),
+        ("unknown", 2),
+    ],
+)
+def test_task_type_score(task_type, expected):
+    assert get_task_type_score(task_type) == expected
 
 
-def test_day_load_score():
+def test_day_load_and_free_hours_are_calculated_from_events():
     now = datetime.now(UTC)
-
-    event = SimpleNamespace(
-        start_time=now,
-        end_time=now + timedelta(hours=3),
-    )
-
-    assert calculate_day_load_score([event]) > 0
-
-
-def test_get_free_hours():
-    now = datetime.now(UTC)
-
     event = SimpleNamespace(
         start_time=now,
         end_time=now + timedelta(hours=4),
     )
 
-    result = get_free_hours_today([event])
-
-    assert result < 14
+    assert calculate_day_load_score([event]) > 0
+    assert get_free_hours_today([event]) < 14
 
 
 def test_get_hours_until_next_subject_event():
     now = datetime.now(UTC)
-
     task = SimpleNamespace(subject_id=1)
+    event = SimpleNamespace(subject_id=1, start_time=now + timedelta(hours=10))
 
-    event = SimpleNamespace(
-        subject_id=1,
-        start_time=now + timedelta(hours=10),
-    )
-
-    result = get_hours_until_next_subject_event(
-        task,
-        [event],
-        now,
-    )
+    result = get_hours_until_next_subject_event(task, [event], now)
 
     assert result >= 1
 

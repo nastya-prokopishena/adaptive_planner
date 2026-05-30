@@ -20,26 +20,44 @@ from backend.domain.services.auto_planner import (
 )
 
 
-def test_auto_planner_rejects_empty_title():
-    with pytest.raises(ValueError, match="Title is required"):
-        plan_task_with_ortools(
-            existing_events=[],
-            title="",
-            duration_minutes=60,
-            date_from="2026-05-01",
-            date_to="2026-05-02",
-        )
-
-
-def test_auto_planner_rejects_invalid_duration():
-    with pytest.raises(ValueError, match="Duration must be greater than zero"):
-        plan_task_with_ortools(
-            existing_events=[],
-            title="Test task",
-            duration_minutes=0,
-            date_from="2026-05-01",
-            date_to="2026-05-02",
-        )
+@pytest.mark.parametrize(
+    ("kwargs", "message"),
+    [
+        (
+            {
+                "existing_events": [],
+                "title": "",
+                "duration_minutes": 60,
+                "date_from": "2026-05-01",
+                "date_to": "2026-05-02",
+            },
+            "Title is required",
+        ),
+        (
+            {
+                "existing_events": [],
+                "title": "Test task",
+                "duration_minutes": 0,
+                "date_from": "2026-05-01",
+                "date_to": "2026-05-02",
+            },
+            "Duration must be greater than zero",
+        ),
+        (
+            {
+                "existing_events": [],
+                "title": "Bad",
+                "duration_minutes": 60,
+                "date_from": "2026-05-30",
+                "date_to": "2026-05-28",
+            },
+            "End date",
+        ),
+    ],
+)
+def test_auto_planner_rejects_invalid_inputs(kwargs, message):
+    with pytest.raises(ValueError, match=message):
+        plan_task_with_ortools(**kwargs)
 
 
 def test_build_candidate_slots_excludes_busy_time():
@@ -68,33 +86,23 @@ def test_build_candidate_slots_excludes_busy_time():
     )
 
 
-def test_parse_clock_returns_default_for_empty_value():
+def test_date_time_and_day_helpers():
     default = datetime(2026, 5, 28, 8, 0).time()
 
     assert parse_clock(None, default) == default
-
-
-def test_normalize_date_accepts_date_and_datetime_strings():
     assert normalize_date("2026-05-28").hour == 0
     assert normalize_date("2026-05-28T12:30:00").hour == 12
-
-
-def test_get_weekday_code_returns_expected_code():
     assert get_weekday_code(datetime(2026, 5, 25).date()) == "MO"
 
 
 def test_normalize_allowed_days_supports_ukrainian_and_numbers():
     result = normalize_allowed_days(["ПН", "вт", "6", "SUNDAY", "bad"])
 
-    assert "MO" in result
-    assert "TU" in result
-
-    assert "SU" in result
-
+    assert {"MO", "TU", "SU"}.issubset(result)
     assert len(result) == 3
 
 
-def test_get_event_ranges_for_non_recurring_event():
+def test_event_ranges_and_busy_ranges_for_non_recurring_event():
     event = SimpleNamespace(
         start_time=datetime(2026, 5, 28, 10),
         end_time=datetime(2026, 5, 28, 11),
@@ -106,34 +114,19 @@ def test_get_event_ranges_for_non_recurring_event():
         datetime(2026, 5, 28),
         datetime(2026, 5, 29),
     )
-
-    assert ranges == [(event.start_time, event.end_time)]
-
-
-def test_build_busy_ranges_collects_event_ranges():
-    event = SimpleNamespace(
-        start_time=datetime(2026, 5, 28, 10),
-        end_time=datetime(2026, 5, 28, 11),
-        recurrence_type="none",
-    )
-
-    result = build_busy_ranges(
+    busy_ranges = build_busy_ranges(
         [event],
         datetime(2026, 5, 28),
         datetime(2026, 5, 29),
     )
 
-    assert len(result) == 1
+    assert ranges == [(event.start_time, event.end_time)]
+    assert busy_ranges == ranges
 
 
 def test_day_load_and_nearby_penalty_are_calculated():
     day = datetime(2026, 5, 28).date()
-    busy = [
-        (
-            datetime(2026, 5, 28, 10),
-            datetime(2026, 5, 28, 11),
-        )
-    ]
+    busy = [(datetime(2026, 5, 28, 10), datetime(2026, 5, 28, 11))]
 
     load = calculate_day_load_minutes(day, busy)
     penalty = calculate_nearby_event_penalty(
@@ -229,18 +222,3 @@ def test_plan_task_with_ortools_returns_planned_event():
     assert result is not None
     assert result["planned_count"] >= 1
     assert result["events"][0]["title"] == "Study"
-
-
-def test_plan_task_with_ortools_rejects_reversed_range():
-    try:
-        plan_task_with_ortools(
-            existing_events=[],
-            title="Bad",
-            duration_minutes=60,
-            date_from="2026-05-30",
-            date_to="2026-05-28",
-        )
-    except ValueError as exc:
-        assert "End date" in str(exc)
-    else:
-        raise AssertionError("Expected ValueError")

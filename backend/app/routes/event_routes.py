@@ -2,6 +2,8 @@ from backend.app.routes.common import *
 
 event_bp = Blueprint("event", __name__)
 
+GOOGLE_DELETE_ERROR = "Google delete error:"
+
 
 # ---------------------------
 # EVENTS
@@ -374,7 +376,7 @@ def delete_event_api(event_id):
                         event.google_event_id,
                     )
                 except Exception as error:
-                    print("Google delete error:", error)
+                    print(GOOGLE_DELETE_ERROR, error)
 
             db.delete(event)
             db.commit()
@@ -446,7 +448,7 @@ def delete_event_api(event_id):
                         event.google_event_id,
                     )
                 except Exception as error:
-                    print("Google delete error:", error)
+                    print(GOOGLE_DELETE_ERROR, error)
 
             db.delete(event)
             db.commit()
@@ -581,7 +583,7 @@ def bulk_delete_events_api():
                         event.google_event_id,
                     )
                 except Exception as error:
-                    print("Google delete error:", error)
+                    print(GOOGLE_DELETE_ERROR, error)
 
             db.delete(event)
             deleted_count += 1

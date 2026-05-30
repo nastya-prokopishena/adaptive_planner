@@ -3,6 +3,15 @@ from collections import Counter
 
 from backend.application.task_difficulty_ml_service import TaskDifficultyMLService
 
+TASK_WORD = "завдання"
+CREATE_WORD = "створити"
+DEVELOP_WORD = "розробити"
+ANALYZE_WORD = "проаналізувати"
+PREPARE_WORD = "підготувати"
+CALCULATE_WORD = "розрахувати"
+COMPARE_WORD = "порівняти"
+JUSTIFY_WORD = "обґрунтувати"
+
 
 class TaskNLPService:
     def __init__(self):
@@ -431,7 +440,7 @@ class TaskNLPService:
 
         markers = [
             "мета",
-            "завдання",
+            TASK_WORD,
             "хід роботи",
             "порядок виконання",
             "вимоги до результатів",
@@ -440,15 +449,15 @@ class TaskNLPService:
             "практичне завдання",
             "семінарське завдання",
             "виконати",
-            "створити",
-            "розробити",
-            "проаналізувати",
-            "підготувати",
+            CREATE_WORD,
+            DEVELOP_WORD,
+            ANALYZE_WORD,
+            PREPARE_WORD,
             "оформити",
-            "розрахувати",
+            CALCULATE_WORD,
             "написати",
-            "порівняти",
-            "обґрунтувати",
+            COMPARE_WORD,
+            JUSTIFY_WORD,
         ]
 
         return any(marker in lower for marker in markers)
@@ -613,7 +622,7 @@ class TaskNLPService:
             "практичне завдання",
             "семінарське завдання",
             "завдання:",
-            "завдання",
+            TASK_WORD,
         ]
 
         starts = []
@@ -724,27 +733,27 @@ class TaskNLPService:
 
     def _is_action_sentence(self, lower):
         markers = [
-            "створити",
-            "розробити",
+            CREATE_WORD,
+            DEVELOP_WORD,
             "виконати",
             "провести",
-            "проаналізувати",
+            ANALYZE_WORD,
             "описати",
             "оформити",
             "побудувати",
-            "розрахувати",
+            CALCULATE_WORD,
             "продемонструвати",
             "встановити",
             "налаштувати",
             "додати",
-            "підготувати",
+            PREPARE_WORD,
             "здійснити",
             "ознайомитись",
             "ознайомитися",
             "освоїти",
             "навести",
-            "порівняти",
-            "обґрунтувати",
+            COMPARE_WORD,
+            JUSTIFY_WORD,
             "відповісти",
             "написати",
             "визначити",
@@ -791,7 +800,7 @@ class TaskNLPService:
         words = re.findall(r"[а-яА-ЯіїєґІЇЄҐa-zA-Z0-9/+#.-]{4,}", text.lower())
 
         stopwords = {
-            "завдання",
+            TASK_WORD,
             "робота",
             "заняття",
             "тема",
@@ -864,13 +873,13 @@ class TaskNLPService:
 
         hard_markers = [
             "реалізувати",
-            "розробити",
-            "створити",
+            DEVELOP_WORD,
+            CREATE_WORD,
             "побудувати",
-            "проаналізувати",
-            "порівняти",
-            "обґрунтувати",
-            "розрахувати",
+            ANALYZE_WORD,
+            COMPARE_WORD,
+            JUSTIFY_WORD,
+            CALCULATE_WORD,
             "оформити звіт",
             "продемонструвати",
             "налаштувати",
@@ -933,19 +942,19 @@ class TaskNLPService:
 
         actions = [
             "реалізувати",
-            "розробити",
-            "створити",
+            DEVELOP_WORD,
+            CREATE_WORD,
             "побудувати",
-            "проаналізувати",
-            "порівняти",
-            "обґрунтувати",
-            "розрахувати",
+            ANALYZE_WORD,
+            COMPARE_WORD,
+            JUSTIFY_WORD,
+            CALCULATE_WORD,
             "оформити",
             "звіт",
             "продемонструвати",
             "налаштувати",
             "встановити",
-            "підготувати",
+            PREPARE_WORD,
             "дослідити",
         ]
 

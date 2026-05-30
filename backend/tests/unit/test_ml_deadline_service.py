@@ -1,6 +1,8 @@
 from datetime import UTC, datetime, timedelta
 from types import SimpleNamespace
 
+import pytest
+
 from backend.application.ml_deadline_service import MLDeadlineService
 
 
@@ -18,26 +20,29 @@ def make_event(start_offset_hours=24, duration_hours=2):
     return SimpleNamespace(start_time=start, end_time=start + timedelta(hours=duration_hours))
 
 
-def test_priority_and_task_type_scores():
+@pytest.mark.parametrize(
+    ("method_name", "value", "expected"),
+    [
+        ("priority_score", "urgent", 4),
+        ("priority_score", "unknown", 2),
+        ("task_type_score", "project", 4),
+        ("task_type_score", "unknown", 2),
+    ],
+)
+def test_score_helpers(method_name, value, expected):
     service = MLDeadlineService()
 
-    assert service.priority_score("urgent") == 4
-    assert service.priority_score("unknown") == 2
-    assert service.task_type_score("project") == 4
-    assert service.task_type_score("unknown") == 2
+    assert getattr(service, method_name)(value) == expected
 
 
 def test_get_hours_until_next_subject_event_returns_zero_without_events():
-    service = MLDeadlineService()
-
-    assert service.get_hours_until_next_subject_event([]) == 0
+    assert MLDeadlineService().get_hours_until_next_subject_event([]) == 0
 
 
 def test_build_features_contains_expected_values():
     service = MLDeadlineService()
-    task = make_task()
 
-    features = service.build_features(task=task, subject_events=[make_event()])
+    features = service.build_features(task=make_task(), subject_events=[make_event()])
 
     assert features["estimated_duration_hours"] == 2
     assert features["difficulty_score"] == 4
@@ -50,9 +55,7 @@ def test_calculate_event_load_hours_counts_only_target_day():
     today = datetime.now(UTC).date()
     event = make_event(start_offset_hours=1, duration_hours=3)
 
-    result = service.calculate_event_load_hours(today, [event])
-
-    assert result >= 0
+    assert service.calculate_event_load_hours(today, [event]) >= 0
 
 
 def test_build_subject_based_deadline_before_future_event():
@@ -60,10 +63,7 @@ def test_build_subject_based_deadline_before_future_event():
     task = make_task(hours=2)
     event = make_event(start_offset_hours=48)
 
-    deadline = service.build_subject_based_deadline(
-        task=task,
-        subject_events=[event],
-    )
+    deadline = service.build_subject_based_deadline(task=task, subject_events=[event])
 
     assert deadline is not None
     assert deadline < event.start_time

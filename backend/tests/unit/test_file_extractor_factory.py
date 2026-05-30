@@ -8,24 +8,18 @@ from backend.infrastructure.file_extractors.pdf_extractor import PdfExtractor
 from backend.infrastructure.file_extractors.text_extractor import TextExtractor
 
 
-def test_factory_returns_pdf_extractor():
-    assert isinstance(FileExtractorFactory.create("schedule.pdf"), PdfExtractor)
-
-
-def test_factory_returns_image_extractor():
-    assert isinstance(FileExtractorFactory.create("photo.png"), ImageExtractor)
-
-
-def test_factory_returns_docx_extractor():
-    assert isinstance(FileExtractorFactory.create("schedule.docx"), DocxExtractor)
-
-
-def test_factory_returns_excel_extractor():
-    assert isinstance(FileExtractorFactory.create("schedule.xlsx"), ExcelExtractor)
-
-
-def test_factory_returns_text_extractor():
-    assert isinstance(FileExtractorFactory.create("schedule.txt"), TextExtractor)
+@pytest.mark.parametrize(
+    ("filename", "expected_class"),
+    [
+        ("schedule.pdf", PdfExtractor),
+        ("photo.png", ImageExtractor),
+        ("schedule.docx", DocxExtractor),
+        ("schedule.xlsx", ExcelExtractor),
+        ("schedule.txt", TextExtractor),
+    ],
+)
+def test_factory_returns_expected_extractor(filename, expected_class):
+    assert isinstance(FileExtractorFactory.create(filename), expected_class)
 
 
 def test_factory_rejects_unknown_format():

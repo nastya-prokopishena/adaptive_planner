@@ -741,57 +741,6 @@ def event_matches_subject(event, subject_id=None, subject_name=None):
     return False
 
 
-def resolve_subject_id(db, user_id, subject_id=None, subject_name=None):
-    if subject_id:
-        try:
-            return int(subject_id)
-        except (TypeError, ValueError):
-            pass
-
-    subject = find_subject_by_name(
-        db=db,
-        user_id=user_id,
-        subject_name=subject_name,
-    )
-
-    if subject:
-        return subject.id
-
-    return None
-
-
-def get_subject_name_by_id(db, user_id, subject_id):
-    if not subject_id:
-        return None
-
-    subject = (
-        db.query(Subject)
-        .filter(Subject.user_id == user_id)
-        .filter(Subject.id == int(subject_id))
-        .first()
-    )
-
-    return subject.name if subject else None
-
-
-def normalize_text(value):
-    return (value or "").strip().lower()
-
-
-def event_matches_subject(event, subject_id=None, subject_name=None):
-    if subject_id and event.subject_id == int(subject_id):
-        return True
-
-    if subject_name:
-        event_title = normalize_text(event.title)
-        subject_text = normalize_text(subject_name)
-
-        if subject_text and subject_text in event_title:
-            return True
-
-    return False
-
-
 def get_subject_events(db, user_id, subject_id=None, subject_name=None):
     now = datetime.now(UTC)
 

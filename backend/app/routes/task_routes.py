@@ -2,6 +2,8 @@ from backend.app.routes.common import *
 
 task_bp = Blueprint("task", __name__)
 
+TASK_NOT_FOUND = "Task not found"
+
 
 @task_bp.route("/api/event-types", methods=["GET"])
 def get_event_types():
@@ -313,7 +315,7 @@ def update_task(task_id):
         task = db.query(Task).filter_by(id=task_id, user_id=user.id).first()
 
         if not task:
-            return jsonify({"error": "Task not found"}), 404
+            return jsonify({"error": TASK_NOT_FOUND}), 404
 
         task.title = data.get("title", task.title)
         task.description = data.get("description", task.description)
@@ -375,7 +377,7 @@ def update_task_deadline(task_id):
         task = db.query(Task).filter_by(id=task_id, user_id=user.id).first()
 
         if not task:
-            return jsonify({"error": "Task not found"}), 404
+            return jsonify({"error": TASK_NOT_FOUND}), 404
 
         task.due_date = due_date
         task.updated_at = to_storage_datetime(datetime.now(UTC))
@@ -403,7 +405,7 @@ def delete_task(task_id):
         task = db.query(Task).filter_by(id=task_id, user_id=user.id).first()
 
         if not task:
-            return jsonify({"error": "Task not found"}), 404
+            return jsonify({"error": TASK_NOT_FOUND}), 404
 
         create_task_log(
             db=db,
@@ -949,7 +951,7 @@ def auto_plan_existing_task(task_id):
         task = db.query(Task).filter(Task.id == task_id).filter(Task.user_id == user.id).first()
 
         if not task:
-            return jsonify({"error": "Task not found"}), 404
+            return jsonify({"error": TASK_NOT_FOUND}), 404
 
         prediction, block = apply_auto_deadline_to_task(
             db=db,
@@ -1370,7 +1372,7 @@ def create_tasks_from_import_api():
                         subject_events_count=len(subject_events),
                     )
 
-                    prediction, block = apply_auto_deadline_to_task(
+                    prediction, _ = apply_auto_deadline_to_task(
                         db=db,
                         user_id=user.id,
                         task=task,
