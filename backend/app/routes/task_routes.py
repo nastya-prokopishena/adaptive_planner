@@ -896,21 +896,20 @@ def auto_plan_deadlines_preview():
                     }
                 )
 
-        return jsonify({"tasks": planned_tasks}), 200
+        return jsonify({"tasks": planned_tasks})
 
     except Exception as error:
         print("AUTO PLAN PREVIEW GLOBAL ERROR:", error)
 
-        return (
-            jsonify(
-                {
-                    "tasks": [],
-                    "error": "Не вдалося автоматично підібрати дедлайни",
-                    "details": str(error),
-                }
-            ),
-            500,
+        response = jsonify(
+            {
+                "tasks": [],
+                "error": "Не вдалося автоматично підібрати дедлайни",
+                "details": str(error),
+            }
         )
+        response.status_code = 500
+        return response
 
     finally:
         db.close()
