@@ -1109,7 +1109,7 @@ export default function TasksPanel({ events = [] }) {
                 className={
                   subjectForm.color === color ? "color-dot active" : "color-dot"
                 }
-                style={{ backgroundColor: color }}
+                style={{ "--color-dot-bg": color }}
                 onClick={() =>
                   setSubjectForm({
                     ...subjectForm,
@@ -1185,7 +1185,7 @@ export default function TasksPanel({ events = [] }) {
                               ? "color-dot active"
                               : "color-dot"
                           }
-                          style={{ backgroundColor: color }}
+                          style={{ "--color-dot-bg": color }}
                           onClick={() =>
                             setEditSubjectForm({
                               ...editSubjectForm,
@@ -1252,7 +1252,8 @@ export default function TasksPanel({ events = [] }) {
                     ? "color-dot active"
                     : "color-dot"
                 }
-                style={{ backgroundColor: color }}
+                style={{ "--color-dot-bg": color }}
+
                 onClick={() =>
                   setEventTypeForm({
                     ...eventTypeForm,
@@ -1306,7 +1307,7 @@ export default function TasksPanel({ events = [] }) {
                               ? "color-dot active"
                               : "color-dot"
                           }
-                          style={{ backgroundColor: color }}
+                          style={{ "--color-dot-bg": color }}
                           onClick={() =>
                             setEditEventTypeForm({
                               ...editEventTypeForm,

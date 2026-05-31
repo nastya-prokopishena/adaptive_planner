@@ -1,8 +1,3 @@
-![Python](https://img.shields.io/badge/Python-3.11-blue)
-![Flask](https://img.shields.io/badge/Flask-Backend-black)
-![CI](https://github.com/nastya-prokopishena/adaptive_planner/actions/workflows/ci.yml/badge.svg)
-![Sonar Quality Gate](https://sonarcloud.io/api/project_badges/measure?project=nastya-prokopishena_adaptive_planner&metric=alert_status)
-
 # 📘 Adaptive Planner
 
 > Вебзастосунок для адаптивного планування навчальних задач, розкладу, дедлайнів і продуктивності студента з використанням AI/ML, Google Calendar, Docker, CI/CD та автоматизованого тестування.
@@ -231,46 +226,110 @@ http://localhost:5000/openapi.json
 
 ## 🧪 Тестування
 
-У проєкті реалізовано:
+У проєкті реалізовано комплексне тестування backend-частини системи Adaptive Planner.
+
+### Реалізовані типи тестування
 
 * unit tests
 * integration tests
 * security tests
 * performance tests
-* coverage report
+* benchmark tests
+* coverage analysis
+* static code analysis
 
-Запуск тестів:
+Для тестування та аналізу використовуються:
+
+* `pytest`
+* `pytest-cov`
+* `pytest-benchmark`
+* `Bandit`
+* `SonarQube`
+* `Locust`
+
+---
+
+### Запуск тестів
 
 ```bash
 python -m pytest
 ```
 
-Запуск coverage:
+### Запуск coverage analysis
 
 ```bash
 python -m pytest --cov=backend --cov-report=term-missing --cov-report=html
 ```
 
-Поточний результат:
+---
+
+### Поточні результати тестування
 
 ```text
-104 automated tests
-53% backend coverage
+398 passed
+83% total backend coverage
+0 critical security issues
 ```
+
+---
+
+### Benchmark тестування
+
+У проєкті реалізовано benchmark-тестування для:
+
+* NLP-аналізу задач
+* AI-обробки розкладу
+* алгоритмів автоматичного планування
+* генерації candidate slots
+
+---
+
+### Performance тестування
+
+Для навантажувального тестування використовується `Locust`.
+
+Тестування перевіряє:
+
+* стабільність REST API
+* одночасну роботу користувачів
+* час відповіді backend
+* навантаження під час AI/NLP-аналізу
+
+---
+
+### Security testing
+
+Для аналізу безпеки використовуються:
+
+* security pytest tests
+* Bandit static analysis
+* перевірка authentication та protected routes
+* перевірка XSS та SQL Injection scenarios
 
 ---
 
 ## 🚀 CI/CD
 
-У проєкті реалізовано GitHub Actions workflows:
+У проєкті реалізовано автоматизовані CI/CD workflows за допомогою GitHub Actions.
 
-| Workflow                | Призначення                         |
-| ----------------------- | ----------------------------------- |
-| `Backend CI`            | Запуск black, isort, flake8, pytest |
-| `Backend Security Scan` | Перевірка backend через Bandit      |
-| `Docker Build Check`    | Перевірка збірки Docker image       |
+Після кожного `push` або `pull_request` система автоматично запускає перевірку якості коду, безпеки, тестування та збірки Docker-образу.
 
-CI/CD автоматично запускається після кожного `push` або `pull_request`.
+### Реалізовані workflows
+
+| Workflow                  | Призначення |
+|---------------------------|-------------|
+| `Backend CI`              | Автоматичний запуск `black`, `isort`, `flake8` та `pytest` |
+| `Backend Security Scan`   | Аналіз безпеки backend-коду за допомогою `Bandit` |
+| `Docker Build Check`      | Перевірка коректності збірки Docker image |
+| `SonarQube Analysis`      | Аналіз якості коду, пошук potential bugs, code smells та проблем підтримуваності |
+
+CI/CD пайплайн забезпечує:
+- автоматичне тестування backend-частини;
+- контроль стилю коду;
+- перевірку безпеки застосунку;
+- перевірку Docker-конфігурації;
+- контроль якості коду через SonarQube;
+- стабільність процесу розгортання.
 
 ---
 
@@ -322,24 +381,54 @@ Failures: 0%
 
 ## 📷 Приклади / скриншоти
 
-Рекомендовано додати у папку:
+### Головна сторінка Adaptive Planner
 
-```text
-screenshots/
-```
+Головна сторінка системи містить календар подій, список найближчих задач, статистику активності користувача та швидкий доступ до основних функцій застосунку. Інтерфейс реалізований з використанням React та FullCalendar.
 
-Скріншоти:
-
-* головна сторінка;
-* dashboard;
-* календар;
-* імпорт розкладу;
-* Swagger UI;
-* GitHub Actions;
-* Locust performance test;
-* coverage report.
+![Головна сторінка Adaptive Planner](frontend/dist/images/dashboard-main.png)
 
 ---
+
+### Інтерфейс імпорту розкладу з AI-аналізом
+
+Сторінка імпорту розкладу дозволяє завантажувати PDF, DOCX, Excel, CSV, TXT та зображення розкладу. Після завантаження файл проходить AI/OCR-аналіз для автоматичного визначення пар, викладачів, часу занять та навчальних груп.
+
+![Імпорт розкладу](frontend/dist/images/schedule-import.png)
+
+---
+
+### Сторінка AI-аналізу навчальних файлів
+
+Модуль AI/NLP-аналізу використовується для автоматичного визначення типу задачі, складності, тривалості та ключових слів на основі тексту лабораторних або практичних робіт.
+
+![AI аналіз файлів](frontend/dist/images/task-analysis.png)
+
+---
+
+### Попередній перегляд задач після AI/NLP-аналізу
+
+Після аналізу система автоматично формує preview задачі із запропонованим дедлайном, оцінкою складності, типом задачі та орієнтовною тривалістю виконання.
+
+![Preview задач](frontend/dist/images/task-preview.png)
+
+---
+
+### Система керування навчальними задачами
+
+Сторінка задач дозволяє переглядати задачі за предметами, змінювати статуси виконання, редагувати дедлайни та відстежувати прогрес навчальної діяльності.
+
+![Керування задачами](frontend/dist/images/tasks-management.png)
+
+---
+
+### Панель аналітики продуктивності користувача
+
+Модуль аналітики візуалізує навантаження користувача, продуктивність, складність задач та статистику виконання за допомогою графіків і діаграм.
+
+![Аналітика](frontend/dist/images/analytics-dashboard.png)
+
+---
+
 
 ## 🧪 Проблеми і рішення
 
@@ -356,15 +445,121 @@ screenshots/
 
 ## 🧾 Використані джерела / література
 
-* Flask documentation
-* React documentation
-* PostgreSQL documentation
-* Redis documentation
-* Docker documentation
-* GitHub Actions documentation
-* Pytest documentation
-* Swagger / OpenAPI documentation
-* SonarQube documentation
-* Locust documentation
-* OpenAI API documentation
-* Google Calendar API documentation
+У процесі розробки проєкту були використані сучасні підходи до проєктування вебзастосунків, AI/ML-інтеграцій, REST API, контейнеризації, автоматизованого тестування та CI/CD.
+
+### 📚 Наукова та професійна література
+
+1. Мартин Р. *Чиста архітектура: Мистецтво розроблення програмного забезпечення*. Фабула, 2023.
+2. Фаулер М. *Рефакторинг: поліпшення дизайну існуючого коду*. Діалектика, 2021.
+3. Goodfellow I., Bengio Y., Courville A. *Deep Learning*. MIT Press, 2016.
+
+---
+
+### 🌐 Frontend технології
+
+- React — бібліотека для побудови користувацьких інтерфейсів  
+  https://react.dev
+
+- Vite — інструмент збірки frontend-застосунків  
+  https://vite.dev
+
+- React Router — бібліотека маршрутизації React-застосунків  
+  https://reactrouter.com
+
+- Axios — HTTP-клієнт для взаємодії з REST API  
+  https://axios-http.com
+
+- FullCalendar — бібліотека інтерактивного календаря  
+  https://fullcalendar.io
+
+- Recharts — бібліотека побудови графіків та аналітики  
+  https://recharts.org
+
+---
+
+### 🐍 Backend технології та Python-екосистема
+
+- Flask — Python веб-фреймворк  
+  https://flask.palletsprojects.com
+
+- Python Documentation  
+  https://docs.python.org/3/
+
+- Jinja2 — шаблонізатор Python  
+  https://jinja.palletsprojects.com
+
+- Flask-SQLAlchemy — ORM інтеграція SQLAlchemy з Flask  
+  https://flask-sqlalchemy.palletsprojects.com
+
+- Flask-Migrate — інструмент міграцій бази даних  
+  https://flask-migrate.readthedocs.io
+
+- SQLAlchemy — ORM для роботи з PostgreSQL  
+  https://www.sqlalchemy.org
+
+- PostgreSQL — система керування базами даних  
+  https://www.postgresql.org
+
+- Redis — система кешування та збереження тимчасових даних  
+  https://redis.io
+
+---
+
+### 🤖 AI / ML / Data Processing
+
+- OpenAI API — AI/NLP обробка тексту та аналіз розкладу  
+  https://platform.openai.com/docs/
+
+- Scikit-learn — бібліотека машинного навчання  
+  https://scikit-learn.org
+
+- NumPy — бібліотека математичних обчислень  
+  https://numpy.org
+
+- Pandas — бібліотека аналізу та обробки даних  
+  https://pandas.pydata.org
+
+- OpenCV — бібліотека комп’ютерного зору  
+  https://opencv.org
+
+- Pdfplumber — обробка PDF-файлів  
+  https://pypi.org/project/pdfplumber/
+
+- python-docx — обробка DOCX документів  
+  https://pypi.org/project/python-docx/
+
+- SerpApi — API для роботи з пошуковими системами  
+  https://serpapi.com
+
+---
+
+### 📅 Інтеграції та API
+
+- Google Calendar API — синхронізація подій та календаря  
+  https://developers.google.com/calendar
+
+- Swagger/OpenAPI — документація REST API  
+  https://swagger.io
+
+---
+
+### 🐳 DevOps та CI/CD
+
+- Docker — контейнеризація застосунку  
+  https://docs.docker.com
+
+- GitHub Actions — автоматизація CI/CD pipeline  
+  https://github.com/features/actions
+
+---
+
+### 🧪 Тестування та контроль якості
+
+- Pytest — автоматизоване тестування Python-застосунків  
+  https://docs.pytest.org
+
+- Locust — навантажувальне тестування  
+  https://locust.io
+
+- SonarQube — аналіз якості та безпеки коду  
+  https://www.sonarqube.org

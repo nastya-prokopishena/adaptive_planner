@@ -4637,6 +4637,23 @@ body[data-theme="dark"] {
   border-color: #f4c9b8 !important;
 }
 
+.color-row .color-dot {
+  background: var(--color-dot-bg) !important;
+  background-color: var(--color-dot-bg) !important;
+}
+
+[data-theme="light"] .color-row .color-dot,
+[data-theme="light"] .color-row .color-dot:hover,
+[data-theme="light"] .color-row .color-dot.active {
+  background: var(--color-dot-bg) !important;
+  background-color: var(--color-dot-bg) !important;
+}
+
+[data-theme="light"] .color-row .color-dot.active {
+  border-color: #ffffff !important;
+  outline: 3px solid var(--primary) !important;
+}
+
 @media (max-width: 760px) {
   .task-replan-badge {
     width: 100%;
